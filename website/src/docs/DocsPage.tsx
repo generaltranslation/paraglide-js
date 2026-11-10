@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { DocsHeading, DocsPageData, DocsSection } from "./data";
 import { initMarkdownInteractive } from "../components/markdown-interactive";
+import { capture } from "../analytics";
 
 const loadedImports = new Set<string>();
 
@@ -20,6 +21,7 @@ export function DocsPage({
   const copyMarkdown = async () => {
     try {
       await navigator.clipboard.writeText(data.rawMarkdown);
+      capture("page_markdown_copied", { page: window.location.pathname });
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch (error) {
