@@ -3,8 +3,6 @@
  * - Copy buttons for code blocks
  */
 
-import { capture } from "../analytics";
-
 const COPY_BUTTON_CLASS = "mwc-copy-button";
 
 function ensureCopyButtons(root: Document | Element = document) {
@@ -33,10 +31,6 @@ function handleCopyClick(event: Event) {
   const pre = button.closest("pre");
   const code = pre?.querySelector("code")?.textContent ?? "";
   navigator.clipboard.writeText(code);
-  capture("code_copied", {
-    page: window.location.pathname,
-    code: code.slice(0, 200),
-  });
 
   const previous = button.textContent;
   button.textContent = "Copied!";

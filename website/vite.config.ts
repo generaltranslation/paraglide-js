@@ -139,19 +139,6 @@ export default defineConfig(({ mode, command }: ConfigEnv) => {
       fs: {
         allow: [".."],
       },
-      // Mirrors the /ingest proxy in worker/index.ts.
-      proxy: {
-        "/ingest/static": {
-          target: "https://us-assets.i.posthog.com",
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/ingest/, ""),
-        },
-        "/ingest": {
-          target: "https://us.i.posthog.com",
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/ingest/, ""),
-        },
-      },
     },
   };
 });
