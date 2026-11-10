@@ -2,13 +2,12 @@ import {
   HeadContent,
   Scripts,
   createRootRoute,
-  useRouter,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
-import { capturePageview, initAnalytics } from "../analytics";
+import { initAnalytics } from "../analytics";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -35,6 +34,8 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: ReactNode }) {
+  useEffect(initAnalytics, []);
+
   return (
     <html lang="en">
       <head>
@@ -44,25 +45,10 @@ function RootDocument({ children }: { children: ReactNode }) {
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
-        <Analytics />
         <Scripts />
       </body>
     </html>
   );
-}
-
-function Analytics() {
-  const router = useRouter();
-
-  useEffect(() => {
-    initAnalytics();
-    capturePageview();
-    return router.subscribe("onResolved", (event) => {
-      if (event.pathChanged) capturePageview();
-    });
-  }, [router]);
-
-  return null;
 }
 
 function NotFoundPage() {

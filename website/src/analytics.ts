@@ -22,7 +22,8 @@ export function initAnalytics() {
     // counts visitors with a daily server-side hash; the project must allow cookieless events.
     cookieless_mode: "always",
     person_profiles: "identified_only",
-    capture_pageview: false,
+    capture_pageview: "history_change",
+    capture_pageleave: false,
     autocapture: false,
     // The shared GT project enables these remotely; the docs site doesn't need them.
     disable_session_recording: true,
@@ -31,13 +32,8 @@ export function initAnalytics() {
     capture_heatmaps: false,
     capture_performance: false,
   });
-  posthog.register({ site: "paraglidejs" });
 
   document.addEventListener("click", handleGtLinkClick, { capture: true });
-}
-
-export function capturePageview() {
-  if (initialized) posthog.capture("$pageview");
 }
 
 function handleGtLinkClick(event: MouseEvent) {
@@ -45,8 +41,5 @@ function handleGtLinkClick(event: MouseEvent) {
   const link = event.target.closest<HTMLAnchorElement>("a[href]");
   if (!link || !/(^|\.)generaltranslation\.com$/.test(link.hostname)) return;
 
-  posthog.capture("gt_link_clicked", {
-    href: link.href,
-    location: window.location.pathname,
-  });
+  posthog.capture("gt_link_clicked", { href: link.href });
 }
