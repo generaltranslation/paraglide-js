@@ -1,18 +1,26 @@
 import posthog from "posthog-js";
 
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
+const PRODUCTION_HOSTNAME = "paraglidejs.com";
 
 let initialized = false;
 
 export function initAnalytics() {
-  if (initialized || !POSTHOG_KEY) return;
+  if (
+    initialized ||
+    !POSTHOG_KEY ||
+    window.location.hostname !== PRODUCTION_HOSTNAME
+  ) {
+    return;
+  }
   initialized = true;
 
   posthog.init(POSTHOG_KEY, {
     api_host: "/ingest",
     ui_host: "https://us.posthog.com",
-    // Cookieless, so the site needs no consent banner.
-    persistence: "memory",
+    // No cookies or browser storage, so the site needs no consent banner. PostHog
+    // counts visitors with a daily server-side hash; the project must allow cookieless events.
+    cookieless_mode: "always",
     person_profiles: "identified_only",
     capture_pageview: false,
     autocapture: false,
