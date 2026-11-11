@@ -372,6 +372,70 @@ test("replacing the virtual output reloads each Vite environment once", async ()
 	}
 });
 
+test("the first virtual output does not reload Vite environments", async () => {
+	const root = await fs.realpath(
+		await fs.mkdtemp(path.join(tmpdir(), "paraglide-virtual-first-"))
+	);
+	const originalEnv = process.env.NODE_ENV;
+	let server: Awaited<ReturnType<typeof createServer>> | undefined;
+	try {
+		process.env.NODE_ENV = "development";
+		await fs.mkdir(path.join(root, "project.inlang"));
+		await fs.writeFile(path.join(root, "package.json"), '{"type":"module"}');
+		await fs.writeFile(
+			path.join(root, "project.inlang/settings.json"),
+			JSON.stringify({
+				baseLocale: "en",
+				locales: ["en"],
+				modules: ["./plugin.js"],
+			})
+		);
+		await fs.writeFile(path.join(root, "messages.json"), "{}");
+		await fs.writeFile(
+			path.join(root, "plugin.js"),
+			`export default {key:"plugin.fixture.first",toBeImportedFiles:async()=>[{path:"./messages.json",locale:"en"}],importFiles:()=>({bundles:[{id:"greeting"}],messages:[{bundleId:"greeting",locale:"en"}],variants:[{messageBundleId:"greeting",messageLocale:"en",pattern:[{type:"text",value:"HELLO"}]}]})};`
+		);
+		server = await createServer({
+			root,
+			configFile: false,
+			logLevel: "silent",
+			plugins: [
+				paraglideVitePlugin({
+					project: path.join(root, "project.inlang"),
+					outdir: path.join(root, "paraglide"),
+					strategy: ["baseLocale"],
+					emitGitIgnore: false,
+					emitPrettierIgnore: false,
+					emitReadme: false,
+				}),
+			],
+			optimizeDeps: { noDiscovery: true },
+			server: { port: 0, watch: null },
+		});
+		const sends = Object.values(server.environments).map((environment) =>
+			vi.spyOn(environment.hot, "send")
+		);
+		// Vite runs buildStart before it listens: nothing can have loaded the
+		// messages yet, and a full-reload sent without clients is replayed to
+		// the first browser that connects.
+		await server.pluginContainer.buildStart({});
+		const fullReloads = sends.flatMap((send) =>
+			send.mock.calls.filter(
+				([payload]: unknown[]) =>
+					typeof payload === "object" &&
+					payload !== null &&
+					"type" in payload &&
+					payload.type === "full-reload"
+			)
+		);
+		expect(fullReloads).toEqual([]);
+	} finally {
+		await server?.close();
+		process.env.NODE_ENV = originalEnv;
+		await fs.rm(root, { recursive: true, force: true });
+	}
+});
+
 test("virtual messages reject incompatible output options", () => {
 	const common = {
 		project: "./project.inlang",

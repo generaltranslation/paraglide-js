@@ -342,11 +342,15 @@ export function createVirtualMessagesPlugins(
 						onPublished() {
 							messages = nextMessages;
 							if (!transport || directory !== nextDirectory) {
+								// Vite listens only after buildStart, so the first publication
+								// has no loaded modules to reload; a full-reload sent now would be
+								// buffered and replayed to the first browser that connects.
+								const replaced = transport !== undefined;
 								directory = nextDirectory;
 								transport = virtualMessages(directory, packed.implementations);
 								if (server) {
 									transport.configureServer(server);
-									reloadEnvironments(server);
+									if (replaced) reloadEnvironments(server);
 								}
 							} else transport.api.update(packed.implementations);
 						},
