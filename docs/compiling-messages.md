@@ -286,9 +286,11 @@ paraglide/
 | `server.js`   | Server middleware: `paraglideMiddleware()`                               |
 
 The `outputStructure` option controls how messages are organized. The Vite
-plugin defaults to `"virtual-modules"` in development and production; this layout
-is available only through Vite. Select `"message-modules"` or `"locale-modules"`
-for physical message files. The CLI defaults to `"message-modules"`.
+plugin defaults to `"locale-modules"` for its dev server and Vitest to reduce HTTP
+requests, and `"virtual-modules"` for builds. Virtual output is available only
+through Vite. Explicit plugin or project config values override either default.
+Select `"message-modules"` or `"locale-modules"` for physical message files. The
+CLI defaults to `"message-modules"`.
 See [Virtual Messages in Vite](./virtual-messages) for output and migration details,
 and [Compiler Options](./compiler-options) for all options.
 

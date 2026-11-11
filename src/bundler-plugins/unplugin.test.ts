@@ -105,7 +105,11 @@ function compilerPlugin(plugins: any): any {
 }
 
 /** Fires Vite's configResolved so the plugin learns its root. */
-function setViteRoot(plugin: any, root: string): void {
+function setViteRoot(
+	plugin: any,
+	root: string,
+	command?: "serve" | "build"
+): void {
 	const configResolved =
 		(plugin.vite?.configResolved as
 			| { handler?: (config: unknown) => void }
@@ -113,7 +117,7 @@ function setViteRoot(plugin: any, root: string): void {
 		(plugin.configResolved as
 			| { handler?: (config: unknown) => void }
 			| undefined);
-	configResolved?.handler?.({ root });
+	configResolved?.handler?.({ root, command });
 }
 
 const mockContext = { addWatchFile: () => {} };
@@ -1521,8 +1525,8 @@ test("buildStart throws when the config is invalid in production", async () => {
 
 // Regression (review): pinning outputStructure in the shared defaults
 // template killed the development default (#486). Without an explicit
-// structure, Vite must still apply its virtual default without changing shared defaults.
-test("Vite development default output structure is virtual-modules", async () => {
+// structure, Vite serve must apply its locale default without changing shared defaults.
+test("Vite development default output structure is locale-modules", async () => {
 	const { writeFile } = await import("node:fs/promises");
 	const { projectDir, outdir } = await createProjectFixture();
 
@@ -1542,18 +1546,16 @@ test("Vite development default output structure is virtual-modules", async () =>
 	const { paraglideVitePlugin: vitePlugin } =
 		await import("../bundler-plugins/vite.js");
 	const plugin = compilerPlugin(vitePlugin({ project: projectDir, outdir }));
-	setViteRoot(plugin, path.dirname(projectDir));
+	setViteRoot(plugin, path.dirname(projectDir), "serve");
 
 	delete process.env.NODE_ENV;
 	await plugin.buildStart?.call(mockContext);
 
-	await expect(
-		realFs.promises.access(path.join(outdir, "messages"))
-	).rejects.toThrow();
+	await realFs.promises.access(path.join(outdir, "messages/en.js"));
 	expect(
 		await realFs.promises.readFile(path.join(outdir, "messages.js"), "utf8")
-	).toContain("virtual:paraglide/");
-	await realFs.promises.access(path.join(outdir, "messages.virtual.d.ts"));
+	).not.toContain("virtual:paraglide/");
+	await realFs.promises.access(path.join(outdir, "messages.d.ts"));
 });
 
 // All four candidate names are registered inside the project directory so

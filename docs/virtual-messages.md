@@ -5,9 +5,10 @@ description: Keep public generated entry points while serving individual message
 
 # Virtual messages in Vite
 
-Large catalogs can produce thousands of message files. The default Vite layout
-keeps the public generated entry points on disk and serves individual message
-implementations through Vite:
+Vite uses `locale-modules` for its dev server and Vitest, and `virtual-modules`
+for production builds. Virtual output keeps the public generated entry points
+on disk and serves individual message implementations through Vite. You can
+also select it explicitly for development:
 
 ```ts
 import { defineConfig } from "vite";
@@ -18,14 +19,15 @@ export default defineConfig({
 		paraglideVitePlugin({
 			project: "./project.inlang",
 			outdir: "./src/paraglide",
-			outputStructure: "virtual-modules", // default in Vite
+			outputStructure: "virtual-modules", // opt in during development too
 		}),
 	],
 });
 ```
 
 `outputStructure: "virtual-modules"` is available only through the Vite plugin
-and is its default in development and production. You can omit this option.
+and is its default for `vite build`. Omitting the option uses `locale-modules`
+for `vite serve` and Vitest, reducing the number of HTTP module requests.
 Select `"message-modules"` or `"locale-modules"` in the plugin or project config
 when you need physical message files. CLI, programmatic and other bundler
 output keep their existing defaults; they reject `"virtual-modules"` because
@@ -46,9 +48,9 @@ export default {
 ```
 
 The Vite plugin then only needs `project: "./project.inlang"`. The explicit
-layout in the project file is optional; Vite uses virtual modules when it is
-absent too. A standalone compile of this explicitly virtual project fails
-instead of silently changing its layout. To intentionally generate physical
+layout in the project file is optional; omitting it lets Vite choose locale
+modules for serve and virtual modules for builds. A standalone compile of this
+explicitly virtual project fails instead of silently changing its layout. To intentionally generate physical
 files for a standalone script, use a separate output directory:
 
 ```sh
@@ -73,7 +75,7 @@ hello(inputs, { locale: "de" });
 ```
 
 The application retains message input types, locale unions, metadata and markup
-types. Vite rewrites verified named imports and safe static `m.hello()` accesses
+types. When virtual output is active, Vite rewrites verified named imports and safe static `m.hello()` accesses
 to individual virtual message imports, reducing the graph needed for the first
 development SSR request. Individual modules retain message-level tree shaking.
 
@@ -84,7 +86,7 @@ they do not receive the static-import optimization.
 
 ## Generated output
 
-Excluding optional README and ignore files, there are nine physical files:
+With virtual output, excluding optional README and ignore files, there are nine physical files:
 
 ```text
 paraglide/
@@ -115,8 +117,22 @@ not make catalog compilation lazy.
 
 ## Development and production
 
-Keep the Paraglide plugin enabled for development and production builds. Edits
-use the normal compiler queue and tracked filesystem watcher. A successful
+The default dev layout loads the public message entry point, its index, and
+one module per locale. This avoids one HTTP request per message in large
+browser test suites and pages that use many messages. It loads the whole
+catalog, so an isolated page using few messages can still load faster with
+explicit virtual output. Choose `outputStructure: "virtual-modules"` if that
+trade-off suits your project.
+
+Defaults follow Vite's command, not `NODE_ENV`, `mode`, or the `isDevelopment`
+compiler option: `vite build --mode development` still uses virtual modules,
+and `NODE_ENV=production vite serve` still uses locale modules. The implicit
+Vite layouts retain generated TypeScript declarations. An explicit declaration
+opt-out is supported for physical output; virtual output requires declarations.
+
+Keep the Paraglide plugin enabled for development and production builds. With
+virtual output, edits use the normal compiler queue and tracked filesystem
+watcher. A successful
 publication updates physical declarations and the virtual implementations, then
 invalidates affected importers. A compilation failure preserves the last
 successfully published virtual graph and uses the existing error handling.
@@ -141,12 +157,13 @@ paraglideVitePlugin({
 
 The same option can be set in `project.inlang/paraglide.config.js`. Explicit
 plugin options override project config; otherwise project config overrides the
-Vite default. Watched config edits can switch layouts.
+Vite default. Watched config edits can switch layouts. Remove an explicit
+`outputStructure` from both plugin options and project config to use the
+automatic serve/build defaults.
 
 ## Compatibility
 
-- This mode enables declarations when using virtual modules. It
-  rejects an explicit `emitTsDeclarations: false`, including one in the project
+- Virtual output enables declarations and rejects an explicit `emitTsDeclarations: false`, including one in the project
   configuration. The global compiler boolean default remains unchanged.
 - Requires `messageModuleSize: 1`. For grouped physical output, select
   `outputStructure: "message-modules"` explicitly.

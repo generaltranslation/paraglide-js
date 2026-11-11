@@ -70,7 +70,7 @@ test.each([
 			await server.listen();
 			await server.pluginContainer.buildStart({});
 			const assertLayout = async (configured?: Layout) => {
-				const expected = override ?? configured ?? "virtual-modules";
+				const expected = override ?? configured ?? "locale-modules";
 				expect((await server!.ssrLoadModule("/entry.js")).value).toBe(
 					"HELLO_LAYOUT"
 				);
@@ -93,10 +93,14 @@ test.each([
 							expected === "message-modules" ? "greeting.js" : "en.js"
 						)
 					);
-					// Physical layouts retain the compiler's false declaration default.
-					await expect(
-						fs.access(path.join(outdir, "messages.d.ts"))
-					).rejects.toThrow();
+					// Implicit Vite layouts keep declarations; explicit physical
+					// layouts retain the compiler's false declaration default.
+					if (override === undefined && configured === undefined)
+						await fs.access(path.join(outdir, "messages.d.ts"));
+					else
+						await expect(
+							fs.access(path.join(outdir, "messages.d.ts"))
+						).rejects.toThrow();
 					await expect(
 						fs.access(path.join(outdir, "messages.virtual.d.ts"))
 					).rejects.toThrow();

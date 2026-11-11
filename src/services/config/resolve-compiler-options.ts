@@ -55,9 +55,9 @@ export function resolveCompilerOptions(args: {
 }
 
 // `outputStructure` is deliberately NOT pinned here: its default differs
-// per surface — Vite defaults to "virtual-modules", other bundler plugins
-// switch layouts in development, and the CLI uses "message-modules". Surfaces that need
-// a pinned value pass it explicitly as an override.
+// per surface — Vite uses locale modules for serve and virtual modules for
+// build, other bundler plugins switch layouts in development, and the CLI
+// uses message modules. Each integration applies its own fallback.
 // `project` and `outdir` have no built-in defaults here either: the CLI
 // decides whether to apply (and announce) the conventional paths, while
 // bundler plugins require them explicitly (or via config file).

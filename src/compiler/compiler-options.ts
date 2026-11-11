@@ -363,12 +363,14 @@ export type CompilerOptions = {
 	 * The `outputStructure` defines how modules are structured in the output.
 	 *
 	 * - `message-modules` - Each module is a physical message file. Default for the CLI.
-	 * - `virtual-modules` - Individual messages served by Vite, with combined declarations. Default for Vite; requires the Vite plugin.
+	 * - `virtual-modules` - Individual messages served by Vite, with combined declarations. Default for Vite builds; requires the Vite plugin.
 	 * - `locale-modules` - Each module is a locale.
 	 *
-	 * Vite uses `virtual-modules` for development and production, keeping public entry
-	 * points physical while avoiding individual message files. Other bundler plugins
-	 * use `locale-modules` in development and `message-modules` in production.
+	 * Vite serve and Vitest use `locale-modules` to reduce HTTP requests. Vite builds
+	 * use `virtual-modules`, keeping public entry points physical while avoiding
+	 * individual message files. Other bundler plugins use `locale-modules` in
+	 * development and `message-modules` in production. Explicit layouts override
+	 * these defaults.
 	 *
 	 * **`message-modules`**
 	 *

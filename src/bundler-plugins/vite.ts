@@ -7,11 +7,12 @@ import { unpluginFactory } from "./unplugin.js";
 
 export type ParaglideVitePluginOptions = ParaglidePluginOptions & {
 	/**
-	 * Message output layout. Vite defaults to virtual-modules in development
-	 * and production. Use message-modules or locale-modules for physical files.
+	 * Message output layout. Vite serve and Vitest default to locale-modules
+	 * to reduce HTTP requests; Vite builds default to virtual-modules.
 	 * Virtual modules emit combined declarations and require this plugin.
+	 * Explicit plugin or project config values override either default.
 	 *
-	 * @default "virtual-modules"
+	 * @default "locale-modules" for serve, "virtual-modules" for build
 	 */
 	outputStructure?: ParaglidePluginOptions["outputStructure"];
 	/**
