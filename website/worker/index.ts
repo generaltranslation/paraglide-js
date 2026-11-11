@@ -13,13 +13,20 @@ export default {
       ? "us-assets.i.posthog.com"
       : "us.i.posthog.com";
     const headers = new Headers(request.headers);
-    // Keeps PostHog's geolocation on the visitor rather than Cloudflare.
-    headers.set("x-forwarded-for", request.headers.get("cf-connecting-ip") ?? "");
+    headers.delete("cookie");
+    // Preserve the visitor IP for PostHog's cookieless hash.
+    headers.set(
+      "x-forwarded-for",
+      request.headers.get("cf-connecting-ip") ?? ""
+    );
 
-    return fetch(`https://${host}${url.pathname.replace(/^\/ingest/, "")}${url.search}`, {
-      method: request.method,
-      headers,
-      body: request.body,
-    });
+    return fetch(
+      `https://${host}${url.pathname.replace(/^\/ingest/, "")}${url.search}`,
+      {
+        method: request.method,
+        headers,
+        body: request.body,
+      }
+    );
   },
 };

@@ -34,7 +34,11 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: ReactNode }) {
-  useEffect(initAnalytics, []);
+  useEffect(() => {
+    initAnalytics().catch((error) =>
+      console.error("Analytics failed to load", error)
+    );
+  }, []);
 
   return (
     <html lang="en">
