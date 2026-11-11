@@ -245,9 +245,29 @@ export function createVirtualMessagesPlugins(
 			return transport?.load(id);
 		},
 	};
-	const optimize: Plugin = {
+	const optimize: Plugin & {
+		// Vitest 5 hook; older Vitest versions ignore it.
+		configureVitest(context: {
+			defineCacheKeyGenerator?: (
+				callback: () => string | undefined | null | false
+			) => void;
+		}): void;
+	} = {
 		name: "paraglide-virtual-message-imports",
 		enforce: "post",
+		// Vitest caches transformed modules on disk and its default key does not
+		// cover Paraglide's project configuration. Without this, a cached
+		// transform keeps importing a virtual id that is no longer served after
+		// the output structure changes outside the Vite config file.
+		configureVitest(context) {
+			context.defineCacheKeyGenerator?.(() =>
+				createHash("sha256")
+					.update(directory && transport ? virtualMessagePrefix(directory) : "")
+					.update("\0")
+					.update([...messages].sort().flat().join("\0"))
+					.digest("hex")
+			);
+		},
 		async transform(code, id) {
 			if (
 				!transport ||
