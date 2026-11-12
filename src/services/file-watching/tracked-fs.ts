@@ -3,144 +3,144 @@ import { dirname, resolve } from "node:path";
 import { nodeNormalizePath } from "../../utilities/node-normalize-path.js";
 
 type TrackedFs = {
-	fs: typeof import("node:fs");
-	readFiles: Set<string>;
-	clearReadFiles: () => void;
+  fs: typeof import("node:fs");
+  readFiles: Set<string>;
+  clearReadFiles: () => void;
 };
 
 type TrackedFsOptions = {
-	baseDir?: string;
-	fs?: typeof import("node:fs");
+  baseDir?: string;
+  fs?: typeof import("node:fs");
 };
 
 type WatchTargetOptions = {
-	baseDir?: string;
-	outdir?: string;
-	ignoreCache?: boolean;
-	includeDirectories?: boolean;
-	ignorePath?: (path: string) => boolean;
+  baseDir?: string;
+  outdir?: string;
+  ignoreCache?: boolean;
+  includeDirectories?: boolean;
+  ignorePath?: (path: string) => boolean;
 };
 
 type WatchTargets = {
-	files: Set<string>;
-	directories: Set<string>;
-	isIgnoredPath: (path: string) => boolean;
+  files: Set<string>;
+  directories: Set<string>;
+  isIgnoredPath: (path: string) => boolean;
 };
 
 export function isPathWithinDirectories(
-	path: string,
-	directories: Iterable<string>
+  path: string,
+  directories: Iterable<string>
 ): boolean {
-	const normalizedPath = nodeNormalizePath(path);
-	for (const directory of directories) {
-		if (isPathWithinDirectory(normalizedPath, nodeNormalizePath(directory))) {
-			return true;
-		}
-	}
-	return false;
+  const normalizedPath = nodeNormalizePath(path);
+  for (const directory of directories) {
+    if (isPathWithinDirectory(normalizedPath, nodeNormalizePath(directory))) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function isPathWithinDirectory(path: string, directory: string): boolean {
-	// Roots already end in a separator; appending another would miss children.
-	const prefix = directory.endsWith("/") ? directory : `${directory}/`;
-	return path === directory || path.startsWith(prefix);
+  // Roots already end in a separator; appending another would miss children.
+  const prefix = directory.endsWith("/") ? directory : `${directory}/`;
+  return path === directory || path.startsWith(prefix);
 }
 
 export function getWatchTargets(
-	files: Iterable<string>,
-	options: WatchTargetOptions = {}
+  files: Iterable<string>,
+  options: WatchTargetOptions = {}
 ): WatchTargets {
-	const baseDir = options.baseDir ?? process.cwd();
-	const outdirPath = options.outdir
-		? nodeNormalizePath(resolve(baseDir, options.outdir))
-		: undefined;
-	const ignoreCache = options.ignoreCache ?? true;
-	const includeDirectories = options.includeDirectories ?? true;
-	const ignorePath = options.ignorePath;
+  const baseDir = options.baseDir ?? process.cwd();
+  const outdirPath = options.outdir
+    ? nodeNormalizePath(resolve(baseDir, options.outdir))
+    : undefined;
+  const ignoreCache = options.ignoreCache ?? true;
+  const includeDirectories = options.includeDirectories ?? true;
+  const ignorePath = options.ignorePath;
 
-	const isIgnoredPath = (path: string) => {
-		const normalizedPath = nodeNormalizePath(path);
-		// match whole path segments only — a project under e.g. /cachet-app/
-		// must not have its inputs ignored
-		if (ignoreCache && /(^|\/)cache(\/|$)/.test(normalizedPath)) {
-			return true;
-		}
-		if (outdirPath && isPathWithinDirectory(normalizedPath, outdirPath)) {
-			return true;
-		}
-		return ignorePath ? ignorePath(normalizedPath) : false;
-	};
+  const isIgnoredPath = (path: string) => {
+    const normalizedPath = nodeNormalizePath(path);
+    // match whole path segments only — a project under e.g. /cachet-app/
+    // must not have its inputs ignored
+    if (ignoreCache && /(^|\/)cache(\/|$)/.test(normalizedPath)) {
+      return true;
+    }
+    if (outdirPath && isPathWithinDirectory(normalizedPath, outdirPath)) {
+      return true;
+    }
+    return ignorePath ? ignorePath(normalizedPath) : false;
+  };
 
-	const nextFiles = new Set<string>();
-	const nextDirectories = new Set<string>();
+  const nextFiles = new Set<string>();
+  const nextDirectories = new Set<string>();
 
-	for (const filePath of files) {
-		const normalizedPath = nodeNormalizePath(filePath);
-		if (isIgnoredPath(normalizedPath)) {
-			continue;
-		}
-		nextFiles.add(normalizedPath);
-		if (includeDirectories) {
-			const directoryPath = dirname(normalizedPath);
-			if (!isIgnoredPath(directoryPath)) {
-				nextDirectories.add(directoryPath);
-			}
-		}
-	}
+  for (const filePath of files) {
+    const normalizedPath = nodeNormalizePath(filePath);
+    if (isIgnoredPath(normalizedPath)) {
+      continue;
+    }
+    nextFiles.add(normalizedPath);
+    if (includeDirectories) {
+      const directoryPath = dirname(normalizedPath);
+      if (!isIgnoredPath(directoryPath)) {
+        nextDirectories.add(directoryPath);
+      }
+    }
+  }
 
-	return {
-		files: nextFiles,
-		directories: nextDirectories,
-		isIgnoredPath,
-	};
+  return {
+    files: nextFiles,
+    directories: nextDirectories,
+    isIgnoredPath,
+  };
 }
 
 export function createTrackedFs(options: TrackedFsOptions = {}): TrackedFs {
-	const baseDir = options.baseDir ?? process.cwd();
-	const baseFs = options.fs ?? fs;
-	const readFiles = new Set<string>();
+  const baseDir = options.baseDir ?? process.cwd();
+  const baseFs = options.fs ?? fs;
+  const readFiles = new Set<string>();
 
-	const trackRead = (path: fs.PathLike | number) => {
-		readFiles.add(nodeNormalizePath(resolve(baseDir, path.toString())));
-	};
+  const trackRead = (path: fs.PathLike | number) => {
+    readFiles.add(nodeNormalizePath(resolve(baseDir, path.toString())));
+  };
 
-	const wrappedFs: typeof import("node:fs") = {
-		...baseFs,
-		// @ts-expect-error - Node's fs has too many overloads
-		readFile: (
-			path: fs.PathLike | number,
-			options: { encoding?: null; flag?: string } | null | undefined,
-			callback: (err: NodeJS.ErrnoException | null, data: Buffer) => void
-		) => {
-			trackRead(path);
-			return baseFs.readFile(path, options, callback);
-		},
-		// @ts-expect-error - Node's fs has too many overloads
-		readFileSync: (
-			path: fs.PathLike | number,
-			options?: { encoding?: null; flag?: string } | null | undefined
-		) => {
-			trackRead(path);
-			return baseFs.readFileSync(path, options);
-		},
-		promises: {
-			...baseFs.promises,
-			// @ts-expect-error - Node's fs.promises has too many overloads
-			readFile: async (
-				path: fs.PathLike,
-				options?: { encoding?: null; flag?: string } | null
-			): Promise<Buffer> => {
-				trackRead(path);
-				return baseFs.promises.readFile(path, options);
-			},
-		},
-	};
+  const wrappedFs: typeof import("node:fs") = {
+    ...baseFs,
+    // @ts-expect-error - Node's fs has too many overloads
+    readFile: (
+      path: fs.PathLike | number,
+      options: { encoding?: null; flag?: string } | null | undefined,
+      callback: (err: NodeJS.ErrnoException | null, data: Buffer) => void
+    ) => {
+      trackRead(path);
+      return baseFs.readFile(path, options, callback);
+    },
+    // @ts-expect-error - Node's fs has too many overloads
+    readFileSync: (
+      path: fs.PathLike | number,
+      options?: { encoding?: null; flag?: string } | null | undefined
+    ) => {
+      trackRead(path);
+      return baseFs.readFileSync(path, options);
+    },
+    promises: {
+      ...baseFs.promises,
+      // @ts-expect-error - Node's fs.promises has too many overloads
+      readFile: async (
+        path: fs.PathLike,
+        options?: { encoding?: null; flag?: string } | null
+      ): Promise<Buffer> => {
+        trackRead(path);
+        return baseFs.promises.readFile(path, options);
+      },
+    },
+  };
 
-	return {
-		fs: wrappedFs,
-		readFiles,
-		clearReadFiles: () => {
-			readFiles.clear();
-		},
-	};
+  return {
+    fs: wrappedFs,
+    readFiles,
+    clearReadFiles: () => {
+      readFiles.clear();
+    },
+  };
 }

@@ -1,13 +1,13 @@
 import { expect, test } from "vitest";
 import {
-	insertBundleNested,
-	loadProjectInMemory,
-	newProject,
-	type BundleNested,
-	type Declaration,
-	type Match,
-	type Pattern,
-	type VariableReference,
+  insertBundleNested,
+  loadProjectInMemory,
+  newProject,
+  type BundleNested,
+  type Declaration,
+  type Match,
+  type Pattern,
+  type VariableReference,
 } from "@inlang/sdk";
 import ts from "typescript";
 import fs from "node:fs/promises";
@@ -21,209 +21,209 @@ import type { CompilerOptions } from "./compiler-options.js";
 
 const execFileAsync = promisify(execFile);
 function bundle(args: {
-	id: string;
-	declarations?: Declaration[];
-	variants?: { matches?: Match[]; pattern: Pattern }[];
-	pattern?: Pattern;
-	selectors?: VariableReference[];
+  id: string;
+  declarations?: Declaration[];
+  variants?: { matches?: Match[]; pattern: Pattern }[];
+  pattern?: Pattern;
+  selectors?: VariableReference[];
 }): BundleNested {
-	return {
-		id: args.id,
-		declarations: args.declarations ?? [],
-		messages: [
-			{
-				id: `${args.id}_en`,
-				bundle_id: args.id,
-				locale: "en",
-				selectors: args.selectors ?? [],
-				variants: (
-					args.variants ?? [
-						{ pattern: args.pattern ?? [{ type: "text", value: "Hello" }] },
-					]
-				).map((variant, index) => ({
-					id: `${args.id}_en_${index}`,
-					message_id: `${args.id}_en`,
-					matches: variant.matches ?? [],
-					pattern: variant.pattern,
-				})),
-			},
-		],
-	};
+  return {
+    id: args.id,
+    declarations: args.declarations ?? [],
+    messages: [
+      {
+        id: `${args.id}_en`,
+        bundle_id: args.id,
+        locale: "en",
+        selectors: args.selectors ?? [],
+        variants: (
+          args.variants ?? [
+            { pattern: args.pattern ?? [{ type: "text", value: "Hello" }] },
+          ]
+        ).map((variant, index) => ({
+          id: `${args.id}_en_${index}`,
+          message_id: `${args.id}_en`,
+          matches: variant.matches ?? [],
+          pattern: variant.pattern,
+        })),
+      },
+    ],
+  };
 }
 
 async function fixture() {
-	const project = await loadProjectInMemory({
-		blob: await newProject({
-			settings: {
-				baseLocale: "en",
-				locales: ["en", "de", "de-CH"],
-			},
-		}),
-	});
-	for (const value of [
-		bundle({ id: "plain" }),
-		bundle({ id: "greeting.hello" }),
-		bundle({ id: "default" }),
-		bundle({ id: "class" }),
-		bundle({
-			id: "unusual",
-			declarations: [{ type: "input-variable", name: "user-name" }],
-			pattern: [
-				{
-					type: "expression",
-					arg: { type: "variable-reference", name: "user-name" },
-				},
-			],
-		}),
-		bundle({
-			id: "numeric",
-			declarations: [{ type: "input-variable", name: "value" }],
-			variants: ["1", "2"].map((value) => ({
-				matches: [{ type: "literal-match", key: "value", value }],
-				pattern: [{ type: "text", value }],
-			})),
-		}),
-		bundle({
-			id: "welcome",
-			declarations: [{ type: "input-variable", name: "username" }],
-			pattern: [
-				{
-					type: "expression",
-					arg: { type: "variable-reference", name: "username" },
-				},
-			],
-		}),
-		bundle({
-			id: "status",
-			declarations: [{ type: "input-variable", name: "state" }],
-			variants: ["ready", "busy"].map((value) => ({
-				matches: [{ type: "literal-match", key: "state", value }],
-				pattern: [{ type: "text", value }],
-			})),
-		}),
-		bundle({
-			id: "count",
-			declarations: [{ type: "input-variable", name: "count" }],
-			variants: [
-				{
-					matches: [{ type: "literal-match", key: "count", value: "1" }],
-					pattern: [{ type: "text", value: "One" }],
-				},
-				{
-					matches: [{ type: "catchall-match", key: "count" }],
-					pattern: [
-						{
-							type: "expression",
-							arg: { type: "variable-reference", name: "count" },
-						},
-					],
-				},
-			],
-		}),
-		bundle({
-			id: "plural",
-			declarations: [
-				{ type: "input-variable", name: "count" },
-				{
-					type: "local-variable",
-					name: "countPlural",
-					value: {
-						type: "expression",
-						arg: { type: "variable-reference", name: "count" },
-						annotation: {
-							type: "function-reference",
-							name: "plural",
-							options: [],
-						},
-					},
-				},
-			],
-			selectors: [{ type: "variable-reference", name: "countPlural" }],
-			variants: ["one", "other"].map((value) => ({
-				matches: [{ type: "literal-match", key: "countPlural", value }],
-				pattern: [{ type: "text", value }],
-			})),
-		}),
-		bundle({
-			id: "rich",
-			declarations: [{ type: "input-variable", name: "amount" }],
-			pattern: [
-				{ type: "markup-start", name: "strong", options: [], attributes: [] },
-				{
-					type: "expression",
-					arg: { type: "variable-reference", name: "amount" },
-				},
-				{ type: "markup-end", name: "strong", options: [], attributes: [] },
-			],
-		}),
-	])
-		await insertBundleNested(project.db, value);
-	return project;
+  const project = await loadProjectInMemory({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de", "de-CH"],
+      },
+    }),
+  });
+  for (const value of [
+    bundle({ id: "plain" }),
+    bundle({ id: "greeting.hello" }),
+    bundle({ id: "default" }),
+    bundle({ id: "class" }),
+    bundle({
+      id: "unusual",
+      declarations: [{ type: "input-variable", name: "user-name" }],
+      pattern: [
+        {
+          type: "expression",
+          arg: { type: "variable-reference", name: "user-name" },
+        },
+      ],
+    }),
+    bundle({
+      id: "numeric",
+      declarations: [{ type: "input-variable", name: "value" }],
+      variants: ["1", "2"].map((value) => ({
+        matches: [{ type: "literal-match", key: "value", value }],
+        pattern: [{ type: "text", value }],
+      })),
+    }),
+    bundle({
+      id: "welcome",
+      declarations: [{ type: "input-variable", name: "username" }],
+      pattern: [
+        {
+          type: "expression",
+          arg: { type: "variable-reference", name: "username" },
+        },
+      ],
+    }),
+    bundle({
+      id: "status",
+      declarations: [{ type: "input-variable", name: "state" }],
+      variants: ["ready", "busy"].map((value) => ({
+        matches: [{ type: "literal-match", key: "state", value }],
+        pattern: [{ type: "text", value }],
+      })),
+    }),
+    bundle({
+      id: "count",
+      declarations: [{ type: "input-variable", name: "count" }],
+      variants: [
+        {
+          matches: [{ type: "literal-match", key: "count", value: "1" }],
+          pattern: [{ type: "text", value: "One" }],
+        },
+        {
+          matches: [{ type: "catchall-match", key: "count" }],
+          pattern: [
+            {
+              type: "expression",
+              arg: { type: "variable-reference", name: "count" },
+            },
+          ],
+        },
+      ],
+    }),
+    bundle({
+      id: "plural",
+      declarations: [
+        { type: "input-variable", name: "count" },
+        {
+          type: "local-variable",
+          name: "countPlural",
+          value: {
+            type: "expression",
+            arg: { type: "variable-reference", name: "count" },
+            annotation: {
+              type: "function-reference",
+              name: "plural",
+              options: [],
+            },
+          },
+        },
+      ],
+      selectors: [{ type: "variable-reference", name: "countPlural" }],
+      variants: ["one", "other"].map((value) => ({
+        matches: [{ type: "literal-match", key: "countPlural", value }],
+        pattern: [{ type: "text", value }],
+      })),
+    }),
+    bundle({
+      id: "rich",
+      declarations: [{ type: "input-variable", name: "amount" }],
+      pattern: [
+        { type: "markup-start", name: "strong", options: [], attributes: [] },
+        {
+          type: "expression",
+          arg: { type: "variable-reference", name: "amount" },
+        },
+        { type: "markup-end", name: "strong", options: [], attributes: [] },
+      ],
+    }),
+  ])
+    await insertBundleNested(project.db, value);
+  return project;
 }
 
 /** Normalize formatting/comments through the TS5 AST, leaving the type contract. */
 function normalizeDeclarations(output: Record<string, string>) {
-	const printer = ts.createPrinter({ removeComments: true });
-	return Object.fromEntries(
-		Object.entries(output)
-			.filter(([name]) => name.endsWith(".d.ts"))
-			.sort(([a], [b]) => a.localeCompare(b))
-			.map(([name, source]) => {
-				const parsed = ts.createSourceFile(
-					name,
-					source,
-					ts.ScriptTarget.Latest,
-					true,
-					ts.ScriptKind.TS
-				);
-				const transformed = ts.transform(parsed, [
-					(context) => {
-						const visit: ts.Visitor = (node) => {
-							if (node.kind === ts.SyntaxKind.DeclareKeyword) return undefined;
-							if (ts.isStringLiteral(node))
-								return ts.factory.createStringLiteral(node.text);
-							return ts.visitEachChild(node, visit, context);
-						};
-						return (file) => ts.visitNode(file, visit) as ts.SourceFile;
-					},
-				]);
-				try {
-					return [
-						name,
-						transformed.transformed[0]!.statements.flatMap((statement) => {
-							if (
-								ts.isExportDeclaration(statement) &&
-								statement.exportClause &&
-								ts.isNamedExports(statement.exportClause)
-							) {
-								return statement.exportClause.elements.map((element) =>
-									ts.factory.updateExportDeclaration(
-										statement,
-										statement.modifiers,
-										statement.isTypeOnly,
-										ts.factory.createNamedExports([element]),
-										statement.moduleSpecifier,
-										statement.attributes
-									)
-								);
-							}
-							return [statement];
-						})
-							.map((statement) =>
-								printer.printNode(
-									ts.EmitHint.Unspecified,
-									statement,
-									transformed.transformed[0]!
-								)
-							)
-							.sort()
-							.join("\n"),
-					];
-				} finally {
-					transformed.dispose();
-				}
-			})
-	);
+  const printer = ts.createPrinter({ removeComments: true });
+  return Object.fromEntries(
+    Object.entries(output)
+      .filter(([name]) => name.endsWith(".d.ts"))
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, source]) => {
+        const parsed = ts.createSourceFile(
+          name,
+          source,
+          ts.ScriptTarget.Latest,
+          true,
+          ts.ScriptKind.TS
+        );
+        const transformed = ts.transform(parsed, [
+          (context) => {
+            const visit: ts.Visitor = (node) => {
+              if (node.kind === ts.SyntaxKind.DeclareKeyword) return undefined;
+              if (ts.isStringLiteral(node))
+                return ts.factory.createStringLiteral(node.text);
+              return ts.visitEachChild(node, visit, context);
+            };
+            return (file) => ts.visitNode(file, visit) as ts.SourceFile;
+          },
+        ]);
+        try {
+          return [
+            name,
+            transformed.transformed[0]!.statements.flatMap((statement) => {
+              if (
+                ts.isExportDeclaration(statement) &&
+                statement.exportClause &&
+                ts.isNamedExports(statement.exportClause)
+              ) {
+                return statement.exportClause.elements.map((element) =>
+                  ts.factory.updateExportDeclaration(
+                    statement,
+                    statement.modifiers,
+                    statement.isTypeOnly,
+                    ts.factory.createNamedExports([element]),
+                    statement.moduleSpecifier,
+                    statement.attributes
+                  )
+                );
+              }
+              return [statement];
+            })
+              .map((statement) =>
+                printer.printNode(
+                  ts.EmitHint.Unspecified,
+                  statement,
+                  transformed.transformed[0]!
+                )
+              )
+              .sort()
+              .join("\n"),
+          ];
+        } finally {
+          transformed.dispose();
+        }
+      })
+  );
 }
 
 const consumer = `
@@ -270,154 +270,154 @@ m.rich.parts();
 `;
 
 async function checkConsumer(
-	output: Record<string, string>,
-	source = consumer
+  output: Record<string, string>,
+  source = consumer
 ) {
-	const directory = await fs.mkdtemp(
-		path.join(os.tmpdir(), "paraglide-consumer-")
-	);
-	try {
-		for (const [name, source] of Object.entries(output)) {
-			if (!name.endsWith(".d.ts")) continue;
-			await fs.mkdir(path.dirname(path.join(directory, name)), {
-				recursive: true,
-			});
-			await fs.writeFile(path.join(directory, name), source);
-		}
-		await fs.writeFile(
-			path.join(directory, "package.json"),
-			'{"type":"module"}'
-		);
-		await fs.writeFile(path.join(directory, "consumer.ts"), source);
-		await fs.writeFile(
-			path.join(directory, "tsconfig.json"),
-			JSON.stringify({
-				compilerOptions: {
-					strict: true,
-					noEmit: true,
-					target: "ES2022",
-					module: "NodeNext",
-					moduleResolution: "NodeNext",
-					lib: ["ESNext", "DOM"],
-					skipLibCheck: false,
-					types: [],
-					noErrorTruncation: true,
-				},
-				files: ["consumer.ts"],
-			})
-		);
-		const compilerPath = path.join(
-			path.dirname(
-				createRequire(import.meta.url).resolve("typescript/package.json")
-			),
-			"lib",
-			"tsc.js"
-		);
-		try {
-			await execFileAsync(
-				process.execPath,
-				[compilerPath, "-p", path.join(directory, "tsconfig.json")],
-				{
-					env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
-					maxBuffer: 1024 * 1024,
-				}
-			);
-		} catch (error) {
-			throw new Error(
-				`TypeScript consumer failed:\n${(error as { stdout?: string }).stdout ?? error}`,
-				{ cause: error }
-			);
-		}
-	} finally {
-		await fs.rm(directory, { recursive: true, force: true });
-	}
+  const directory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "paraglide-consumer-")
+  );
+  try {
+    for (const [name, source] of Object.entries(output)) {
+      if (!name.endsWith(".d.ts")) continue;
+      await fs.mkdir(path.dirname(path.join(directory, name)), {
+        recursive: true,
+      });
+      await fs.writeFile(path.join(directory, name), source);
+    }
+    await fs.writeFile(
+      path.join(directory, "package.json"),
+      '{"type":"module"}'
+    );
+    await fs.writeFile(path.join(directory, "consumer.ts"), source);
+    await fs.writeFile(
+      path.join(directory, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: {
+          strict: true,
+          noEmit: true,
+          target: "ES2022",
+          module: "NodeNext",
+          moduleResolution: "NodeNext",
+          lib: ["ESNext", "DOM"],
+          skipLibCheck: false,
+          types: [],
+          noErrorTruncation: true,
+        },
+        files: ["consumer.ts"],
+      })
+    );
+    const compilerPath = path.join(
+      path.dirname(
+        createRequire(import.meta.url).resolve("typescript/package.json")
+      ),
+      "lib",
+      "tsc.js"
+    );
+    try {
+      await execFileAsync(
+        process.execPath,
+        [compilerPath, "-p", path.join(directory, "tsconfig.json")],
+        {
+          env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
+          maxBuffer: 1024 * 1024,
+        }
+      );
+    } catch (error) {
+      throw new Error(
+        `TypeScript consumer failed:\n${(error as { stdout?: string }).stdout ?? error}`,
+        { cause: error }
+      );
+    }
+  } finally {
+    await fs.rm(directory, { recursive: true, force: true });
+  }
 }
 
 for (const outputStructure of ["message-modules", "locale-modules"] as const) {
-	test(`${outputStructure}: direct declarations preserve the public contract`, async () => {
-		const project = await fixture();
-		try {
-			const direct = await compileProject({
-				project,
-				compilerOptions: { outputStructure, emitTsDeclarations: true },
-			});
-			expect(
-				Object.fromEntries(
-					Object.entries(normalizeDeclarations(direct)).filter(([name]) =>
-						name.startsWith("messages")
-					)
-				)
-			).toMatchSnapshot();
-		} finally {
-			await project.close();
-		}
-	});
+  test(`${outputStructure}: direct declarations preserve the public contract`, async () => {
+    const project = await fixture();
+    try {
+      const direct = await compileProject({
+        project,
+        compilerOptions: { outputStructure, emitTsDeclarations: true },
+      });
+      expect(
+        Object.fromEntries(
+          Object.entries(normalizeDeclarations(direct)).filter(([name]) =>
+            name.startsWith("messages")
+          )
+        )
+      ).toMatchSnapshot();
+    } finally {
+      await project.close();
+    }
+  });
 
-	test(`${outputStructure}: TypeScript accepts valid consumers and rejects invalid calls`, async () => {
-		const project = await fixture();
-		try {
-			const output = await compileProject({
-				project,
-				compilerOptions: { outputStructure, emitTsDeclarations: true },
-			});
-			await checkConsumer(output);
-		} finally {
-			await project.close();
-		}
-	});
+  test(`${outputStructure}: TypeScript accepts valid consumers and rejects invalid calls`, async () => {
+    const project = await fixture();
+    try {
+      const output = await compileProject({
+        project,
+        compilerOptions: { outputStructure, emitTsDeclarations: true },
+      });
+      await checkConsumer(output);
+    } finally {
+      await project.close();
+    }
+  });
 }
 
 test("locale-modules: combined declarations have a bounded number of import() types", async () => {
-	const project = await fixture();
-	try {
-		const output = await compileProject({
-			project,
-			compilerOptions: {
-				outputStructure: "locale-modules",
-				emitTsDeclarations: true,
-			},
-		});
-		// LocalizedString and the shared runtime aliases, whatever the catalog size.
-		expect(output["messages/_index.d.ts"]?.match(/import\(/g)).toHaveLength(4);
-		for (const locale of ["en", "de", "de-CH"])
-			expect(
-				output[`messages/${locale}.d.ts`]?.match(/import\(/g)?.length ?? 0
-			).toBeLessThanOrEqual(2);
-	} finally {
-		await project.close();
-	}
+  const project = await fixture();
+  try {
+    const output = await compileProject({
+      project,
+      compilerOptions: {
+        outputStructure: "locale-modules",
+        emitTsDeclarations: true,
+      },
+    });
+    // LocalizedString and the shared runtime aliases, whatever the catalog size.
+    expect(output["messages/_index.d.ts"]?.match(/import\(/g)).toHaveLength(4);
+    for (const locale of ["en", "de", "de-CH"])
+      expect(
+        output[`messages/${locale}.d.ts`]?.match(/import\(/g)?.length ?? 0
+      ).toBeLessThanOrEqual(2);
+  } finally {
+    await project.close();
+  }
 });
 
 test("locale-modules: the shared runtime aliases stay private", async () => {
-	// No message ID needs renaming, so no other export declaration hides them.
-	const project = await loadProjectInMemory({
-		blob: await newProject({
-			settings: { baseLocale: "en", locales: ["en", "de"] },
-		}),
-	});
-	try {
-		for (const value of [
-			bundle({ id: "plain" }),
-			bundle({
-				id: "rich",
-				pattern: [
-					{ type: "markup-start", name: "strong", options: [], attributes: [] },
-					{ type: "text", value: "Rich" },
-					{ type: "markup-end", name: "strong", options: [], attributes: [] },
-				],
-			}),
-		])
-			await insertBundleNested(project.db, value);
-		const output = await compileProject({
-			project,
-			compilerOptions: {
-				outputStructure: "locale-modules",
-				emitTsDeclarations: true,
-			},
-		});
-		await checkConsumer(
-			output,
-			`
+  // No message ID needs renaming, so no other export declaration hides them.
+  const project = await loadProjectInMemory({
+    blob: await newProject({
+      settings: { baseLocale: "en", locales: ["en", "de"] },
+    }),
+  });
+  try {
+    for (const value of [
+      bundle({ id: "plain" }),
+      bundle({
+        id: "rich",
+        pattern: [
+          { type: "markup-start", name: "strong", options: [], attributes: [] },
+          { type: "text", value: "Rich" },
+          { type: "markup-end", name: "strong", options: [], attributes: [] },
+        ],
+      }),
+    ])
+      await insertBundleNested(project.db, value);
+    const output = await compileProject({
+      project,
+      compilerOptions: {
+        outputStructure: "locale-modules",
+        emitTsDeclarations: true,
+      },
+    });
+    await checkConsumer(
+      output,
+      `
 import { m } from "./messages.js";
 // @ts-expect-error the runtime aliases are private
 import type { __ParaglideMessageMetadata } from "./messages/_index.js";
@@ -428,77 +428,77 @@ import type { __ParaglideMessagePart as EnglishPart } from "./messages/en.js";
 m.plain() satisfies string;
 m.rich.parts({});
 `
-		);
-	} finally {
-		await project.close();
-	}
+    );
+  } finally {
+    await project.close();
+  }
 });
 
 test("message-modules: importing messages.js reads one message declaration file", async () => {
-	const project = await fixture();
-	const directory = await fs.mkdtemp(
-		path.join(os.tmpdir(), "paraglide-declarations-")
-	);
-	try {
-		const output = await compileProject({
-			project,
-			compilerOptions: {
-				outputStructure: "message-modules",
-				emitTsDeclarations: true,
-			},
-		});
-		expect(output["messages/_index.d.ts"]?.match(/import\(/g)).toHaveLength(4);
-		for (const [name, source] of Object.entries(output)) {
-			if (!name.endsWith(".d.ts")) continue;
-			await fs.mkdir(path.dirname(path.join(directory, name)), {
-				recursive: true,
-			});
-			await fs.writeFile(path.join(directory, name), source);
-		}
-		await fs.writeFile(
-			path.join(directory, "consumer.ts"),
-			'import { m } from "./messages.js";\nm.plain();\n'
-		);
-		const program = ts.createProgram([path.join(directory, "consumer.ts")], {
-			noEmit: true,
-			target: ts.ScriptTarget.ES2022,
-			module: ts.ModuleKind.ESNext,
-			moduleResolution: ts.ModuleResolutionKind.Bundler,
-			types: [],
-		});
-		expect(
-			ts
-				.getPreEmitDiagnostics(program)
-				.map((diagnostic) =>
-					ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")
-				)
-		).toEqual([]);
-		expect(
-			program
-				.getSourceFiles()
-				.map((file) => path.relative(directory, file.fileName))
-				.filter((name) => name.startsWith("messages/"))
-		).toEqual(["messages/_index.d.ts"]);
-	} finally {
-		await project.close();
-		await fs.rm(directory, { recursive: true, force: true });
-	}
+  const project = await fixture();
+  const directory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "paraglide-declarations-")
+  );
+  try {
+    const output = await compileProject({
+      project,
+      compilerOptions: {
+        outputStructure: "message-modules",
+        emitTsDeclarations: true,
+      },
+    });
+    expect(output["messages/_index.d.ts"]?.match(/import\(/g)).toHaveLength(4);
+    for (const [name, source] of Object.entries(output)) {
+      if (!name.endsWith(".d.ts")) continue;
+      await fs.mkdir(path.dirname(path.join(directory, name)), {
+        recursive: true,
+      });
+      await fs.writeFile(path.join(directory, name), source);
+    }
+    await fs.writeFile(
+      path.join(directory, "consumer.ts"),
+      'import { m } from "./messages.js";\nm.plain();\n'
+    );
+    const program = ts.createProgram([path.join(directory, "consumer.ts")], {
+      noEmit: true,
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      types: [],
+    });
+    expect(
+      ts
+        .getPreEmitDiagnostics(program)
+        .map((diagnostic) =>
+          ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")
+        )
+    ).toEqual([]);
+    expect(
+      program
+        .getSourceFiles()
+        .map((file) => path.relative(directory, file.fileName))
+        .filter((name) => name.startsWith("messages/"))
+    ).toEqual(["messages/_index.d.ts"]);
+  } finally {
+    await project.close();
+    await fs.rm(directory, { recursive: true, force: true });
+  }
 });
 
 for (const extraOptions of [
-	{ experimentalStaticLocale: '"de"' },
-	{ disableAsyncLocalStorage: true },
+  { experimentalStaticLocale: '"de"' },
+  { disableAsyncLocalStorage: true },
 ] satisfies Partial<CompilerOptions>[]) {
-	test(`declarations remain valid with ${Object.keys(extraOptions)[0]}`, async () => {
-		const project = await fixture();
-		try {
-			const output = await compileProject({
-				project,
-				compilerOptions: { ...extraOptions, emitTsDeclarations: true },
-			});
-			await checkConsumer(output);
-		} finally {
-			await project.close();
-		}
-	});
+  test(`declarations remain valid with ${Object.keys(extraOptions)[0]}`, async () => {
+    const project = await fixture();
+    try {
+      const output = await compileProject({
+        project,
+        compilerOptions: { ...extraOptions, emitTsDeclarations: true },
+      });
+      await checkConsumer(output);
+    } finally {
+      await project.close();
+    }
+  });
 }

@@ -5,13 +5,13 @@ import { ParaglideMessage } from "@inlang/paraglide-js-solid";
 import { m } from "./paraglide/messages.js";
 
 const view = (
-	<ParaglideMessage
-		message={m.cta}
-		inputs={{}}
-		markup={{
-			link: ({ children, options }) => <a href={options.to}>{children}</a>,
-		}}
-	/>
+  <ParaglideMessage
+    message={m.cta}
+    inputs={{}}
+    markup={{
+      link: ({ children, options }) => <a href={options.to}>{children}</a>,
+    }}
+  />
 );
 ```
 

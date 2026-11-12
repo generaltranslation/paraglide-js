@@ -31,14 +31,14 @@ import { defineConfig } from "vite";
 +import { paraglideVitePlugin } from "@inlang/paraglide-js";
 
 export default defineConfig({
-	plugins: [
-		reactRouter(),
+  plugins: [
+    reactRouter(),
 +		paraglideVitePlugin({
 +			project: "./project.inlang",
 +			outdir: "./app/paraglide",
 +			emitTsDeclarations: true,
 +		}),
-	],
+  ],
 });
 ```
 
@@ -66,10 +66,10 @@ Enable the middleware flag in `react-router.config.ts`:
 
 ```ts
 export default {
-	ssr: true,
-	future: {
-		v8_middleware: true,
-	},
+  ssr: true,
+  future: {
+    v8_middleware: true,
+  },
 } satisfies Config;
 ```
 
@@ -79,7 +79,7 @@ import { type MiddlewareFunction } from "react-router";
 import { paraglideMiddleware } from "./paraglide/server.js";
 
 export const middleware: MiddlewareFunction[] = [
-	(ctx, next) => paraglideMiddleware(ctx.request, () => next()),
+  (ctx, next) => paraglideMiddleware(ctx.request, () => next()),
 ];
 ```
 
@@ -87,26 +87,26 @@ In `routes.ts`:
 
 ```diff
 import {
-	type RouteConfig,
-	index,
-	prefix,
-	route,
+  type RouteConfig,
+  index,
+  prefix,
+  route,
 } from "@react-router/dev/routes";
 
 export default [
-	// prefixing each path with an optional :locale
-	// optional to match a path with no locale `/page`
-	// or with a locale `/en/page`
-	//
-	// * make sure that the pattern you define here matches
-	// * with the urlPatterns of paraglide JS if you use
-	// * the `url` strategy
-	//
-	// React Router middleware doesn't allow passing a rewritten
-	// Request to loaders yet, so keep the locale prefix here.
+  // prefixing each path with an optional :locale
+  // optional to match a path with no locale `/page`
+  // or with a locale `/en/page`
+  //
+  // * make sure that the pattern you define here matches
+  // * with the urlPatterns of paraglide JS if you use
+  // * the `url` strategy
+  //
+  // React Router middleware doesn't allow passing a rewritten
+  // Request to loaders yet, so keep the locale prefix here.
 +	...prefix(":locale?", [
-		index("routes/home.tsx"),
-		route("about", "routes/about.tsx"),
+    index("routes/home.tsx"),
+    route("about", "routes/about.tsx"),
 +	]),
 ] satisfies RouteConfig;
 ```
@@ -128,10 +128,10 @@ when multiple entries use the same file.
 import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
 export default [
-	index("routes/home.tsx"),
-	route("en/pricing", "routes/pricing.tsx", { id: "pricing-en" }),
-	route("de/preise", "routes/pricing.tsx", { id: "pricing-de" }),
-	route("pl/cennik", "routes/pricing.tsx", { id: "pricing-pl" }),
+  index("routes/home.tsx"),
+  route("en/pricing", "routes/pricing.tsx", { id: "pricing-en" }),
+  route("de/preise", "routes/pricing.tsx", { id: "pricing-de" }),
+  route("pl/cennik", "routes/pricing.tsx", { id: "pricing-pl" }),
 ] satisfies RouteConfig;
 ```
 
@@ -140,20 +140,20 @@ Keep the corresponding Paraglide `urlPatterns` so helpers like
 
 ```ts
 paraglideVitePlugin({
-	project: "./project.inlang",
-	outdir: "./app/paraglide",
-	emitTsDeclarations: true,
-	strategy: ["url", "baseLocale"],
-	urlPatterns: [
-		{
-			pattern: "/pricing",
-			localized: [
-				["en", "/en/pricing"],
-				["de", "/de/preise"],
-				["pl", "/pl/cennik"],
-			],
-		},
-	],
+  project: "./project.inlang",
+  outdir: "./app/paraglide",
+  emitTsDeclarations: true,
+  strategy: ["url", "baseLocale"],
+  urlPatterns: [
+    {
+      pattern: "/pricing",
+      localized: [
+        ["en", "/en/pricing"],
+        ["de", "/de/preise"],
+        ["pl", "/pl/cennik"],
+      ],
+    },
+  ],
 });
 ```
 
@@ -165,17 +165,17 @@ In `root.tsx`:
 
 ```diff
 import {
-	assertIsLocale,
-	baseLocale,
-	getLocale,
-	isLocale,
-	overwriteGetLocale,
+  assertIsLocale,
+  baseLocale,
+  getLocale,
+  isLocale,
+  overwriteGetLocale,
 } from "./paraglide/runtime";
 
 +export function loader(args: Route.LoaderArgs) {
 +	return {
-		// detect the locale from the path. if no locale is found, the baseLocale is used.
-		// e.g. /de will set the locale to "de"
+    // detect the locale from the path. if no locale is found, the baseLocale is used.
+    // e.g. /de will set the locale to "de"
 +		locale: isLocale(args.params.locale) ? args.params.locale : baseLocale,
 +	};
 }
@@ -189,12 +189,12 @@ import {
 +}
 
 export default function App(props: Route.ComponentProps) {
-	return (
-		// use the locale
+  return (
+    // use the locale
 +		<LocaleContextSSR.Provider value={props.loaderData.locale}>
-			<Outlet />
+      <Outlet />
 +		</LocaleContextSSR.Provider>
-	);
+  );
 }
 ```
 
@@ -238,23 +238,23 @@ In `routes.ts`:
 
 ```diff
 import {
-	type RouteConfig,
-	index,
-	prefix,
-	route,
+  type RouteConfig,
+  index,
+  prefix,
+  route,
 } from "@react-router/dev/routes";
 
 export default [
-	// prefixing each path with an optional :locale
-	// optional to match a path with no locale `/page`
-	// or with a locale `/en/page`
-	//
-	// * make sure that the pattern you define here matches
-	// * with the urlPatterns of paraglide JS if you use
-	// * the `url` strategy
+  // prefixing each path with an optional :locale
+  // optional to match a path with no locale `/page`
+  // or with a locale `/en/page`
+  //
+  // * make sure that the pattern you define here matches
+  // * with the urlPatterns of paraglide JS if you use
+  // * the `url` strategy
 +	...prefix(":locale?", [
-		index("routes/home.tsx"),
-		route("about", "routes/about.tsx"),
+    index("routes/home.tsx"),
+    route("about", "routes/about.tsx"),
 +	]),
 ] satisfies RouteConfig;
 ```

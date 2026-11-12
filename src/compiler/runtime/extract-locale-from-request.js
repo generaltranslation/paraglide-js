@@ -4,12 +4,12 @@ import { extractLocaleFromUrl } from "./extract-locale-from-url.js";
 import { getStrategyForUrl } from "./route-strategy.js";
 import { isCustomStrategy } from "./strategy.js";
 import {
-	baseLocale,
-	cookieName,
-	strategy,
-	TREE_SHAKE_COOKIE_STRATEGY_USED,
-	TREE_SHAKE_PREFERRED_LANGUAGE_STRATEGY_USED,
-	TREE_SHAKE_URL_STRATEGY_USED,
+  baseLocale,
+  cookieName,
+  strategy,
+  TREE_SHAKE_COOKIE_STRATEGY_USED,
+  TREE_SHAKE_PREFERRED_LANGUAGE_STRATEGY_USED,
+  TREE_SHAKE_URL_STRATEGY_USED,
 } from "./variables.js";
 
 /**
@@ -38,15 +38,15 @@ import {
  * @returns {Locale}
  */
 export const extractLocaleFromRequest = (request, options = {}) => {
-	const effectiveRequestUrl = resolveEffectiveRequestUrl(
-		request,
-		options.effectiveRequestUrl
-	);
-	return extractLocaleFromRequestWithStrategies(
-		request,
-		getStrategyForUrl(effectiveRequestUrl),
-		effectiveRequestUrl
-	);
+  const effectiveRequestUrl = resolveEffectiveRequestUrl(
+    request,
+    options.effectiveRequestUrl
+  );
+  return extractLocaleFromRequestWithStrategies(
+    request,
+    getStrategyForUrl(effectiveRequestUrl),
+    effectiveRequestUrl
+  );
 };
 
 /**
@@ -58,50 +58,50 @@ export const extractLocaleFromRequest = (request, options = {}) => {
  * @returns {Locale}
  */
 export const extractLocaleFromRequestWithStrategies = (
-	request,
-	strategies,
-	url = request.url
+  request,
+  strategies,
+  url = request.url
 ) => {
-	const effectiveRequestUrl = resolveEffectiveRequestUrl(request, url);
-	/** @type {string|undefined} */
-	let locale;
+  const effectiveRequestUrl = resolveEffectiveRequestUrl(request, url);
+  /** @type {string|undefined} */
+  let locale;
 
-	for (const strat of strategies) {
-		if (TREE_SHAKE_COOKIE_STRATEGY_USED && strat === "cookie") {
-			const cookiePrefix = cookieName + "=";
+  for (const strat of strategies) {
+    if (TREE_SHAKE_COOKIE_STRATEGY_USED && strat === "cookie") {
+      const cookiePrefix = cookieName + "=";
 
-			locale = request.headers
-				.get("cookie")
-				?.split(";")
-				.map((c) => c.trim())
-				.find((c) => c.startsWith(cookiePrefix))
-				?.slice(cookiePrefix.length);
-		} else if (TREE_SHAKE_URL_STRATEGY_USED && strat === "url") {
-			locale = extractLocaleFromUrl(effectiveRequestUrl);
-		} else if (
-			TREE_SHAKE_PREFERRED_LANGUAGE_STRATEGY_USED &&
-			strat === "preferredLanguage"
-		) {
-			locale = extractLocaleFromHeader(request);
-		} else if (strat === "globalVariable") {
-			locale = _locale;
-		} else if (strat === "baseLocale") {
-			return baseLocale;
-		} else if (strat === "localStorage") {
-			continue;
-		} else if (isCustomStrategy(strat)) {
-			// Custom strategies are not supported in sync version
-			// Use extractLocaleFromRequestAsync for custom server strategies
-			continue;
-		}
-		const matchedLocale = toLocale(locale);
-		if (matchedLocale) {
-			return matchedLocale;
-		}
-	}
-	throw new Error(
-		"No locale found. There is an error in your strategy. Try adding 'baseLocale' as the very last strategy. Read more here https://paraglidejs.com/errors#no-locale-found"
-	);
+      locale = request.headers
+        .get("cookie")
+        ?.split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith(cookiePrefix))
+        ?.slice(cookiePrefix.length);
+    } else if (TREE_SHAKE_URL_STRATEGY_USED && strat === "url") {
+      locale = extractLocaleFromUrl(effectiveRequestUrl);
+    } else if (
+      TREE_SHAKE_PREFERRED_LANGUAGE_STRATEGY_USED &&
+      strat === "preferredLanguage"
+    ) {
+      locale = extractLocaleFromHeader(request);
+    } else if (strat === "globalVariable") {
+      locale = _locale;
+    } else if (strat === "baseLocale") {
+      return baseLocale;
+    } else if (strat === "localStorage") {
+      continue;
+    } else if (isCustomStrategy(strat)) {
+      // Custom strategies are not supported in sync version
+      // Use extractLocaleFromRequestAsync for custom server strategies
+      continue;
+    }
+    const matchedLocale = toLocale(locale);
+    if (matchedLocale) {
+      return matchedLocale;
+    }
+  }
+  throw new Error(
+    "No locale found. There is an error in your strategy. Try adding 'baseLocale' as the very last strategy. Read more here https://paraglidejs.com/errors#no-locale-found"
+  );
 };
 
 /**
@@ -110,12 +110,12 @@ export const extractLocaleFromRequestWithStrategies = (
  * @returns {URL}
  */
 function resolveEffectiveRequestUrl(
-	request,
-	effectiveRequestUrl = request.url
+  request,
+  effectiveRequestUrl = request.url
 ) {
-	if (effectiveRequestUrl instanceof URL) {
-		return new URL(effectiveRequestUrl.href);
-	}
+  if (effectiveRequestUrl instanceof URL) {
+    return new URL(effectiveRequestUrl.href);
+  }
 
-	return new URL(effectiveRequestUrl, request.url);
+  return new URL(effectiveRequestUrl, request.url);
 }

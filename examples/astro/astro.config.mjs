@@ -5,21 +5,21 @@ import node from "@astrojs/node";
 
 // https://astro.build/config
 export default defineConfig({
-	integrations: [
-		svelte({
-			preprocess: [vitePreprocess()],
-		}),
-	],
-	vite: {
-		plugins: [
-			paraglideVitePlugin({
-				project: "./project.inlang",
-				outdir: "./src/paraglide",
-				emitTsDeclarations: true,
-				strategy: ["url"],
-			}),
-		],
-	},
-	output: "server",
-	adapter: node({ mode: "standalone" }),
+  integrations: [
+    svelte({
+      preprocess: [vitePreprocess()],
+    }),
+  ],
+  vite: {
+    plugins: [
+      paraglideVitePlugin({
+        project: "./project.inlang",
+        outdir: "./src/paraglide",
+        emitTsDeclarations: true,
+        strategy: ["url"],
+      }),
+    ],
+  },
+  output: "server",
+  adapter: node({ mode: "standalone" }),
 });

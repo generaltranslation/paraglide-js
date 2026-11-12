@@ -8,27 +8,27 @@ import { m } from "../paraglide/messages.js";
 ---
 
 <HTML>
-	<head>
-		<BaseHead title={m.site_title()} description={m.site_description()} />
-	</head>
-	<body>
-		<Header title={m.site_title()} />
-		<main>
-			<h1>{m.gunther_green_phone()}</h1>
-			<p>{m.display_button_car()}</p>
-			<Counter client:load />
-			<p>{m.street_board_orange()}</p>
-			<br />
-			<a href={localizeHref("/nested")}>go to /nested</a>
-			<hr />
-			<h2>POST request</h2>
-			<form method="post" action="/api/post">
-				<label>
-					Message
-					<input name="message" value="hello from form" />
-				</label>
-				<button type="submit">Submit POST request</button>
-			</form>
-		</main>
-	</body>
+  <head>
+    <BaseHead title={m.site_title()} description={m.site_description()} />
+  </head>
+  <body>
+    <Header title={m.site_title()} />
+    <main>
+      <h1>{m.gunther_green_phone()}</h1>
+      <p>{m.display_button_car()}</p>
+      <Counter client:load />
+      <p>{m.street_board_orange()}</p>
+      <br />
+      <a href={localizeHref("/nested")}>go to /nested</a>
+      <hr />
+      <h2>POST request</h2>
+      <form method="post" action="/api/post">
+        <label>
+          Message
+          <input name="message" value="hello from form" />
+        </label>
+        <button type="submit">Submit POST request</button>
+      </form>
+    </main>
+  </body>
 </HTML>

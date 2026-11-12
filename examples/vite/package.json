@@ -1,18 +1,18 @@
 {
-	"name": "@inlang/paraglide-js-example-vite",
-	"private": true,
-	"version": "0.0.0",
-	"type": "module",
-	"scripts": {
-		"dev": "vite dev",
-		"build": "vite build && tsc --noEmit",
-		"clean": "rm -rf ./dist ./node_modules ./src/paraglide"
-	},
-	"devDependencies": {
-		"@inlang/paraglide-js": "workspace:*",
-		"@inlang/plugin-message-format": "4.6.0",
-		"@inlang/plugin-m-function-matcher": "2.3.0",
-		"typescript": "^5.7.2",
-		"vite": "^6.0.7"
-	}
+  "name": "@inlang/paraglide-js-example-vite",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build && tsc --noEmit",
+    "clean": "rm -rf ./dist ./node_modules ./src/paraglide"
+  },
+  "devDependencies": {
+    "@inlang/paraglide-js": "workspace:*",
+    "@inlang/plugin-message-format": "4.6.0",
+    "@inlang/plugin-m-function-matcher": "2.3.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7"
+  }
 }

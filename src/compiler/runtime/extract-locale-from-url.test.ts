@@ -3,237 +3,237 @@ import { createParaglide } from "../create-paraglide.js";
 import { newProject } from "@inlang/sdk";
 
 test("normal named groups", async () => {
-	const runtime = await createParaglide({
-		blob: await newProject({
-			settings: {
-				baseLocale: "en",
-				locales: ["en", "de"],
-			},
-		}),
-		urlPatterns: [
-			{
-				pattern: "https://example.com/bookstore/item/:id",
-				localized: [
-					["de", "https://example.com/buchladen/artikel/:id"],
-					["en", "https://example.com/bookstore/item/:id"],
-				],
-			},
-		],
-	});
+  const runtime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de"],
+      },
+    }),
+    urlPatterns: [
+      {
+        pattern: "https://example.com/bookstore/item/:id",
+        localized: [
+          ["de", "https://example.com/buchladen/artikel/:id"],
+          ["en", "https://example.com/bookstore/item/:id"],
+        ],
+      },
+    ],
+  });
 
-	expect(
-		runtime.extractLocaleFromUrl(`https://example.com/bookstore/item/123`)
-	).toBe("en");
+  expect(
+    runtime.extractLocaleFromUrl(`https://example.com/bookstore/item/123`)
+  ).toBe("en");
 
-	expect(
-		runtime.extractLocaleFromUrl(`https://example.com/buchladen/artikel/123`)
-	).toBe("de");
+  expect(
+    runtime.extractLocaleFromUrl(`https://example.com/buchladen/artikel/123`)
+  ).toBe("de");
 
-	expect(
-		runtime.extractLocaleFromUrl(`https://example.com/something/else`)
-	).toBe(undefined);
+  expect(
+    runtime.extractLocaleFromUrl(`https://example.com/something/else`)
+  ).toBe(undefined);
 });
 
 test("handles relative named groups", async () => {
-	const runtime = await createParaglide({
-		blob: await newProject({
-			settings: {
-				baseLocale: "en",
-				locales: ["en", "de"],
-			},
-		}),
-		urlPatterns: [
-			{
-				pattern: "/bookstore/item/:id",
-				localized: [
-					["de", "/buchladen/artikel/:id"],
-					["en", "/bookstore/item/:id"],
-				],
-			},
-		],
-	});
+  const runtime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de"],
+      },
+    }),
+    urlPatterns: [
+      {
+        pattern: "/bookstore/item/:id",
+        localized: [
+          ["de", "/buchladen/artikel/:id"],
+          ["en", "/bookstore/item/:id"],
+        ],
+      },
+    ],
+  });
 
-	expect(
-		runtime.extractLocaleFromUrl(`https://example.com/bookstore/item/123`)
-	).toBe("en");
+  expect(
+    runtime.extractLocaleFromUrl(`https://example.com/bookstore/item/123`)
+  ).toBe("en");
 
-	expect(
-		runtime.extractLocaleFromUrl(`https://example.com/buchladen/artikel/123`)
-	).toBe("de");
+  expect(
+    runtime.extractLocaleFromUrl(`https://example.com/buchladen/artikel/123`)
+  ).toBe("de");
 
-	expect(
-		runtime.extractLocaleFromUrl(`https://example.com/something/else`)
-	).toBe(undefined);
+  expect(
+    runtime.extractLocaleFromUrl(`https://example.com/something/else`)
+  ).toBe(undefined);
 });
 
 test("wildcards", async () => {
-	const runtime = await createParaglide({
-		blob: await newProject({
-			settings: {
-				baseLocale: "en",
-				locales: ["en", "de"],
-			},
-		}),
-		urlPatterns: [
-			{
-				pattern: "https://{:subdomain.}?:domain.:tld/:path*",
-				localized: [
-					["de", "https://de.:domain.:tld/startseite/ueber-uns"],
-					["en", "https://:domain.:tld/home/about-us"],
-				],
-			},
-		],
-	});
+  const runtime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de"],
+      },
+    }),
+    urlPatterns: [
+      {
+        pattern: "https://{:subdomain.}?:domain.:tld/:path*",
+        localized: [
+          ["de", "https://de.:domain.:tld/startseite/ueber-uns"],
+          ["en", "https://:domain.:tld/home/about-us"],
+        ],
+      },
+    ],
+  });
 
-	expect(
-		runtime.extractLocaleFromUrl(`https://de.example.com/startseite/ueber-uns`)
-	).toBe("de");
+  expect(
+    runtime.extractLocaleFromUrl(`https://de.example.com/startseite/ueber-uns`)
+  ).toBe("de");
 
-	expect(
-		runtime.extractLocaleFromUrl(`https://example.com/home/about-us`)
-	).toBe("en");
+  expect(
+    runtime.extractLocaleFromUrl(`https://example.com/home/about-us`)
+  ).toBe("en");
 });
 
 test("optional parameters", async () => {
-	const runtime = await createParaglide({
-		blob: await newProject({
-			settings: {
-				baseLocale: "en",
-				locales: ["en", "de"],
-			},
-		}),
-		urlPatterns: [
-			{
-				pattern: "https://example.com/:locale?",
-				localized: [
-					["de", "https://example.com/de"],
-					["en", "https://example.com/en"],
-				],
-			},
-		],
-	});
+  const runtime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de"],
+      },
+    }),
+    urlPatterns: [
+      {
+        pattern: "https://example.com/:locale?",
+        localized: [
+          ["de", "https://example.com/de"],
+          ["en", "https://example.com/en"],
+        ],
+      },
+    ],
+  });
 
-	expect(runtime.extractLocaleFromUrl(`https://example.com/de`)).toBe("de");
-	expect(runtime.extractLocaleFromUrl(`https://example.com/en`)).toBe("en");
+  expect(runtime.extractLocaleFromUrl(`https://example.com/de`)).toBe("de");
+  expect(runtime.extractLocaleFromUrl(`https://example.com/en`)).toBe("en");
 });
 
 test("regex works", async () => {
-	const { extractLocaleFromUrl } = await createParaglide({
-		blob: await newProject({
-			settings: {
-				baseLocale: "en",
-				locales: ["en", "de"],
-			},
-		}),
-		urlPatterns: [
-			{
-				pattern: "https://example.com/:item(phone)",
-				localized: [
-					["en", "https://example.com/:item(phone)"],
-					["de", "https://example.com/de/:item(phone)"],
-				],
-			},
-		],
-	});
+  const { extractLocaleFromUrl } = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de"],
+      },
+    }),
+    urlPatterns: [
+      {
+        pattern: "https://example.com/:item(phone)",
+        localized: [
+          ["en", "https://example.com/:item(phone)"],
+          ["de", "https://example.com/de/:item(phone)"],
+        ],
+      },
+    ],
+  });
 
-	expect(extractLocaleFromUrl(`https://example.com/de/phone`)).toBe("de");
-	expect(extractLocaleFromUrl(`https://example.com/phone`)).toBe("en");
+  expect(extractLocaleFromUrl(`https://example.com/de/phone`)).toBe("de");
+  expect(extractLocaleFromUrl(`https://example.com/phone`)).toBe("en");
 
-	expect(extractLocaleFromUrl(`https://example.com/de/other`)).toBe(undefined);
-	expect(extractLocaleFromUrl(`https://example.com/other`)).toBe(undefined);
+  expect(extractLocaleFromUrl(`https://example.com/de/other`)).toBe(undefined);
+  expect(extractLocaleFromUrl(`https://example.com/other`)).toBe(undefined);
 });
 
 test("default url pattern", async () => {
-	const r = await createParaglide({
-		blob: await newProject({
-			settings: {
-				baseLocale: "en",
-				locales: ["en", "de"],
-			},
-		}),
-	});
+  const r = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de"],
+      },
+    }),
+  });
 
-	expect(r.extractLocaleFromUrl("https://example.com/")).toBe("en");
-	expect(r.extractLocaleFromUrl("https://example.com/de")).toBe("de");
-	expect(r.extractLocaleFromUrl("https://example.com/fr")).toBe("en");
+  expect(r.extractLocaleFromUrl("https://example.com/")).toBe("en");
+  expect(r.extractLocaleFromUrl("https://example.com/de")).toBe("de");
+  expect(r.extractLocaleFromUrl("https://example.com/fr")).toBe("en");
 
-	expect(r.extractLocaleFromUrl("https://example.com/optional-subpage")).toBe(
-		"en"
-	);
-	expect(
-		r.extractLocaleFromUrl("https://example.com/de/optional-subpage")
-	).toBe("de");
-	expect(r.extractLocaleFromUrl("https://example.com/DE")).toBe("de");
+  expect(r.extractLocaleFromUrl("https://example.com/optional-subpage")).toBe(
+    "en"
+  );
+  expect(
+    r.extractLocaleFromUrl("https://example.com/de/optional-subpage")
+  ).toBe("de");
+  expect(r.extractLocaleFromUrl("https://example.com/DE")).toBe("de");
 });
 
 test("default pattern is case-insensitive but custom urlPatterns keep exact matching", async () => {
-	const defaultRuntime = await createParaglide({
-		blob: await newProject({
-			settings: {
-				baseLocale: "en",
-				locales: ["en", "de"],
-			},
-		}),
-	});
+  const defaultRuntime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de"],
+      },
+    }),
+  });
 
-	expect(
-		defaultRuntime.extractLocaleFromUrl("https://example.com/DE/about")
-	).toBe("de");
+  expect(
+    defaultRuntime.extractLocaleFromUrl("https://example.com/DE/about")
+  ).toBe("de");
 
-	const customRuntime = await createParaglide({
-		blob: await newProject({
-			settings: {
-				baseLocale: "en",
-				locales: ["en", "de"],
-			},
-		}),
-		urlPatterns: [
-			{
-				pattern: "https://example.com/:locale(en|de)/:path*",
-				localized: [
-					["en", "https://example.com/en/:path*"],
-					["de", "https://example.com/de/:path*"],
-				],
-			},
-		],
-	});
+  const customRuntime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de"],
+      },
+    }),
+    urlPatterns: [
+      {
+        pattern: "https://example.com/:locale(en|de)/:path*",
+        localized: [
+          ["en", "https://example.com/en/:path*"],
+          ["de", "https://example.com/de/:path*"],
+        ],
+      },
+    ],
+  });
 
-	expect(
-		customRuntime.extractLocaleFromUrl("https://example.com/de/about")
-	).toBe("de");
-	expect(
-		customRuntime.extractLocaleFromUrl("https://example.com/en/about")
-	).toBe("en");
-	expect(
-		customRuntime.extractLocaleFromUrl("https://example.com/DE/about")
-	).toBe(undefined);
+  expect(
+    customRuntime.extractLocaleFromUrl("https://example.com/de/about")
+  ).toBe("de");
+  expect(
+    customRuntime.extractLocaleFromUrl("https://example.com/en/about")
+  ).toBe("en");
+  expect(
+    customRuntime.extractLocaleFromUrl("https://example.com/DE/about")
+  ).toBe(undefined);
 });
 
 test("the default url pattern parses each URL once", async () => {
-	const runtime = await createParaglide({
-		blob: await newProject({
-			settings: {
-				baseLocale: "en",
-				locales: ["en", "de"],
-			},
-		}),
-	});
-	let parsed = 0;
-	vi.stubGlobal(
-		"URL",
-		class extends URL {
-			constructor(...args: ConstructorParameters<typeof URL>) {
-				super(...args);
-				parsed++;
-			}
-		}
-	);
-	try {
-		expect(runtime.extractLocaleFromUrl("https://example.com/de/about")).toBe(
-			"de"
-		);
-		expect(parsed).toBe(1);
-	} finally {
-		vi.unstubAllGlobals();
-	}
+  const runtime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de"],
+      },
+    }),
+  });
+  let parsed = 0;
+  vi.stubGlobal(
+    "URL",
+    class extends URL {
+      constructor(...args: ConstructorParameters<typeof URL>) {
+        super(...args);
+        parsed++;
+      }
+    }
+  );
+  try {
+    expect(runtime.extractLocaleFromUrl("https://example.com/de/about")).toBe(
+      "de"
+    );
+    expect(parsed).toBe(1);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

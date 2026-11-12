@@ -116,8 +116,8 @@ To make it precise, reference each message directly instead of building its key.
 
 ```ts
 const labels = {
-	email: m.email_label,
-	phone: m.phone_label,
+  email: m.email_label,
+  phone: m.phone_label,
 };
 
 labels[fieldName](); // ✅ every message is referenced directly

@@ -55,10 +55,10 @@ boundary explicit:
 ```js
 // vite.config.js
 paraglideVitePlugin({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	experimentalPerLocaleBuild: true,
-	outputStructure: "message-modules",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  experimentalPerLocaleBuild: true,
+  outputStructure: "message-modules",
 });
 
 // src/lazy-page.js

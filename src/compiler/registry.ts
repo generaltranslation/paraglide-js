@@ -16,18 +16,18 @@
 export const registryBinding = "__paraglideRegistry";
 
 type RegistryFunction = {
-	/** JSDoc of the function in registry.js */
-	jsdoc: string;
-	/** The function declaration, without `export` */
-	code: string;
+  /** JSDoc of the function in registry.js */
+  jsdoc: string;
+  /** The function declaration, without `export` */
+  code: string;
 };
 
 /**
  * The functions of the generated registry.js file, by name.
  */
 const registryFunctions: Record<string, RegistryFunction> = {
-	getIntlFormatter: {
-		jsdoc: `/**
+  getIntlFormatter: {
+    jsdoc: `/**
  * @template T
  * @param {new (locale: string, options?: any) => T} Constructor
  * @param {string} locale
@@ -35,7 +35,7 @@ const registryFunctions: Record<string, RegistryFunction> = {
  * @param {boolean} cacheable Compiler-created plain options only.
  * @returns {T}
  */`,
-		code: `function getIntlFormatter(Constructor, locale, options, cacheable) {
+    code: `function getIntlFormatter(Constructor, locale, options, cacheable) {
 	// Arbitrary user options may have getters or Proxy traps. Only inspect
 	// the plain data objects the compiler creates, or absent options.
 	if (typeof locale !== "string" || (options !== undefined && !cacheable)) {
@@ -74,9 +74,9 @@ const registryFunctions: Record<string, RegistryFunction> = {
 	cache.set(key, formatter);
 	return formatter
 };`,
-	},
-	plural: {
-		jsdoc: `/**
+  },
+  plural: {
+    jsdoc: `/**
  * Selects the plural category of "input - options.offset". The offset
  * comes from ICU MessageFormat 1 "{count, plural, offset:1 ...}" and does not
  * change exact matches like "=0", which compare the input itself.
@@ -87,24 +87,24 @@ const registryFunctions: Record<string, RegistryFunction> = {
  * @param {boolean} [cacheable=false] Internal compiler flag for plain data options.
  * @returns {string}
  */`,
-		code: `function plural(locale, input, options, cacheable = false) {
+    code: `function plural(locale, input, options, cacheable = false) {
 	return getIntlFormatter(Intl.PluralRules, locale, options, cacheable).select(Number(input) - Number(options?.offset ?? 0))
 };`,
-	},
-	number: {
-		jsdoc: `/**
+  },
+  number: {
+    jsdoc: `/**
  * @param {import("./runtime.js").Locale} locale
  * @param {unknown} input
  * @param {Intl.NumberFormatOptions} [options]
  * @param {boolean} [cacheable=false] Internal compiler flag for plain data options.
  * @returns {string}
  */`,
-		code: `function number(locale, input, options, cacheable = false) {
+    code: `function number(locale, input, options, cacheable = false) {
 	return getIntlFormatter(Intl.NumberFormat, locale, options, cacheable).format(Number(input))
 };`,
-	},
-	icuPound: {
-		jsdoc: `/**
+  },
+  icuPound: {
+    jsdoc: `/**
  * Formats "#" in ICU MessageFormat 1 plurals: the number "input - options.offset",
  * formatted like number(). The offset comes from "{count, plural, offset:1 ...}".
  * An input that is not a finite number (or a numeric string) is displayed as is,
@@ -115,56 +115,56 @@ const registryFunctions: Record<string, RegistryFunction> = {
  * @param {{ offset?: unknown }} [options]
  * @returns {string}
  */`,
-		code: `function icuPound(locale, input, options) {
+    code: `function icuPound(locale, input, options) {
 	const value = typeof input === "number" ? input : typeof input === "string" && input.trim() !== "" ? Number(input) : NaN
 	if (!Number.isFinite(value)) return String(input)
 	return number(locale, value - Number(options?.offset ?? 0))
 };`,
-	},
-	datetime: {
-		jsdoc: `/**
+  },
+  datetime: {
+    jsdoc: `/**
  * @param {import("./runtime.js").Locale} locale
  * @param {unknown} input
  * @param {Intl.DateTimeFormatOptions} [options]
  * @param {boolean} [cacheable=false] Internal compiler flag for plain data options.
  * @returns {string}
  */`,
-		code: `function datetime(locale, input, options, cacheable = false) {
+    code: `function datetime(locale, input, options, cacheable = false) {
 	// The host default zone can change while the app is running.
 	const formatter = cacheable && options?.timeZone !== undefined
 		? getIntlFormatter(Intl.DateTimeFormat, locale, options, cacheable)
 		: new Intl.DateTimeFormat(locale, options);
 	return formatter.format(new Date(/** @type {string} */ (input)))
 };`,
-	},
-	relativetime: {
-		jsdoc: `/**
+  },
+  relativetime: {
+    jsdoc: `/**
  * @param {import("./runtime.js").Locale} locale
  * @param {unknown} input
  * @param {Intl.RelativeTimeFormatOptions & { unit: RelativeTimeFormatUnit }} options
  * @param {boolean} [cacheable=false] Internal compiler flag for plain data options.
  * @returns {string}
  */`,
-		code: `function relativetime(locale, input, options, cacheable = false) {
+    code: `function relativetime(locale, input, options, cacheable = false) {
 	const { unit, ...intlOptions } = options;
 	return getIntlFormatter(Intl.RelativeTimeFormat, locale, intlOptions, cacheable).format(Number(input), unit);
 };`,
-	},
+  },
 };
 
 /**
  * Creates the Registry file
  */
 export function createRegistry(): string {
-	return `
+  return `
 /**
  * @typedef {"year" | "years" | "quarter" | "quarters" | "month" | "months" | "week" | "weeks" | "day" | "days" | "hour" | "hours" | "minute" | "minutes" | "second" | "seconds"} RelativeTimeFormatUnit
  */
 
 ${Object.values(registryFunctions)
-	.map(
-		(fn) =>
-			`${fn.jsdoc}\n${fn === registryFunctions.getIntlFormatter ? "" : "export "}${fn.code}`
-	)
-	.join("\n\n")}`;
+  .map(
+    (fn) =>
+      `${fn.jsdoc}\n${fn === registryFunctions.getIntlFormatter ? "" : "export "}${fn.code}`
+  )
+  .join("\n\n")}`;
 }

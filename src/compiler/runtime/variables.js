@@ -32,7 +32,7 @@ export const cookieDomain = "<cookie-domain>";
 // checks in set-locale.js fail checkJs. `cookieSameSite` uses the same form
 // for consistency.
 export const cookieSameSite =
-	/** @type {"lax" | "strict" | "none" | undefined} */ (undefined);
+  /** @type {"lax" | "strict" | "none" | undefined} */ (undefined);
 
 export const cookieSecure = /** @type {boolean | "auto"} */ (false);
 
@@ -101,7 +101,7 @@ export let serverAsyncLocalStorage = undefined;
  * @returns {ParaglideAsyncLocalStorage | undefined}
  */
 export function getServerAsyncLocalStorage() {
-	return serverAsyncLocalStorage;
+  return serverAsyncLocalStorage;
 }
 
 export const disableAsyncLocalStorage = false;
@@ -125,7 +125,7 @@ export const experimentalStaticLocale = undefined;
  * @param {ParaglideAsyncLocalStorage | undefined} value
  */
 export function overwriteServerAsyncLocalStorage(value) {
-	serverAsyncLocalStorage = value;
+  serverAsyncLocalStorage = value;
 }
 
 export const TREE_SHAKE_COOKIE_STRATEGY_USED = false;

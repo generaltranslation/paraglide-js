@@ -1,4 +1,4 @@
 export type PerLocaleBuildSettings = {
-	baseLocale: string;
-	locales: string[];
+  baseLocale: string;
+  locales: string[];
 };

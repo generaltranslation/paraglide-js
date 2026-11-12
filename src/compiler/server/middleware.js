@@ -97,101 +97,101 @@ import * as runtime from "./runtime.js";
  * ```
  */
 export async function paraglideMiddleware(request, resolve, options) {
-	let requestAsyncLocalStorage = runtime.serverAsyncLocalStorage;
-	// %async-local-storage
-	const url = resolveMiddlewareUrl(request, options?.effectiveRequestUrl);
-	const origin = url.origin;
+  let requestAsyncLocalStorage = runtime.serverAsyncLocalStorage;
+  // %async-local-storage
+  const url = resolveMiddlewareUrl(request, options?.effectiveRequestUrl);
+  const origin = url.origin;
 
-	if (runtime.isExcludedByRouteStrategy(url.href)) {
-		const locale = runtime.baseLocale;
-		const newRequest = cloneRequestWithFallback(request, url);
-		return /** @type {Response} */ (
-			await requestAsyncLocalStorage?.run({ locale, origin }, () =>
-				resolve({ locale, request: newRequest })
-			)
-		);
-	}
+  if (runtime.isExcludedByRouteStrategy(url.href)) {
+    const locale = runtime.baseLocale;
+    const newRequest = cloneRequestWithFallback(request, url);
+    return /** @type {Response} */ (
+      await requestAsyncLocalStorage?.run({ locale, origin }, () =>
+        resolve({ locale, request: newRequest })
+      )
+    );
+  }
 
-	const strategy = runtime.getStrategyForUrl(url.href);
-	const vary = getVaryFields(strategy);
-	const decision = await runtime.shouldRedirect({
-		request,
-		effectiveRequestUrl: url,
-	});
-	const locale = decision.locale;
-	// Custom server strategies run before built-in strategies, regardless of order.
-	const hasCustomStrategy = strategy.some((strat) =>
-		strat.startsWith("custom-")
-	);
-	const urlDecidesLocale =
-		options?.redirect === "navigation" &&
-		strategy[0] === "url" &&
-		!hasCustomStrategy &&
-		runtime.extractLocaleFromUrl(url) !== undefined;
-	const navigationVary =
-		options?.redirect === "navigation" ? ["Accept", "Sec-Fetch-Dest"] : [];
+  const strategy = runtime.getStrategyForUrl(url.href);
+  const vary = getVaryFields(strategy);
+  const decision = await runtime.shouldRedirect({
+    request,
+    effectiveRequestUrl: url,
+  });
+  const locale = decision.locale;
+  // Custom server strategies run before built-in strategies, regardless of order.
+  const hasCustomStrategy = strategy.some((strat) =>
+    strat.startsWith("custom-")
+  );
+  const urlDecidesLocale =
+    options?.redirect === "navigation" &&
+    strategy[0] === "url" &&
+    !hasCustomStrategy &&
+    runtime.extractLocaleFromUrl(url) !== undefined;
+  const navigationVary =
+    options?.redirect === "navigation" ? ["Accept", "Sec-Fetch-Dest"] : [];
 
-	// if the client makes a request to a URL that doesn't match
-	// the localizedUrl, redirect the client to the localized URL
-	if (
-		shouldRedirectRequest(request, options?.redirect) &&
-		decision.shouldRedirect &&
-		decision.redirectUrl
-	) {
-		/** @type {Record<string, string>} */
-		const headers = {};
-		const redirectVary = [...(urlDecidesLocale ? [] : vary), ...navigationVary];
-		if (redirectVary.length > 0) {
-			headers["Vary"] = redirectVary.join(", ");
-		}
+  // if the client makes a request to a URL that doesn't match
+  // the localizedUrl, redirect the client to the localized URL
+  if (
+    shouldRedirectRequest(request, options?.redirect) &&
+    decision.shouldRedirect &&
+    decision.redirectUrl
+  ) {
+    /** @type {Record<string, string>} */
+    const headers = {};
+    const redirectVary = [...(urlDecidesLocale ? [] : vary), ...navigationVary];
+    if (redirectVary.length > 0) {
+      headers["Vary"] = redirectVary.join(", ");
+    }
 
-		const response = new Response(null, {
-			status: 307,
-			headers: {
-				Location: decision.redirectUrl.href,
-				...headers,
-			},
-		});
+    const response = new Response(null, {
+      status: 307,
+      headers: {
+        Location: decision.redirectUrl.href,
+        ...headers,
+      },
+    });
 
-		options?.onRedirect?.(response);
-		return response;
-	}
+    options?.onRedirect?.(response);
+    return response;
+  }
 
-	// If the strategy includes "url", we need to de-localize the URL
-	// before passing it to the server middleware.
-	//
-	// The middleware is responsible for mapping a localized URL to the
-	// de-localized URL e.g. `/en/about` to `/about`. Otherwise,
-	// the server can't render the correct page.
-	let newRequest;
-	if (strategy.includes("url")) {
-		newRequest = cloneRequestWithFallback(request, runtime.deLocalizeUrl(url));
-	} else {
-		newRequest = cloneRequestWithFallback(request, url);
-	}
+  // If the strategy includes "url", we need to de-localize the URL
+  // before passing it to the server middleware.
+  //
+  // The middleware is responsible for mapping a localized URL to the
+  // de-localized URL e.g. `/en/about` to `/about`. Otherwise,
+  // the server can't render the correct page.
+  let newRequest;
+  if (strategy.includes("url")) {
+    newRequest = cloneRequestWithFallback(request, runtime.deLocalizeUrl(url));
+  } else {
+    newRequest = cloneRequestWithFallback(request, url);
+  }
 
-	let response = await requestAsyncLocalStorage?.run({ locale, origin }, () =>
-		resolve({ locale, request: newRequest })
-	);
+  let response = await requestAsyncLocalStorage?.run({ locale, origin }, () =>
+    resolve({ locale, request: newRequest })
+  );
 
-	if (response instanceof Response) {
-		const urlIndex = strategy.indexOf("url");
-		const responseVary =
-			urlIndex !== -1 && !hasCustomStrategy && runtime.extractLocaleFromUrl(url)
-				? getVaryFields(strategy.slice(0, urlIndex))
-				: [...vary];
-		// Classifying navigations can change a cached 200 into a redirect.
-		if (
-			(request.method === "GET" || request.method === "HEAD") &&
-			urlIndex !== -1 &&
-			(!urlDecidesLocale || decision.shouldRedirect)
-		) {
-			responseVary.push(...navigationVary);
-		}
-		response = withVary(response, responseVary);
-	}
+  if (response instanceof Response) {
+    const urlIndex = strategy.indexOf("url");
+    const responseVary =
+      urlIndex !== -1 && !hasCustomStrategy && runtime.extractLocaleFromUrl(url)
+        ? getVaryFields(strategy.slice(0, urlIndex))
+        : [...vary];
+    // Classifying navigations can change a cached 200 into a redirect.
+    if (
+      (request.method === "GET" || request.method === "HEAD") &&
+      urlIndex !== -1 &&
+      (!urlDecidesLocale || decision.shouldRedirect)
+    ) {
+      responseVary.push(...navigationVary);
+    }
+    response = withVary(response, responseVary);
+  }
 
-	return response;
+  return response;
 }
 
 /**
@@ -199,11 +199,11 @@ export async function paraglideMiddleware(request, resolve, options) {
  * @returns {string[]}
  */
 function getVaryFields(strategy) {
-	/** @type {string[]} */
-	const vary = [];
-	if (strategy.includes("cookie")) vary.push("Cookie");
-	if (strategy.includes("preferredLanguage")) vary.push("Accept-Language");
-	return vary;
+  /** @type {string[]} */
+  const vary = [];
+  if (strategy.includes("cookie")) vary.push("Cookie");
+  if (strategy.includes("preferredLanguage")) vary.push("Accept-Language");
+  return vary;
 }
 
 /**
@@ -212,33 +212,33 @@ function getVaryFields(strategy) {
  * @returns {Response}
  */
 function withVary(response, vary) {
-	// Network errors and protocol upgrades are not ordinary HTTP responses.
-	if (response.status < 200 || response.status > 599) return response;
-	const existing = response.headers.get("Vary");
-	const fields =
-		existing?.split(",").map((field) => field.trim().toLowerCase()) ?? [];
-	if (fields.includes("*")) return response;
-	const missing = vary.filter((field) => !fields.includes(field.toLowerCase()));
-	if (missing.length === 0) return response;
-	const value = [existing, ...missing].filter(Boolean).join(", ");
+  // Network errors and protocol upgrades are not ordinary HTTP responses.
+  if (response.status < 200 || response.status > 599) return response;
+  const existing = response.headers.get("Vary");
+  const fields =
+    existing?.split(",").map((field) => field.trim().toLowerCase()) ?? [];
+  if (fields.includes("*")) return response;
+  const missing = vary.filter((field) => !fields.includes(field.toLowerCase()));
+  if (missing.length === 0) return response;
+  const value = [existing, ...missing].filter(Boolean).join(", ");
 
-	try {
-		response.headers.set("Vary", value);
-		return response;
-	} catch (error) {
-		if (!(error instanceof TypeError)) throw error;
-	}
+  try {
+    response.headers.set("Vary", value);
+    return response;
+  } catch (error) {
+    if (!(error instanceof TypeError)) throw error;
+  }
 
-	// Responses from fetch() or Response.redirect() can have immutable headers.
-	try {
-		// Preserve runtime-specific response state, including Workers body encoding.
-		const copy = new Response(response.body, response);
-		copy.headers.set("Vary", value);
-		return copyResponseMetadata(copy, response);
-	} catch {
-		// Keep callback responses whose body cannot be reused.
-		return response;
-	}
+  // Responses from fetch() or Response.redirect() can have immutable headers.
+  try {
+    // Preserve runtime-specific response state, including Workers body encoding.
+    const copy = new Response(response.body, response);
+    copy.headers.set("Vary", value);
+    return copyResponseMetadata(copy, response);
+  } catch {
+    // Keep callback responses whose body cannot be reused.
+    return response;
+  }
 }
 
 /**
@@ -247,20 +247,20 @@ function withVary(response, vary) {
  * @returns {Response}
  */
 function copyResponseMetadata(target, source) {
-	// ResponseInit omits fetch metadata, so clones need to retain it as well.
-	return Object.defineProperties(target, {
-		url: { value: source.url, configurable: true },
-		redirected: { value: source.redirected, configurable: true },
-		type: { value: source.type, configurable: true },
-		clone: {
-			configurable: true,
-			writable: true,
-			/** @this {Response} */
-			value() {
-				return copyResponseMetadata(Response.prototype.clone.call(this), this);
-			},
-		},
-	});
+  // ResponseInit omits fetch metadata, so clones need to retain it as well.
+  return Object.defineProperties(target, {
+    url: { value: source.url, configurable: true },
+    redirected: { value: source.redirected, configurable: true },
+    type: { value: source.type, configurable: true },
+    clone: {
+      configurable: true,
+      writable: true,
+      /** @this {Response} */
+      value() {
+        return copyResponseMetadata(Response.prototype.clone.call(this), this);
+      },
+    },
+  });
 }
 
 /**
@@ -269,43 +269,43 @@ function copyResponseMetadata(target, source) {
  * @returns {boolean}
  */
 function shouldRedirectRequest(request, redirect) {
-	const destination = request.headers.get("Sec-Fetch-Dest");
-	if (redirect !== "navigation") return destination === "document";
-	if (request.method !== "GET" && request.method !== "HEAD") return false;
-	if (destination !== null) return destination === "document";
+  const destination = request.headers.get("Sec-Fetch-Dest");
+  if (redirect !== "navigation") return destination === "document";
+  if (request.method !== "GET" && request.method !== "HEAD") return false;
+  if (destination !== null) return destination === "document";
 
-	let specificity = -1;
-	let quality = 0;
-	for (const range of splitHeaderValue(
-		request.headers.get("Accept") ?? "",
-		","
-	)) {
-		const [type, ...parameters] = splitHeaderValue(range, ";").map((part) =>
-			part.trim().toLowerCase()
-		);
-		const rangeSpecificity =
-			type === "text/html"
-				? 2
-				: type === "text/*"
-					? 1
-					: type === "*/*"
-						? 0
-						: -1;
-		if (rangeSpecificity < 0 || rangeSpecificity < specificity) continue;
+  let specificity = -1;
+  let quality = 0;
+  for (const range of splitHeaderValue(
+    request.headers.get("Accept") ?? "",
+    ","
+  )) {
+    const [type, ...parameters] = splitHeaderValue(range, ";").map((part) =>
+      part.trim().toLowerCase()
+    );
+    const rangeSpecificity =
+      type === "text/html"
+        ? 2
+        : type === "text/*"
+          ? 1
+          : type === "*/*"
+            ? 0
+            : -1;
+    if (rangeSpecificity < 0 || rangeSpecificity < specificity) continue;
 
-		const weight = parameters.find((parameter) => /^q\s*=/.test(parameter));
-		const value = weight ? weight.slice(weight.indexOf("=") + 1).trim() : "1";
-		const rangeQuality = /^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(value)
-			? Number(value)
-			: 0;
-		// A specific q=0 exclusion takes precedence over an acceptable wildcard.
-		quality =
-			rangeSpecificity > specificity
-				? rangeQuality
-				: Math.max(quality, rangeQuality);
-		specificity = rangeSpecificity;
-	}
-	return quality > 0;
+    const weight = parameters.find((parameter) => /^q\s*=/.test(parameter));
+    const value = weight ? weight.slice(weight.indexOf("=") + 1).trim() : "1";
+    const rangeQuality = /^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(value)
+      ? Number(value)
+      : 0;
+    // A specific q=0 exclusion takes precedence over an acceptable wildcard.
+    quality =
+      rangeSpecificity > specificity
+        ? rangeQuality
+        : Math.max(quality, rangeQuality);
+    specificity = rangeSpecificity;
+  }
+  return quality > 0;
 }
 
 /**
@@ -314,23 +314,23 @@ function shouldRedirectRequest(request, redirect) {
  * @returns {string[]}
  */
 function splitHeaderValue(value, separator) {
-	const parts = [];
-	let start = 0;
-	let quoted = false;
-	for (let index = 0; index < value.length; index++) {
-		const character = value[index];
-		if (quoted && character === "\\") {
-			index++;
-		} else if (character === '"') {
-			quoted = !quoted;
-		} else if (!quoted && character === separator) {
-			parts.push(value.slice(start, index));
-			start = index + 1;
-		}
-	}
-	if (quoted) return [];
-	parts.push(value.slice(start));
-	return parts;
+  const parts = [];
+  let start = 0;
+  let quoted = false;
+  for (let index = 0; index < value.length; index++) {
+    const character = value[index];
+    if (quoted && character === "\\") {
+      index++;
+    } else if (character === '"') {
+      quoted = !quoted;
+    } else if (!quoted && character === separator) {
+      parts.push(value.slice(start, index));
+      start = index + 1;
+    }
+  }
+  if (quoted) return [];
+  parts.push(value.slice(start));
+  return parts;
 }
 
 /**
@@ -339,18 +339,18 @@ function splitHeaderValue(value, separator) {
  * @returns {URL}
  */
 function resolveMiddlewareUrl(request, effectiveRequestUrl) {
-	if (typeof effectiveRequestUrl === "function") {
-		return new URL(effectiveRequestUrl(request), request.url);
-	}
+  if (typeof effectiveRequestUrl === "function") {
+    return new URL(effectiveRequestUrl(request), request.url);
+  }
 
-	if (
-		typeof effectiveRequestUrl === "string" ||
-		effectiveRequestUrl instanceof URL
-	) {
-		return new URL(effectiveRequestUrl, request.url);
-	}
+  if (
+    typeof effectiveRequestUrl === "string" ||
+    effectiveRequestUrl instanceof URL
+  ) {
+    return new URL(effectiveRequestUrl, request.url);
+  }
 
-	return new URL(request.url);
+  return new URL(request.url);
 }
 
 /**
@@ -369,30 +369,30 @@ function resolveMiddlewareUrl(request, effectiveRequestUrl) {
  * @returns {Request}
  */
 function cloneRequestWithFallback(request, url = request.url) {
-	const targetUrl = typeof url === "string" ? url : url.href;
-	if (targetUrl === request.url) {
-		try {
-			// Clone first so building a new Request does not consume the original body stream.
-			return new Request(request.clone());
-		} catch {
-			try {
-				return new Request(request);
-			} catch {
-				return request;
-			}
-		}
-	}
+  const targetUrl = typeof url === "string" ? url : url.href;
+  if (targetUrl === request.url) {
+    try {
+      // Clone first so building a new Request does not consume the original body stream.
+      return new Request(request.clone());
+    } catch {
+      try {
+        return new Request(request);
+      } catch {
+        return request;
+      }
+    }
+  }
 
-	try {
-		// Clone first so building a new Request does not consume the original body stream.
-		return new Request(targetUrl, request.clone());
-	} catch {
-		try {
-			return new Request(targetUrl, request);
-		} catch {
-			return request;
-		}
-	}
+  try {
+    // Clone first so building a new Request does not consume the original body stream.
+    return new Request(targetUrl, request.clone());
+  } catch {
+    try {
+      return new Request(targetUrl, request);
+    } catch {
+      return request;
+    }
+  }
 }
 
 /**
@@ -406,21 +406,21 @@ function cloneRequestWithFallback(request, url = request.url) {
  * @returns {import("./runtime.js").ParaglideAsyncLocalStorage}
  */
 function createMockAsyncLocalStorage() {
-	/** @type {any} */
-	let currentStore = undefined;
-	return {
-		getStore() {
-			return currentStore;
-		},
-		async run(store, callback) {
-			currentStore = store;
-			try {
-				return await callback();
-			} finally {
-				currentStore = undefined;
-			}
-		},
-	};
+  /** @type {any} */
+  let currentStore = undefined;
+  return {
+    getStore() {
+      return currentStore;
+    },
+    async run(store, callback) {
+      currentStore = store;
+      try {
+        return await callback();
+      } finally {
+        currentStore = undefined;
+      }
+    },
+  };
 }
 
 // Used in generated server.js when async local storage is disabled.

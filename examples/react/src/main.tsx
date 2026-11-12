@@ -7,7 +7,7 @@ document.documentElement.lang = getLocale();
 document.documentElement.dir = getTextDirection();
 
 createRoot(document.getElementById("root")!).render(
-	<StrictMode>
-		<App />
-	</StrictMode>
+  <StrictMode>
+    <App />
+  </StrictMode>
 );

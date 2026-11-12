@@ -4,37 +4,37 @@
  * Mainly exists to support https://github.com/opral/inlang-paraglide-js/issues/285
  */
 export function toSafeModuleId(id: string): string {
-	// Most catalog keys already are module identifiers. Avoid a lowercase copy,
-	// replacement, and per-character uppercase scan for that common case.
-	if (
-		typeof id === "string" &&
-		/^[a-z_][a-z0-9_]*$/.test(id) &&
-		!reservedJsKeywords.includes(id)
-	) {
-		return id;
-	}
-	const result = id.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+  // Most catalog keys already are module identifiers. Avoid a lowercase copy,
+  // replacement, and per-character uppercase scan for that common case.
+  if (
+    typeof id === "string" &&
+    /^[a-z_][a-z0-9_]*$/.test(id) &&
+    !reservedJsKeywords.includes(id)
+  ) {
+    return id;
+  }
+  const result = id.toLowerCase().replace(/[^a-z0-9_]/g, "_");
 
-	const startsWithNumber = result[0]?.match(/[0-9]/);
+  const startsWithNumber = result[0]?.match(/[0-9]/);
 
-	if (startsWithNumber) {
-		return "_" + result;
-	} else if (reservedJsKeywords.includes(result)) {
-		return "_" + result;
-	}
+  if (startsWithNumber) {
+    return "_" + result;
+  } else if (reservedJsKeywords.includes(result)) {
+    return "_" + result;
+  }
 
-	let numUppercase = 0;
-	for (const char of id) {
-		if (char.match(/[A-Z]/)) {
-			numUppercase++;
-		}
-	}
+  let numUppercase = 0;
+  for (const char of id) {
+    if (char.match(/[A-Z]/)) {
+      numUppercase++;
+    }
+  }
 
-	return result + (numUppercase > 0 ? `${numUppercase}` : "");
+  return result + (numUppercase > 0 ? `${numUppercase}` : "");
 }
 
 export function isSafeModuleId(id: string): boolean {
-	return toSafeModuleId(id) === id;
+  return toSafeModuleId(id) === id;
 }
 
 /**
@@ -50,25 +50,25 @@ export function isSafeModuleId(id: string): boolean {
  *   // Map { "a.b" => "$a$2e$b", "a_b" => "a_b", "_index" => "$_index" }
  */
 export function allocateModuleIds(
-	ids: Iterable<string>,
-	reserved: ReadonlySet<string>
+  ids: Iterable<string>,
+  reserved: ReadonlySet<string>
 ): Map<string, string> {
-	const safeIds = new Map<string, string>();
-	const idsBySafeId = new Map<string, number>();
-	for (const id of ids) {
-		const safeId = toSafeModuleId(id);
-		safeIds.set(id, safeId);
-		idsBySafeId.set(safeId, (idsBySafeId.get(safeId) ?? 0) + 1);
-	}
-	const moduleIds = new Map<string, string>();
-	for (const [id, safeId] of safeIds) {
-		const keeps =
-			!reserved.has(safeId) &&
-			!unbindableNames.has(safeId) &&
-			(id === safeId || idsBySafeId.get(safeId) === 1);
-		moduleIds.set(id, keeps ? safeId : escapeIdentifier(id));
-	}
-	return moduleIds;
+  const safeIds = new Map<string, string>();
+  const idsBySafeId = new Map<string, number>();
+  for (const id of ids) {
+    const safeId = toSafeModuleId(id);
+    safeIds.set(id, safeId);
+    idsBySafeId.set(safeId, (idsBySafeId.get(safeId) ?? 0) + 1);
+  }
+  const moduleIds = new Map<string, string>();
+  for (const [id, safeId] of safeIds) {
+    const keeps =
+      !reserved.has(safeId) &&
+      !unbindableNames.has(safeId) &&
+      (id === safeId || idsBySafeId.get(safeId) === 1);
+    moduleIds.set(id, keeps ? safeId : escapeIdentifier(id));
+  }
+  return moduleIds;
 }
 
 const unbindableNames = new Set(["eval", "arguments"]);
@@ -85,13 +85,13 @@ const unbindableNames = new Set(["eval", "arguments"]);
  *   escapeIdentifier("a.b") // "$a$2e$b"
  */
 export function escapeIdentifier(text: string): string {
-	return (
-		"$" +
-		text.replace(
-			/[^a-z0-9_]/g,
-			(character) => `$${character.charCodeAt(0).toString(16)}$`
-		)
-	);
+  return (
+    "$" +
+    text.replace(
+      /[^a-z0-9_]/g,
+      (character) => `$${character.charCodeAt(0).toString(16)}$`
+    )
+  );
 }
 
 /**
@@ -99,61 +99,61 @@ export function escapeIdentifier(text: string): string {
  * strict-mode code reserves, `eval`, `arguments` and `then`.
  */
 export function isReservedBindingName(name: string): boolean {
-	return reservedJsKeywords.includes(name) || unbindableNames.has(name);
+  return reservedJsKeywords.includes(name) || unbindableNames.has(name);
 }
 
 const reservedJsKeywords = [
-	"break",
-	"case",
-	"catch",
-	"class",
-	"const",
-	"continue",
-	"debugger",
-	"default",
-	"delete",
-	"do",
-	"else",
-	"export",
-	"extends",
-	"false",
-	"finally",
-	"for",
-	"function",
-	"if",
-	"import",
-	"in",
-	"instanceof",
-	"new",
-	"null",
-	"return",
-	"super",
-	"switch",
-	"this",
-	"throw",
-	"true",
-	"try",
-	"typeof",
-	"var",
-	"void",
-	"while",
-	"with",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "debugger",
+  "default",
+  "delete",
+  "do",
+  "else",
+  "export",
+  "extends",
+  "false",
+  "finally",
+  "for",
+  "function",
+  "if",
+  "import",
+  "in",
+  "instanceof",
+  "new",
+  "null",
+  "return",
+  "super",
+  "switch",
+  "this",
+  "throw",
+  "true",
+  "try",
+  "typeof",
+  "var",
+  "void",
+  "while",
+  "with",
 
-	//Strict mode reserved keywords
-	"let",
-	"static",
-	"yield",
-	"await",
+  //Strict mode reserved keywords
+  "let",
+  "static",
+  "yield",
+  "await",
 
-	//Reserved keywords for future use
-	"enum",
-	"implements",
-	"interface",
-	"package",
-	"private",
-	"protected",
-	"public",
+  //Reserved keywords for future use
+  "enum",
+  "implements",
+  "interface",
+  "package",
+  "private",
+  "protected",
+  "public",
 
-	// https://github.com/opral/inlang-paraglide-js/issues/331
-	"then",
+  // https://github.com/opral/inlang-paraglide-js/issues/331
+  "then",
 ];

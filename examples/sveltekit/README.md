@@ -42,15 +42,15 @@ import { defineConfig } from 'vite';
 +import { paraglideVitePlugin } from '@inlang/paraglide-js';
 
 export default defineConfig({
-	plugins: [
-		sveltekit(),
+  plugins: [
+    sveltekit(),
 +		paraglideVitePlugin({
 +			project: './project.inlang',
 +			outdir: './src/lib/paraglide',
 +			emitTsDeclarations: true,
 +			strategy: ['url', 'cookie', 'baseLocale'],
 +		})
-	]
+  ]
 });
 ```
 
@@ -64,7 +64,7 @@ See https://svelte.dev/docs/kit/accessibility#The-lang-attribute for more inform
 <!doctype html>
 -<html lang="en">
 +<html lang="%lang%" dir="%dir%">
-	...
+  ...
 </html>
 ```
 
@@ -79,16 +79,16 @@ import { getTextDirection } from '$lib/paraglide/runtime';
 
 // creating a handle to use the paraglide middleware
 const paraglideHandle: Handle = ({ event, resolve }) =>
-	paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
-		return resolve(
-			{ ...event, request: localizedRequest },
-			{
-				transformPageChunk: ({ html }) => {
-					return html.replace('%lang%', locale).replace('%dir%', getTextDirection(locale));
-				}
-			}
-		);
-	});
+  paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
+    return resolve(
+      { ...event, request: localizedRequest },
+      {
+        transformPageChunk: ({ html }) => {
+          return html.replace('%lang%', locale).replace('%dir%', getTextDirection(locale));
+        }
+      }
+    );
+  });
 
 export const handle: Handle = paraglideHandle;
 ```
@@ -104,7 +104,7 @@ import type { Reroute } from '@sveltejs/kit/hooks';
 import { deLocalizeUrl } from '$lib/paraglide/runtime';
 
 export const reroute: Reroute = (request) => {
-	return deLocalizeUrl(request.url).pathname;
+  return deLocalizeUrl(request.url).pathname;
 };
 ```
 
@@ -141,17 +141,17 @@ already reloads by default.
 
 ```diff
 <script>
-	import { page } from '$app/state';
-	import { resolve } from '$app/paths';
-	import { locales, localizeHref } from '$lib/paraglide/runtime';
+  import { page } from '$app/state';
+  import { resolve } from '$app/paths';
+  import { locales, localizeHref } from '$lib/paraglide/runtime';
 </script>
 
 <nav class="locale-switcher" aria-label="Languages">
-	{#each locales as locale}
-		<a href={resolve(localizeHref(page.url.pathname, { locale }))} data-sveltekit-reload>
-			{locale}
-		</a>
-	{/each}
+  {#each locales as locale}
+    <a href={resolve(localizeHref(page.url.pathname, { locale }))} data-sveltekit-reload>
+      {locale}
+    </a>
+  {/each}
 </nav>
 
 <slot></slot>
@@ -167,13 +167,13 @@ import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 const config = {
-	preprocess: vitePreprocess(),
-	kit: {
-		adapter: adapter(),
+  preprocess: vitePreprocess(),
+  kit: {
+    adapter: adapter(),
 +		paths: {
 +			relative: false
 +		}
-	}
+  }
 };
 
 export default config;

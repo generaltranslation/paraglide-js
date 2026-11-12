@@ -4,8 +4,8 @@ import { getLocale, getLocaleForUrl } from "./get-locale.js";
 import { getUrlOrigin } from "./get-url-origin.js";
 import { extractLocaleFromRequestAsync } from "./extract-locale-from-request-async.js";
 import {
-	getStrategyForUrl,
-	isExcludedByRouteStrategy,
+  getStrategyForUrl,
+  isExcludedByRouteStrategy,
 } from "./route-strategy.js";
 import { trailingSlash } from "./variables.js";
 
@@ -82,24 +82,24 @@ import { trailingSlash } from "./variables.js";
  * @returns {Promise<ShouldRedirectResult>}
  */
 export async function shouldRedirect(input = {}) {
-	const currentUrl = resolveUrl(input);
-	const locale = await resolveLocale(input, currentUrl);
-	const strategy = getStrategyForUrl(currentUrl.href);
+  const currentUrl = resolveUrl(input);
+  const locale = await resolveLocale(input, currentUrl);
+  const strategy = getStrategyForUrl(currentUrl.href);
 
-	if (isExcludedByRouteStrategy(currentUrl.href) || !strategy.includes("url")) {
-		return { shouldRedirect: false, locale, redirectUrl: undefined };
-	}
+  if (isExcludedByRouteStrategy(currentUrl.href) || !strategy.includes("url")) {
+    return { shouldRedirect: false, locale, redirectUrl: undefined };
+  }
 
-	const localizedUrl = localizeUrl(currentUrl.href, { locale });
+  const localizedUrl = localizeUrl(currentUrl.href, { locale });
 
-	const shouldRedirectToLocalizedUrl =
-		normalizeUrl(localizedUrl.href) !== normalizeUrl(currentUrl.href);
+  const shouldRedirectToLocalizedUrl =
+    normalizeUrl(localizedUrl.href) !== normalizeUrl(currentUrl.href);
 
-	return {
-		shouldRedirect: shouldRedirectToLocalizedUrl,
-		locale,
-		redirectUrl: shouldRedirectToLocalizedUrl ? localizedUrl : undefined,
-	};
+  return {
+    shouldRedirect: shouldRedirectToLocalizedUrl,
+    locale,
+    redirectUrl: shouldRedirectToLocalizedUrl ? localizedUrl : undefined,
+  };
 }
 
 /**
@@ -110,22 +110,22 @@ export async function shouldRedirect(input = {}) {
  * @returns {Promise<Locale>}
  */
 async function resolveLocale(input, currentUrl) {
-	const locale = toLocale(input.locale);
-	if (locale) {
-		return locale;
-	}
+  const locale = toLocale(input.locale);
+  if (locale) {
+    return locale;
+  }
 
-	if (input.request) {
-		return extractLocaleFromRequestAsync(input.request, {
-			effectiveRequestUrl: currentUrl,
-		});
-	}
+  if (input.request) {
+    return extractLocaleFromRequestAsync(input.request, {
+      effectiveRequestUrl: currentUrl,
+    });
+  }
 
-	if ("url" in input && typeof input.url !== "undefined") {
-		return getLocaleForUrl(currentUrl.href);
-	}
+  if ("url" in input && typeof input.url !== "undefined") {
+    return getLocaleForUrl(currentUrl.href);
+  }
 
-	return getLocale();
+  return getLocale();
 }
 
 /**
@@ -135,42 +135,42 @@ async function resolveLocale(input, currentUrl) {
  * @returns {URL}
  */
 function resolveUrl(input) {
-	if (
-		"effectiveRequestUrl" in input &&
-		input.effectiveRequestUrl instanceof URL
-	) {
-		return new URL(input.effectiveRequestUrl.href);
-	}
+  if (
+    "effectiveRequestUrl" in input &&
+    input.effectiveRequestUrl instanceof URL
+  ) {
+    return new URL(input.effectiveRequestUrl.href);
+  }
 
-	if (
-		"effectiveRequestUrl" in input &&
-		typeof input.effectiveRequestUrl === "string"
-	) {
-		return new URL(
-			input.effectiveRequestUrl,
-			input.request ? input.request.url : getUrlOrigin()
-		);
-	}
+  if (
+    "effectiveRequestUrl" in input &&
+    typeof input.effectiveRequestUrl === "string"
+  ) {
+    return new URL(
+      input.effectiveRequestUrl,
+      input.request ? input.request.url : getUrlOrigin()
+    );
+  }
 
-	if (input.request) {
-		return new URL(input.request.url);
-	}
+  if (input.request) {
+    return new URL(input.request.url);
+  }
 
-	if ("url" in input && input.url instanceof URL) {
-		return new URL(input.url.href);
-	}
+  if ("url" in input && input.url instanceof URL) {
+    return new URL(input.url.href);
+  }
 
-	if ("url" in input && typeof input.url === "string") {
-		return new URL(input.url, getUrlOrigin());
-	}
+  if ("url" in input && typeof input.url === "string") {
+    return new URL(input.url, getUrlOrigin());
+  }
 
-	if (typeof window !== "undefined" && window?.location?.href) {
-		return new URL(window.location.href);
-	}
+  if (typeof window !== "undefined" && window?.location?.href) {
+    return new URL(window.location.href);
+  }
 
-	throw new Error(
-		"shouldRedirect() requires either a request, an absolute URL, or must run in a browser environment."
-	);
+  throw new Error(
+    "shouldRedirect() requires either a request, an absolute URL, or must run in a browser environment."
+  );
 }
 
 /**
@@ -180,9 +180,9 @@ function resolveUrl(input) {
  * @returns {string}
  */
 function normalizeUrl(url) {
-	const urlObj = new URL(url);
-	if (trailingSlash === undefined) {
-		urlObj.pathname = urlObj.pathname.replace(/\/$/, "");
-	}
-	return urlObj.href;
+  const urlObj = new URL(url);
+  if (trailingSlash === undefined) {
+    urlObj.pathname = urlObj.pathname.replace(/\/$/, "");
+  }
+  return urlObj.href;
 }

@@ -19,8 +19,8 @@ In the example below, the `cookie` strategy first determines the locale. If no c
 
 ```diff
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
 +	strategy: ["cookie", "baseLocale"]
 })
 ```
@@ -75,8 +75,8 @@ The cookie strategy determines the locale from a cookie.
 
 ```diff
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
 +	strategy: ["cookie"]
 })
 ```
@@ -89,8 +89,8 @@ It is useful as a fallback strategy if no other strategy returns a locale, for e
 
 ```diff
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
 +	strategy: ["cookie", "baseLocale"]
 })
 ```
@@ -103,8 +103,8 @@ This strategy is only useful in testing environments or to get started quickly. 
 
 ```diff
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
 +	strategy: ["globalVariable"]
 })
 ```
@@ -118,8 +118,8 @@ Automatically detects the user's preferred language from browser settings or HTT
 
 ```diff
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
 +	strategy: ["preferredLanguage", "baseLocale"]
 })
 ```
@@ -140,8 +140,8 @@ Determine the locale from the user's local storage.
 
 ```diff
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
 +	strategy: ["localStorage"]
 })
 ```
@@ -154,8 +154,8 @@ Determine the locale from the URL (pathname, domain, etc) using the `urlPatterns
 
 ```diff
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
 +	strategy: ["url", "cookie"],
 +	// The url strategy uses these patterns (or defaults if not specified)
 +	urlPatterns: [/* your patterns */]
@@ -183,14 +183,14 @@ Without route-level overrides, `url` with wildcard patterns resolves unprefixed 
 
 ```ts
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "cookie", "baseLocale"],
-	routeStrategies: [
-		{ match: "/dashboard/:path(.*)?", strategy: ["cookie", "baseLocale"] },
-		{ match: "/rpc/:path(.*)?", strategy: ["cookie", "baseLocale"] },
-		{ match: "/api/:path(.*)?", exclude: true },
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "cookie", "baseLocale"],
+  routeStrategies: [
+    { match: "/dashboard/:path(.*)?", strategy: ["cookie", "baseLocale"] },
+    { match: "/rpc/:path(.*)?", strategy: ["cookie", "baseLocale"] },
+    { match: "/api/:path(.*)?", exclude: true },
+  ],
 });
 ```
 
@@ -243,16 +243,16 @@ import { AsyncLocalStorage } from "node:async_hooks";
 const localeStorage = new AsyncLocalStorage();
 
 overwriteGetLocale(() => {
-	//any calls to getLocale() in the async local storage context will return the stored locale
-	return localeStorage.getStore() ?? baseLocale;
+  //any calls to getLocale() in the async local storage context will return the stored locale
+  return localeStorage.getStore() ?? baseLocale;
 });
 
 export function onRequest(request, next) {
-	const locale = detectLocale(request); //parse the locale from headers, cookies, etc.
-	// set the async locale storage for the current request
-	// to the detected locale and let the request continue
-	// in that context
-	return localeStorage.run(locale, async () => await next());
+  const locale = detectLocale(request); //parse the locale from headers, cookies, etc.
+  // set the async locale storage for the current request
+  // to the detected locale and let the request continue
+  // in that context
+  return localeStorage.run(locale, async () => await next());
 }
 ```
 
@@ -268,8 +268,8 @@ To use them, you need to include them in the `strategy` array when configuring y
 
 ```diff
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
 +	strategy: ["custom-userPreferences", "cookie", "baseLocale"]
 })
 ```
@@ -287,36 +287,36 @@ import { defineCustomClientStrategy } from "./paraglide/runtime.js";
 
 // Example 1: sessionStorage strategy
 defineCustomClientStrategy("custom-sessionStorage", {
-	getLocale: () => {
-		return sessionStorage.getItem("user-locale") ?? undefined;
-	},
-	setLocale: (locale) => {
-		sessionStorage.setItem("user-locale", locale);
-	},
+  getLocale: () => {
+    return sessionStorage.getItem("user-locale") ?? undefined;
+  },
+  setLocale: (locale) => {
+    sessionStorage.setItem("user-locale", locale);
+  },
 });
 
 // Example 2: Query parameter strategy (answers the original question!)
 defineCustomClientStrategy("custom-queryParam", {
-	getLocale: () => {
-		const urlParams = new URLSearchParams(window.location.search);
-		return urlParams.get("locale") ?? undefined;
-	},
-	setLocale: (locale) => {
-		const url = new URL(window.location);
-		url.searchParams.set("locale", locale);
-		window.history.replaceState({}, "", url.toString());
-	},
+  getLocale: () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("locale") ?? undefined;
+  },
+  setLocale: (locale) => {
+    const url = new URL(window.location);
+    url.searchParams.set("locale", locale);
+    window.history.replaceState({}, "", url.toString());
+  },
 });
 
 // Example 3: URL hash strategy
 defineCustomClientStrategy("custom-hash", {
-	getLocale: () => {
-		const hash = window.location.hash.slice(1); // Remove #
-		return hash.startsWith("lang=") ? hash.replace("lang=", "") : undefined;
-	},
-	setLocale: (locale) => {
-		window.location.hash = `lang=${locale}`;
-	},
+  getLocale: () => {
+    const hash = window.location.hash.slice(1); // Remove #
+    return hash.startsWith("lang=") ? hash.replace("lang=", "") : undefined;
+  },
+  setLocale: (locale) => {
+    window.location.hash = `lang=${locale}`;
+  },
 });
 ```
 
@@ -335,34 +335,34 @@ import { defineCustomServerStrategy } from "./paraglide/runtime.js";
 
 // Example 1: Custom header strategy
 defineCustomServerStrategy("custom-header", {
-	getLocale: (request) => {
-		const locale = request?.headers.get("X-Custom-Locale");
-		return locale ?? undefined;
-	},
+  getLocale: (request) => {
+    const locale = request?.headers.get("X-Custom-Locale");
+    return locale ?? undefined;
+  },
 });
 
 // Example 2: Async database strategy
 defineCustomServerStrategy("custom-database", {
-	getLocale: async (request) => {
-		const userId = extractUserIdFromRequest(request);
-		if (!userId) return undefined;
+  getLocale: async (request) => {
+    const userId = extractUserIdFromRequest(request);
+    if (!userId) return undefined;
 
-		try {
-			// This async call is supported!
-			return await getUserLocaleFromDatabase(userId);
-		} catch (error) {
-			console.warn("Failed to fetch user locale:", error);
-			return undefined;
-		}
-	},
+    try {
+      // This async call is supported!
+      return await getUserLocaleFromDatabase(userId);
+    } catch (error) {
+      console.warn("Failed to fetch user locale:", error);
+      return undefined;
+    }
+  },
 });
 
 // Example 3: Query parameter on server (for SSR)
 defineCustomServerStrategy("custom-serverQuery", {
-	getLocale: (request) => {
-		const url = new URL(request.url);
-		return url.searchParams.get("locale") ?? undefined;
-	},
+  getLocale: (request) => {
+    const url = new URL(request.url);
+    return url.searchParams.get("locale") ?? undefined;
+  },
 });
 ```
 
@@ -373,52 +373,52 @@ Here's a complete example showing how to implement user preference strategies on
 ```js
 // File: src/locale-strategies.js
 import {
-	defineCustomClientStrategy,
-	defineCustomServerStrategy,
+  defineCustomClientStrategy,
+  defineCustomServerStrategy,
 } from "./paraglide/runtime.js";
 import {
-	getUserLocale,
-	setUserLocale,
-	extractUserIdFromRequest,
+  getUserLocale,
+  setUserLocale,
+  extractUserIdFromRequest,
 } from "./services/userService.js";
 
 // Client-side strategy - works with user preferences in browser
 defineCustomClientStrategy("custom-userPreference", {
-	getLocale: () => {
-		// Get from memory cache, framework state store, or return undefined to fall back
-		return window.__userLocale ?? undefined;
-	},
-	setLocale: async (locale) => {
-		try {
-			// Update user preference in database via API
-			await setUserLocale(locale);
-			window.__userLocale = locale;
+  getLocale: () => {
+    // Get from memory cache, framework state store, or return undefined to fall back
+    return window.__userLocale ?? undefined;
+  },
+  setLocale: async (locale) => {
+    try {
+      // Update user preference in database via API
+      await setUserLocale(locale);
+      window.__userLocale = locale;
 
-			// Optional: Also update URL query param for immediate reflection
-			const url = new URL(window.location);
-			url.searchParams.set("locale", locale);
-			window.history.replaceState({}, "", url.toString());
-		} catch (error) {
-			console.warn("Failed to save user locale preference:", error);
-			// Strategy can still succeed even if save fails
-		}
-	},
+      // Optional: Also update URL query param for immediate reflection
+      const url = new URL(window.location);
+      url.searchParams.set("locale", locale);
+      window.history.replaceState({}, "", url.toString());
+    } catch (error) {
+      console.warn("Failed to save user locale preference:", error);
+      // Strategy can still succeed even if save fails
+    }
+  },
 });
 
 // Server-side strategy - async database lookup
 defineCustomServerStrategy("custom-userPreference", {
-	getLocale: async (request) => {
-		const userId = extractUserIdFromRequest(request);
-		if (!userId) return undefined;
+  getLocale: async (request) => {
+    const userId = extractUserIdFromRequest(request);
+    if (!userId) return undefined;
 
-		try {
-			// Async database call - this is now fully supported!
-			return await getUserLocale(userId);
-		} catch (error) {
-			console.warn("Failed to fetch user locale from database:", error);
-			return undefined; // Fallback to next strategy
-		}
-	},
+    try {
+      // Async database call - this is now fully supported!
+      return await getUserLocale(userId);
+    } catch (error) {
+      console.warn("Failed to fetch user locale from database:", error);
+      return undefined; // Fallback to next strategy
+    }
+  },
 });
 ```
 

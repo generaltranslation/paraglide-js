@@ -4,10 +4,10 @@ import { execUrlPattern } from "./exec-url-pattern.js";
 import { getUrlPattern } from "./url-pattern-cache.js";
 import { getUrlPatternCandidates } from "./url-pattern-index.js";
 import {
-	locales,
-	baseLocale,
-	TREE_SHAKE_DEFAULT_URL_PATTERN_USED,
-	trailingSlash,
+  locales,
+  baseLocale,
+  TREE_SHAKE_DEFAULT_URL_PATTERN_USED,
+  trailingSlash,
 } from "./variables.js";
 
 /**
@@ -54,89 +54,89 @@ import {
  *   The order follows each input URL with all its locale variants before moving to the next URL.
  */
 export function generateStaticLocalizedUrls(urls) {
-	/** @type {Set<URL>} */
-	const localizedUrls = new Set();
+  /** @type {Set<URL>} */
+  const localizedUrls = new Set();
 
-	// For default URL pattern, we can optimize the generation
-	if (TREE_SHAKE_DEFAULT_URL_PATTERN_USED) {
-		for (const urlInput of urls) {
-			const originalUrl =
-				urlInput instanceof URL
-					? urlInput
-					: new URL(urlInput, "http://localhost");
-			const url =
-				trailingSlash === undefined
-					? originalUrl
-					: normalizeTrailingSlash(new URL(originalUrl));
+  // For default URL pattern, we can optimize the generation
+  if (TREE_SHAKE_DEFAULT_URL_PATTERN_USED) {
+    for (const urlInput of urls) {
+      const originalUrl =
+        urlInput instanceof URL
+          ? urlInput
+          : new URL(urlInput, "http://localhost");
+      const url =
+        trailingSlash === undefined
+          ? originalUrl
+          : normalizeTrailingSlash(new URL(originalUrl));
 
-			// Base locale doesn't get a prefix
-			localizedUrls.add(url);
+      // Base locale doesn't get a prefix
+      localizedUrls.add(url);
 
-			// Other locales get their code as prefix
-			for (const locale of locales) {
-				if (locale !== baseLocale) {
-					const localizedPath = `/${locale}${url.pathname}${url.search}${url.hash}`;
-					const localizedUrl = new URL(localizedPath, url.origin);
-					localizedUrls.add(normalizeTrailingSlash(localizedUrl));
-				}
-			}
-		}
-		return Array.from(localizedUrls);
-	}
+      // Other locales get their code as prefix
+      for (const locale of locales) {
+        if (locale !== baseLocale) {
+          const localizedPath = `/${locale}${url.pathname}${url.search}${url.hash}`;
+          const localizedUrl = new URL(localizedPath, url.origin);
+          localizedUrls.add(normalizeTrailingSlash(localizedUrl));
+        }
+      }
+    }
+    return Array.from(localizedUrls);
+  }
 
-	// For custom URL patterns, we need to use localizeUrl for each URL and locale
-	for (const urlInput of urls) {
-		const originalUrl =
-			urlInput instanceof URL
-				? urlInput
-				: new URL(urlInput, "http://localhost");
-		const url = normalizeTrailingSlash(new URL(originalUrl));
+  // For custom URL patterns, we need to use localizeUrl for each URL and locale
+  for (const urlInput of urls) {
+    const originalUrl =
+      urlInput instanceof URL
+        ? urlInput
+        : new URL(urlInput, "http://localhost");
+    const url = normalizeTrailingSlash(new URL(originalUrl));
 
-		// Try each URL pattern to find one that matches
-		let patternFound = false;
-		for (const pattern of getUrlPatternCandidates(url)) {
-			try {
-				// Try to match the unlocalized pattern
-				const unlocalizedMatch = execUrlPattern(
-					getUrlPattern(pattern.pattern, url),
-					url
-				);
+    // Try each URL pattern to find one that matches
+    let patternFound = false;
+    for (const pattern of getUrlPatternCandidates(url)) {
+      try {
+        // Try to match the unlocalized pattern
+        const unlocalizedMatch = execUrlPattern(
+          getUrlPattern(pattern.pattern, url),
+          url
+        );
 
-				if (!unlocalizedMatch) continue;
+        if (!unlocalizedMatch) continue;
 
-				patternFound = true;
+        patternFound = true;
 
-				// Track unique localized URLs to avoid duplicates when patterns are the same
-				const seenUrls = new Set();
+        // Track unique localized URLs to avoid duplicates when patterns are the same
+        const seenUrls = new Set();
 
-				// Generate localized URL for each locale
-				for (const [locale] of pattern.localized) {
-					try {
-						const localizedUrl = localizeUrl(url, { locale });
-						const urlString = localizedUrl.href;
+        // Generate localized URL for each locale
+        for (const [locale] of pattern.localized) {
+          try {
+            const localizedUrl = localizeUrl(url, { locale });
+            const urlString = localizedUrl.href;
 
-						// Only add if we haven't seen this exact URL before
-						if (!seenUrls.has(urlString)) {
-							seenUrls.add(urlString);
-							localizedUrls.add(localizedUrl);
-						}
-					} catch {
-						// Skip if localization fails for this locale
-						continue;
-					}
-				}
-				break;
-			} catch {
-				// Skip if pattern matching fails
-				continue;
-			}
-		}
+            // Only add if we haven't seen this exact URL before
+            if (!seenUrls.has(urlString)) {
+              seenUrls.add(urlString);
+              localizedUrls.add(localizedUrl);
+            }
+          } catch {
+            // Skip if localization fails for this locale
+            continue;
+          }
+        }
+        break;
+      } catch {
+        // Skip if pattern matching fails
+        continue;
+      }
+    }
 
-		// If no pattern matched, use the URL as is
-		if (!patternFound) {
-			localizedUrls.add(originalUrl);
-		}
-	}
+    // If no pattern matched, use the URL as is
+    if (!patternFound) {
+      localizedUrls.add(originalUrl);
+    }
+  }
 
-	return Array.from(localizedUrls);
+  return Array.from(localizedUrls);
 }

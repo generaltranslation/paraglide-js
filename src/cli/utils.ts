@@ -25,30 +25,30 @@ import nodePath from "node:path";
  * ```
  */
 export type CliStep<In extends object, Out> = <Ctx extends In>(
-	ctx: Ctx
+  ctx: Ctx
 ) => Promise<Ctx & Out>;
 
 /**
  * Wrapper to exit the process if the user presses CTRL+C.
  */
 export const prompt: typeof consola.prompt = async (message, options) => {
-	const response = await consola.prompt(message, options);
-	if (response?.toString() === "Symbol(clack:cancel)") {
-		process.exit(0);
-	}
-	return response;
+  const response = await consola.prompt(message, options);
+  if (response?.toString() === "Symbol(clack:cancel)") {
+    process.exit(0);
+  }
+  return response;
 };
 
 export const promptSelection = async <T extends string>(
-	message: string,
-	options: { initial?: T; options: { label: string; value: T }[] } = {
-		options: [],
-	}
+  message: string,
+  options: { initial?: T; options: { label: string; value: T }[] } = {
+    options: [],
+  }
 ): Promise<T> => {
-	return prompt(message, {
-		type: "select",
-		...options,
-	}) as unknown as Promise<T>;
+  return prompt(message, {
+    type: "select",
+    ...options,
+  }) as unknown as Promise<T>;
 };
 
 /**
@@ -60,15 +60,15 @@ export const promptSelection = async <T extends string>(
  *   toRelativeDisplayPath("/app", "/app/src/paraglide") // "src/paraglide"
  */
 export function toRelativeDisplayPath(root: string, path: string): string {
-	return nodePath
-		.relative(root, nodePath.resolve(root, path))
-		.split(nodePath.sep)
-		.join("/");
+  return nodePath
+    .relative(root, nodePath.resolve(root, path))
+    .split(nodePath.sep)
+    .join("/");
 }
 
 /** Quote package-script arguments containing shell metacharacters. */
 export function shellArgument(value: string): string {
-	return /^[A-Za-z0-9_./-]+$/.test(value)
-		? value
-		: "'" + value.replaceAll("'", `'"'"'`) + "'";
+  return /^[A-Za-z0-9_./-]+$/.test(value)
+    ? value
+    : "'" + value.replaceAll("'", `'"'"'`) + "'";
 }

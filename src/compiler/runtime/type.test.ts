@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
 import {
-	createProject as typescriptProject,
-	ts,
-	type ProjectOptions,
+  createProject as typescriptProject,
+  ts,
+  type ProjectOptions,
 } from "@ts-morph/bootstrap";
 import { createRuntimeFile } from "./create-runtime.js";
 import fs from "node:fs";
@@ -14,150 +14,150 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const superStrictRuleOutAnyErrorTsSettings: ProjectOptions["compilerOptions"] =
-	{
-		outDir: "dist",
-		declaration: true,
-		allowJs: true,
-		checkJs: true,
-		noImplicitAny: true,
-		noUnusedLocals: true,
-		noUnusedParameters: true,
-		noImplicitReturns: true,
-		noImplicitThis: true,
-		noUncheckedIndexedAccess: true,
-		noPropertyAccessFromIndexSignature: true,
-		module: ts.ModuleKind.Node16,
-		strict: true,
-	};
+  {
+    outDir: "dist",
+    declaration: true,
+    allowJs: true,
+    checkJs: true,
+    noImplicitAny: true,
+    noUnusedLocals: true,
+    noUnusedParameters: true,
+    noImplicitReturns: true,
+    noImplicitThis: true,
+    noUncheckedIndexedAccess: true,
+    noPropertyAccessFromIndexSignature: true,
+    module: ts.ModuleKind.Node16,
+    strict: true,
+  };
 
 test("createRuntimeFile throws if urlPatterns contains an unknown locale", () => {
-	expect(() =>
-		createRuntimeFile({
-			baseLocale: "en",
-			locales: ["en", "de"],
-			compilerOptions: {
-				...defaultCompilerOptions,
-				urlPatterns: [
-					{
-						pattern: "https://example.com/:path*",
-						localized: [["fr", "https://example.com/fr/:path*"]],
-					},
-				],
-			},
-		})
-	).toThrow(
-		'Invalid locale "fr" in urlPatterns. It must be one of the locales defined in the "locales" array.'
-	);
+  expect(() =>
+    createRuntimeFile({
+      baseLocale: "en",
+      locales: ["en", "de"],
+      compilerOptions: {
+        ...defaultCompilerOptions,
+        urlPatterns: [
+          {
+            pattern: "https://example.com/:path*",
+            localized: [["fr", "https://example.com/fr/:path*"]],
+          },
+        ],
+      },
+    })
+  ).toThrow(
+    'Invalid locale "fr" in urlPatterns. It must be one of the locales defined in the "locales" array.'
+  );
 });
 
 test("createRuntimeFile throws if cookieSameSite is 'none' without cookieSecure", () => {
-	const create = (cookieSecure?: boolean | "auto") =>
-		createRuntimeFile({
-			baseLocale: "en",
-			locales: ["en", "de"],
-			compilerOptions: {
-				...defaultCompilerOptions,
-				cookieSameSite: "none",
-				cookieSecure,
-			},
-		});
+  const create = (cookieSecure?: boolean | "auto") =>
+    createRuntimeFile({
+      baseLocale: "en",
+      locales: ["en", "de"],
+      compilerOptions: {
+        ...defaultCompilerOptions,
+        cookieSameSite: "none",
+        cookieSecure,
+      },
+    });
 
-	expect(() => create()).toThrow(
-		'cookieSameSite "none" requires cookieSecure to be true or "auto". Browsers reject SameSite=None cookies without the Secure attribute.'
-	);
-	expect(() => create(false)).toThrow();
-	expect(() => create(true)).not.toThrow();
-	expect(() => create("auto")).not.toThrow();
+  expect(() => create()).toThrow(
+    'cookieSameSite "none" requires cookieSecure to be true or "auto". Browsers reject SameSite=None cookies without the Secure attribute.'
+  );
+  expect(() => create(false)).toThrow();
+  expect(() => create(true)).not.toThrow();
+  expect(() => create("auto")).not.toThrow();
 });
 
 test("runtime with cookie attributes passes checkJs", async () => {
-	const project = await typescriptProject({
-		useInMemoryFileSystem: true,
-		compilerOptions: superStrictRuleOutAnyErrorTsSettings,
-	});
+  const project = await typescriptProject({
+    useInMemoryFileSystem: true,
+    compilerOptions: superStrictRuleOutAnyErrorTsSettings,
+  });
 
-	project.createSourceFile(
-		"./runtime.js",
-		createRuntimeFile({
-			baseLocale: "en",
-			locales: ["en", "de"],
-			compilerOptions: {
-				...defaultCompilerOptions,
-				cookieSameSite: "lax",
-				cookieSecure: "auto",
-			},
-		})
-	);
+  project.createSourceFile(
+    "./runtime.js",
+    createRuntimeFile({
+      baseLocale: "en",
+      locales: ["en", "de"],
+      compilerOptions: {
+        ...defaultCompilerOptions,
+        cookieSameSite: "lax",
+        cookieSecure: "auto",
+      },
+    })
+  );
 
-	const diagnostics = ts
-		.getPreEmitDiagnostics(project.createProgram())
-		.map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"));
+  const diagnostics = ts
+    .getPreEmitDiagnostics(project.createProgram())
+    .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"));
 
-	expect(diagnostics).toEqual([]);
+  expect(diagnostics).toEqual([]);
 });
 
 test("cookie cache clearer remains internal in the generated runtime", () => {
-	const jsdocRuntime = createRuntimeFile({
-		baseLocale: "en",
-		locales: ["en", "de"],
-		compilerOptions: {
-			...defaultCompilerOptions,
-			strategy: ["cookie", "baseLocale"],
-		},
-	});
+  const jsdocRuntime = createRuntimeFile({
+    baseLocale: "en",
+    locales: ["en", "de"],
+    compilerOptions: {
+      ...defaultCompilerOptions,
+      strategy: ["cookie", "baseLocale"],
+    },
+  });
 
-	expect(jsdocRuntime).toContain("function clearLocaleCookieCache");
-	expect(jsdocRuntime).not.toContain("export function clearLocaleCookieCache");
+  expect(jsdocRuntime).toContain("function clearLocaleCookieCache");
+  expect(jsdocRuntime).not.toContain("export function clearLocaleCookieCache");
 });
 
 test("import statements in JSDoc examples survive in the generated runtime", () => {
-	const runtime = createRuntimeFile({
-		baseLocale: "en",
-		locales: ["en", "de"],
-		compilerOptions: defaultCompilerOptions,
-	});
+  const runtime = createRuntimeFile({
+    baseLocale: "en",
+    locales: ["en", "de"],
+    compilerOptions: defaultCompilerOptions,
+  });
 
-	expect(runtime).toContain(
-		` *   import { m } from './messages.js'\n *   m.hello({ name: 'world' }, { locale: "en" })`
-	);
-	expect(runtime).not.toMatch(/^\s*import\s/m);
+  expect(runtime).toContain(
+    ` *   import { m } from './messages.js'\n *   m.hello({ name: 'world' }, { locale: "en" })`
+  );
+  expect(runtime).not.toMatch(/^\s*import\s/m);
 });
 
 test.each(["JSDoc", "declarations"])(
-	"URL helpers accept readonly URLs through generated %s",
-	async (mode) => {
-		let project = await typescriptProject({
-			useInMemoryFileSystem: true,
-			compilerOptions: superStrictRuleOutAnyErrorTsSettings,
-		});
-		project.createSourceFile(
-			"./runtime.js",
-			createRuntimeFile({
-				baseLocale: "en",
-				locales: ["en", "de"],
-				compilerOptions: defaultCompilerOptions,
-			})
-		);
-		if (mode === "declarations") {
-			let declaration = "";
-			project.createProgram().emit(
-				undefined,
-				(name, content) => {
-					if (name.endsWith("runtime.d.ts")) declaration = content;
-				},
-				undefined,
-				true
-			);
-			expect(declaration).not.toBe("");
-			project = await typescriptProject({
-				useInMemoryFileSystem: true,
-				compilerOptions: superStrictRuleOutAnyErrorTsSettings,
-			});
-			project.createSourceFile("./runtime.d.ts", declaration);
-		}
-		project.createSourceFile(
-			"./consumer.ts",
-			`import { localizeUrl, deLocalizeUrl } from "./runtime.js";
+  "URL helpers accept readonly URLs through generated %s",
+  async (mode) => {
+    let project = await typescriptProject({
+      useInMemoryFileSystem: true,
+      compilerOptions: superStrictRuleOutAnyErrorTsSettings,
+    });
+    project.createSourceFile(
+      "./runtime.js",
+      createRuntimeFile({
+        baseLocale: "en",
+        locales: ["en", "de"],
+        compilerOptions: defaultCompilerOptions,
+      })
+    );
+    if (mode === "declarations") {
+      let declaration = "";
+      project.createProgram().emit(
+        undefined,
+        (name, content) => {
+          if (name.endsWith("runtime.d.ts")) declaration = content;
+        },
+        undefined,
+        true
+      );
+      expect(declaration).not.toBe("");
+      project = await typescriptProject({
+        useInMemoryFileSystem: true,
+        compilerOptions: superStrictRuleOutAnyErrorTsSettings,
+      });
+      project.createSourceFile("./runtime.d.ts", declaration);
+    }
+    project.createSourceFile(
+      "./consumer.ts",
+      `import { localizeUrl, deLocalizeUrl } from "./runtime.js";
 type ReadonlyURL = Readonly<Omit<URL, "searchParams"> & {
   searchParams: Omit<URLSearchParams, "append" | "delete" | "set" | "sort">;
 }>;
@@ -170,47 +170,47 @@ for (const input of [page.url, new URL("https://example.com"), "https://example.
 deLocalizeUrl({ pathname: "/about" });
 // @ts-expect-error - href must be a string
 localizeUrl({ href: 123 }, { locale: "de" });`
-		);
-		const diagnostics = ts
-			.getPreEmitDiagnostics(project.createProgram())
-			.map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"));
-		expect(diagnostics).toEqual([]);
-	}
+    );
+    const diagnostics = ts
+      .getPreEmitDiagnostics(project.createProgram())
+      .map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n"));
+    expect(diagnostics).toEqual([]);
+  }
 );
 
 test("runtime type", async () => {
-	const project = await typescriptProject({
-		useInMemoryFileSystem: true,
-		compilerOptions: superStrictRuleOutAnyErrorTsSettings,
-	});
+  const project = await typescriptProject({
+    useInMemoryFileSystem: true,
+    compilerOptions: superStrictRuleOutAnyErrorTsSettings,
+  });
 
-	const jsdocRuntime = createRuntimeFile({
-		baseLocale: "en",
-		locales: ["en"],
-		compilerOptions: defaultCompilerOptions,
-	}).replace(
-		'import * as pathToRegexp from "@inlang/paraglide-js/path-to-regexp";',
-		""
-	);
+  const jsdocRuntime = createRuntimeFile({
+    baseLocale: "en",
+    locales: ["en"],
+    compilerOptions: defaultCompilerOptions,
+  }).replace(
+    'import * as pathToRegexp from "@inlang/paraglide-js/path-to-regexp";',
+    ""
+  );
 
-	const file = (path: string) => {
-		return [path, fs.readFileSync(resolve(__dirname, path), "utf-8")!] as const;
-	};
+  const file = (path: string) => {
+    return [path, fs.readFileSync(resolve(__dirname, path), "utf-8")!] as const;
+  };
 
-	project.createSourceFile("./runtime.js", jsdocRuntime);
-	project.createSourceFile(...file("./type.ts"));
-	project.createSourceFile(...file("./ambient.d.ts"));
+  project.createSourceFile("./runtime.js", jsdocRuntime);
+  project.createSourceFile(...file("./type.ts"));
+  project.createSourceFile(...file("./ambient.d.ts"));
 
-	// add the imports for the types in the runtime type
-	for (const name of fs.readdirSync(__dirname)) {
-		if (name.endsWith(".js")) {
-			project.createSourceFile(...file(name));
-		}
-	}
+  // add the imports for the types in the runtime type
+  for (const name of fs.readdirSync(__dirname)) {
+    if (name.endsWith(".js")) {
+      project.createSourceFile(...file(name));
+    }
+  }
 
-	project.createSourceFile(
-		"./test.ts",
-		`
+  project.createSourceFile(
+    "./test.ts",
+    `
     import * as runtime from "./runtime.js"
     import type { Runtime } from "./type.js"
 
@@ -250,16 +250,16 @@ test("runtime type", async () => {
 
 		console.log(a)
     `
-	);
+  );
 
-	const program = project.createProgram();
-	const diagnostics = ts
-		.getPreEmitDiagnostics(program)
-		// ignore 'export' modifier cannot be applied to ambient modules and module augmentations since they are always visible. /ambient.d.ts
-		.filter((d) => d.code !== 2668)
-		.filter((d) => d.messageText.toString().includes("path-to-regexp"));
-	for (const diagnostic of diagnostics) {
-		console.error(diagnostic.messageText, diagnostic.file?.fileName);
-	}
-	expect(diagnostics.length).toEqual(0);
+  const program = project.createProgram();
+  const diagnostics = ts
+    .getPreEmitDiagnostics(program)
+    // ignore 'export' modifier cannot be applied to ambient modules and module augmentations since they are always visible. /ambient.d.ts
+    .filter((d) => d.code !== 2668)
+    .filter((d) => d.messageText.toString().includes("path-to-regexp"));
+  for (const diagnostic of diagnostics) {
+    console.error(diagnostic.messageText, diagnostic.file?.fileName);
+  }
+  expect(diagnostics.length).toEqual(0);
 });

@@ -6,9 +6,9 @@
  * directory, including locales which differ only by punctuation or Unicode.
  */
 export function getPerLocaleBuildLocaleId(locale: string): string {
-	const readable = locale.replace(/[^A-Za-z0-9_-]/g, "_") || "locale";
-	const hex = Array.from(new TextEncoder().encode(locale), (byte) =>
-		byte.toString(16).padStart(2, "0")
-	).join("");
-	return `${readable}-${hex}`;
+  const readable = locale.replace(/[^A-Za-z0-9_-]/g, "_") || "locale";
+  const hex = Array.from(new TextEncoder().encode(locale), (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("");
+  return `${readable}-${hex}`;
 }

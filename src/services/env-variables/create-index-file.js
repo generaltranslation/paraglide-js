@@ -14,12 +14,12 @@ import path from "node:path";
 const dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 const packageJson = JSON.parse(
-	await fs.readFile(path.resolve(dirname, "../../../package.json"), "utf-8")
+  await fs.readFile(path.resolve(dirname, "../../../package.json"), "utf-8")
 );
 
 await fs.writeFile(
-	dirname + "/index.ts",
-	`
+  dirname + "/index.ts",
+  `
 export const ENV_VARIABLES = {
 	PARJS_PACKAGE_VERSION: ${ifDefined(packageJson.version)},
 }
@@ -34,5 +34,5 @@ export const ENV_VARIABLES = {
  * @returns {string | undefined}
  */
 function ifDefined(value) {
-	return value ? `"${value}"` : undefined;
+  return value ? `"${value}"` : undefined;
 }

@@ -106,7 +106,7 @@ effectiveRequestUrl.protocol = "https:";
 effectiveRequestUrl.host = "app.example.com";
 
 return paraglideMiddleware(request, ({ request }) => resolve(request), {
-	effectiveRequestUrl,
+  effectiveRequestUrl,
 });
 ```
 
@@ -126,9 +126,9 @@ import { paraglideMiddleware } from "./paraglide/server.js";
 import type { Handle } from "@sveltejs/kit/hooks";
 
 export const handle: Handle = ({ event, resolve }) => {
-	return paraglideMiddleware(event.request, ({ request, locale }) => {
-		return resolve({ ...event, request });
-	});
+  return paraglideMiddleware(event.request, ({ request, locale }) => {
+    return resolve({ ...event, request });
+  });
 };
 ```
 
@@ -140,9 +140,9 @@ import { paraglideMiddleware } from "./paraglide/server.js";
 import { NextResponse } from "next/server";
 
 export async function middleware(request: Request) {
-	return paraglideMiddleware(request, async ({ request, locale }) => {
-		return NextResponse.next();
-	});
+  return paraglideMiddleware(request, async ({ request, locale }) => {
+    return NextResponse.next();
+  });
 }
 ```
 
@@ -154,7 +154,7 @@ import { paraglideMiddleware } from "./paraglide/server.js";
 import { defineMiddleware } from "astro:middleware";
 
 export const onRequest = defineMiddleware((context, next) => {
-	return paraglideMiddleware(context.request, ({ request }) => next(request));
+  return paraglideMiddleware(context.request, ({ request }) => next(request));
 });
 ```
 
@@ -169,10 +169,10 @@ import { paraglideMiddleware } from "./paraglide/server.js";
 import handler from "@tanstack/react-start/server-entry";
 
 export default {
-	fetch(req: Request): Promise<Response> {
-		// Pass original `req` - NOT the modified `request` from callback
-		return paraglideMiddleware(req, () => handler.fetch(req));
-	},
+  fetch(req: Request): Promise<Response> {
+    // Pass original `req` - NOT the modified `request` from callback
+    return paraglideMiddleware(req, () => handler.fetch(req));
+  },
 };
 ```
 
@@ -185,10 +185,10 @@ import { paraglideMiddleware } from "./paraglide/server.js";
 const app = new Hono();
 
 app.use("*", async (c) => {
-	return paraglideMiddleware(c.req.raw, async ({ request, locale }) => {
-		// Your route handling here
-		return c.text(`Locale: ${locale}`);
-	});
+  return paraglideMiddleware(c.req.raw, async ({ request, locale }) => {
+    // Your route handling here
+    return c.text(`Locale: ${locale}`);
+  });
 });
 
 export default app;
@@ -200,11 +200,11 @@ export default app;
 import { paraglideMiddleware } from "./paraglide/server.js";
 
 export default {
-	async fetch(request: Request): Promise<Response> {
-		return paraglideMiddleware(request, async ({ request, locale }) => {
-			return new Response(`Hello from ${locale}!`);
-		});
-	},
+  async fetch(request: Request): Promise<Response> {
+    return paraglideMiddleware(request, async ({ request, locale }) => {
+      return new Response(`Hello from ${locale}!`);
+    });
+  },
 };
 ```
 
@@ -219,14 +219,14 @@ This is especially useful when public pages are URL-prefixed, but private routes
 
 ```ts
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "cookie", "baseLocale"],
-	routeStrategies: [
-		{ match: "/dashboard/:path(.*)?", strategy: ["cookie", "baseLocale"] },
-		{ match: "/rpc/:path(.*)?", strategy: ["cookie", "baseLocale"] },
-		{ match: "/api/:path(.*)?", exclude: true },
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "cookie", "baseLocale"],
+  routeStrategies: [
+    { match: "/dashboard/:path(.*)?", strategy: ["cookie", "baseLocale"] },
+    { match: "/rpc/:path(.*)?", strategy: ["cookie", "baseLocale"] },
+    { match: "/api/:path(.*)?", exclude: true },
+  ],
 });
 ```
 
@@ -261,7 +261,7 @@ HTTP clients that omit `Sec-Fetch-Dest`, such as `curl`, do not receive redirect
 
 ```ts
 return paraglideMiddleware(request, ({ request }) => resolve(request), {
-	redirect: "navigation",
+  redirect: "navigation",
 });
 ```
 
@@ -320,10 +320,10 @@ Request A (locale: de) ───────────────────
 
 ```ts
 paraglideVitePlugin({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	emitTsDeclarations: true,
-	disableAsyncLocalStorage: true, // Compatibility fallback
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  emitTsDeclarations: true,
+  disableAsyncLocalStorage: true, // Compatibility fallback
 });
 ```
 
@@ -344,10 +344,10 @@ Ensure `getLocale()` is called inside the middleware callback:
 const locale = getLocale(); // Returns server's default locale
 
 app.use((req) => {
-	return paraglideMiddleware(req, ({ locale }) => {
-		// ✅ Correct - inside middleware
-		const locale = getLocale(); // Returns request's locale
-	});
+  return paraglideMiddleware(req, ({ locale }) => {
+    // ✅ Correct - inside middleware
+    const locale = getLocale(); // Returns request's locale
+  });
 });
 ```
 
@@ -400,12 +400,12 @@ Ensure AsyncLocalStorage is enabled (the default):
 
 ```ts
 paraglideVitePlugin({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	emitTsDeclarations: true,
-	// Don't set this to true unless your runtime lacks AsyncLocalStorage
-	// and guarantees per-request isolation
-	// disableAsyncLocalStorage: true,
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  emitTsDeclarations: true,
+  // Don't set this to true unless your runtime lacks AsyncLocalStorage
+  // and guarantees per-request isolation
+  // disableAsyncLocalStorage: true,
 });
 ```
 
@@ -432,9 +432,9 @@ Or set it manually in your server response:
 
 ```ts
 return new Response(body, {
-	headers: {
-		"Set-Cookie": `PARAGLIDE_LOCALE=${locale}; Path=/; Max-Age=31536000`,
-	},
+  headers: {
+    "Set-Cookie": `PARAGLIDE_LOCALE=${locale}; Path=/; Max-Age=31536000`,
+  },
 });
 ```
 
@@ -448,8 +448,8 @@ You can define custom locale detection strategies alongside built-in ones.
 import { defineCustomClientStrategy } from "./paraglide/runtime.js";
 
 defineCustomClientStrategy("custom-sessionStorage", {
-	getLocale: () => sessionStorage.getItem("locale") ?? undefined,
-	setLocale: (locale) => sessionStorage.setItem("locale", locale),
+  getLocale: () => sessionStorage.getItem("locale") ?? undefined,
+  setLocale: (locale) => sessionStorage.setItem("locale", locale),
 });
 ```
 
@@ -460,16 +460,16 @@ import { defineCustomServerStrategy } from "./paraglide/runtime.js";
 
 // Sync example
 defineCustomServerStrategy("custom-header", {
-	getLocale: (request) => request?.headers.get("X-Locale") ?? undefined,
+  getLocale: (request) => request?.headers.get("X-Locale") ?? undefined,
 });
 
 // Async example (database lookup)
 defineCustomServerStrategy("custom-database", {
-	getLocale: async (request) => {
-		const userId = extractUserId(request);
-		if (!userId) return undefined;
-		return await getUserLocaleFromDB(userId);
-	},
+  getLocale: async (request) => {
+    const userId = extractUserId(request);
+    if (!userId) return undefined;
+    return await getUserLocaleFromDB(userId);
+  },
 });
 ```
 
@@ -477,10 +477,10 @@ defineCustomServerStrategy("custom-database", {
 
 ```ts
 paraglideVitePlugin({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	emitTsDeclarations: true,
-	strategy: ["custom-header", "url", "cookie", "baseLocale"],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  emitTsDeclarations: true,
+  strategy: ["custom-header", "url", "cookie", "baseLocale"],
 });
 ```
 

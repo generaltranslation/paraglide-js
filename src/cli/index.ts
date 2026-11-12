@@ -4,8 +4,8 @@ import { ENV_VARIABLES } from "../services/env-variables/index.js";
 import { initCommand } from "./commands/init/definition.js";
 
 export const cli = new Command()
-	.name("paraglide-js")
-	.addCommand(compileCommand)
-	.addCommand(initCommand)
-	.showHelpAfterError()
-	.version(ENV_VARIABLES.PARJS_PACKAGE_VERSION);
+  .name("paraglide-js")
+  .addCommand(compileCommand)
+  .addCommand(initCommand)
+  .showHelpAfterError()
+  .version(ENV_VARIABLES.PARJS_PACKAGE_VERSION);
