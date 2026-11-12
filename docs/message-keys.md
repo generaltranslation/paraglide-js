@@ -96,8 +96,8 @@ Give independently evolving messages their own IDs, even when their current sour
 
 ```json
 {
-	"calm_green_otter": "OK",
-	"bright_coral_fox": "OK"
+  "calm_green_otter": "OK",
+  "bright_coral_fox": "OK"
 }
 ```
 
@@ -138,9 +138,9 @@ If you have existing messages with dot notation, access them with bracket notati
 ```json
 // messages/en.json
 {
-	"nav.home": "Home",
-	"nav.about": "About",
-	"nav.contact": "Contact"
+  "nav.home": "Home",
+  "nav.about": "About",
+  "nav.contact": "Contact"
 }
 ```
 
@@ -168,11 +168,11 @@ New random human-readable keys are naturally flat:
 ```json
 // messages/en.json
 {
-	"calm_green_otter": "Home",
-	"bright_coral_fox": "About",
-	"swift_amber_deer": "Contact",
-	"quiet_violet_whale": "Privacy Policy",
-	"gentle_silver_owl": "Terms of Service"
+  "calm_green_otter": "Home",
+  "bright_coral_fox": "About",
+  "swift_amber_deer": "Contact",
+  "quiet_violet_whale": "Privacy Policy",
+  "gentle_silver_owl": "Terms of Service"
 }
 ```
 
@@ -196,19 +196,19 @@ For dynamic menu systems, create an explicit mapping from domain values to gener
 import { m } from "./paraglide/messages.js";
 
 const navMessages = {
-	home: m.calm_green_otter,
-	about: m.bright_coral_fox,
-	contact: m.swift_amber_deer,
+  home: m.calm_green_otter,
+  about: m.bright_coral_fox,
+  contact: m.swift_amber_deer,
 } as const;
 
 const menuItems = [
-	{ key: "home", href: "/" },
-	{ key: "about", href: "/about" },
+  { key: "home", href: "/" },
+  { key: "about", href: "/about" },
 ] as const;
 
 menuItems.forEach((item) => {
-	const label = navMessages[item.key]();
-	console.log(`<a href="${item.href}">${label}</a>`);
+  const label = navMessages[item.key]();
+  console.log(`<a href="${item.href}">${label}</a>`);
 });
 ```
 

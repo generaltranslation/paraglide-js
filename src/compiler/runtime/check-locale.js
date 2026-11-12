@@ -16,12 +16,12 @@ var localesByLowerCase;
  * @returns {Locale | undefined}
  */
 export function toLocale(value) {
-	if (typeof value !== "string") {
-		return undefined;
-	}
+  if (typeof value !== "string") {
+    return undefined;
+  }
 
-	localesByLowerCase ??= mapLocalesByLowerCase();
-	return localesByLowerCase.get(value.toLowerCase());
+  localesByLowerCase ??= mapLocalesByLowerCase();
+  return localesByLowerCase.get(value.toLowerCase());
 }
 
 /**
@@ -30,12 +30,12 @@ export function toLocale(value) {
  * @returns {Map<string, Locale>}
  */
 function mapLocalesByLowerCase() {
-	const map = new Map();
-	for (const locale of locales) {
-		const lowerCase = locale.toLowerCase();
-		if (!map.has(lowerCase)) map.set(lowerCase, locale);
-	}
-	return map;
+  const map = new Map();
+  for (const locale of locales) {
+    const lowerCase = locale.toLowerCase();
+    if (!map.has(lowerCase)) map.set(lowerCase, locale);
+  }
+  return map;
 }
 
 /**
@@ -54,7 +54,7 @@ function mapLocalesByLowerCase() {
  * @returns {locale is Locale}
  */
 export function isLocale(locale) {
-	return !!locale && locales.some((item) => item === locale);
+  return !!locale && locales.some((item) => item === locale);
 }
 
 /**
@@ -65,9 +65,9 @@ export function isLocale(locale) {
  * @throws {Error} If the input is not a locale.
  */
 export function assertIsLocale(input) {
-	const locale = toLocale(input);
-	if (locale) return locale;
-	throw new Error(
-		`Invalid locale: ${input}. Expected one of: ${locales.join(", ")}`
-	);
+  const locale = toLocale(input);
+  if (locale) return locale;
+  throw new Error(
+    `Invalid locale: ${input}. Expected one of: ${locales.join(", ")}`
+  );
 }

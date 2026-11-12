@@ -53,13 +53,13 @@ All bundler plugins are exported from `@inlang/paraglide-js`:
 
 ```ts
 import {
-	paraglideVitePlugin,
-	paraglideWebpackPlugin,
-	paraglideRollupPlugin,
-	paraglideRspackPlugin,
-	paraglideRolldownPlugin,
-	paraglideEsbuildPlugin,
-	// ... and more plugins supported by unplugin
+  paraglideVitePlugin,
+  paraglideWebpackPlugin,
+  paraglideRollupPlugin,
+  paraglideRspackPlugin,
+  paraglideRolldownPlugin,
+  paraglideEsbuildPlugin,
+  // ... and more plugins supported by unplugin
 } from "@inlang/paraglide-js";
 ```
 
@@ -78,13 +78,13 @@ import { defineConfig } from "vite";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 
 export default defineConfig({
-	plugins: [
-		paraglideVitePlugin({
-			project: "./project.inlang",
-			outdir: "./src/paraglide",
-			emitTsDeclarations: true,
-		}),
-	],
+  plugins: [
+    paraglideVitePlugin({
+      project: "./project.inlang",
+      outdir: "./src/paraglide",
+      emitTsDeclarations: true,
+    }),
+  ],
 });
 ```
 
@@ -102,8 +102,8 @@ compilation or the Paraglide configuration is invalid, enable `devErrorResponse`
 
 ```ts
 paraglideVitePlugin({
-	project: "./project.inlang",
-	devErrorResponse: true,
+  project: "./project.inlang",
+  devErrorResponse: true,
 });
 ```
 
@@ -134,9 +134,9 @@ locale:
 
 ```ts
 paraglideVitePlugin({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	experimentalPerLocaleBuild: true,
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  experimentalPerLocaleBuild: true,
 });
 ```
 
@@ -166,10 +166,10 @@ select `message-modules` so Vite can keep each page's messages with that page:
 
 ```ts
 paraglideVitePlugin({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	experimentalPerLocaleBuild: true,
-	outputStructure: "message-modules",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  experimentalPerLocaleBuild: true,
+  outputStructure: "message-modules",
 });
 ```
 
@@ -198,13 +198,13 @@ can compose with them. See the
 const { paraglideWebpackPlugin } = require("@inlang/paraglide-js");
 
 module.exports = {
-	plugins: [
-		paraglideWebpackPlugin({
-			project: "./project.inlang",
-			outdir: "./src/paraglide",
-			emitTsDeclarations: true,
-		}),
-	],
+  plugins: [
+    paraglideWebpackPlugin({
+      project: "./project.inlang",
+      outdir: "./src/paraglide",
+      emitTsDeclarations: true,
+    }),
+  ],
 };
 ```
 
@@ -215,13 +215,13 @@ module.exports = {
 import { paraglideRollupPlugin } from "@inlang/paraglide-js";
 
 export default {
-	plugins: [
-		paraglideRollupPlugin({
-			project: "./project.inlang",
-			outdir: "./src/paraglide",
-			emitTsDeclarations: true,
-		}),
-	],
+  plugins: [
+    paraglideRollupPlugin({
+      project: "./project.inlang",
+      outdir: "./src/paraglide",
+      emitTsDeclarations: true,
+    }),
+  ],
 };
 ```
 
@@ -233,9 +233,9 @@ If you disable declaration emission, enable TypeScript support for the generated
 
 ```json
 {
-	"compilerOptions": {
-		"allowJs": true
-	}
+  "compilerOptions": {
+    "allowJs": true
+  }
 }
 ```
 
@@ -251,9 +251,9 @@ Or via bundler plugin / programmatic API:
 
 ```ts
 paraglideVitePlugin({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	emitTsDeclarations: true,
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  emitTsDeclarations: true,
 });
 ```
 
@@ -298,11 +298,11 @@ Large projects can reduce file creation and repeated generated code by grouping 
 
 ```ts
 await compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	outputStructure: "message-modules",
-	messageModuleSize: 512,
-	emitTsDeclarations: true,
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  outputStructure: "message-modules",
+  messageModuleSize: 512,
+  emitTsDeclarations: true,
 });
 ```
 
@@ -329,9 +329,9 @@ The Paraglide compiler can be invoked programmatically via the `compile` functio
 import { compile } from "@inlang/paraglide-js";
 
 await compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	emitTsDeclarations: true,
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  emitTsDeclarations: true,
 });
 ```
 
@@ -356,11 +356,11 @@ import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 const inlangProject = await loadProjectFromDirectory({
-	path: "./project.inlang",
+  path: "./project.inlang",
 });
 
 const output = await compileProject({
-	project: inlangProject,
+  project: inlangProject,
 });
 
 // Write files to a custom location
@@ -368,7 +368,7 @@ const outdir = "./custom/paraglide";
 await mkdir(outdir, { recursive: true });
 
 for (const [filename, content] of Object.entries(output)) {
-	await writeFile(join(outdir, filename), content);
+  await writeFile(join(outdir, filename), content);
 }
 ```
 

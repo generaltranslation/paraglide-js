@@ -1,12 +1,12 @@
 {
-	"$schema": "https://unpkg.com/@changesets/config@2.3.0/schema.json",
-	"changelog": "@changesets/cli/changelog",
-	"commit": false,
-	"access": "public",
-	"baseBranch": "main",
-	"bumpVersionsWithWorkspaceProtocolOnly": true,
-	"___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
-		"onlyUpdatePeerDependentsWhenOutOfRange": true
-	},
-	"ignore": ["@inlang/paraglide-js-example-*", "@inlang/paraglide-js-benchmark"]
+  "$schema": "https://unpkg.com/@changesets/config@2.3.0/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "access": "public",
+  "baseBranch": "main",
+  "bumpVersionsWithWorkspaceProtocolOnly": true,
+  "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+    "onlyUpdatePeerDependentsWhenOutOfRange": true
+  },
+  "ignore": ["@inlang/paraglide-js-example-*", "@inlang/paraglide-js-benchmark"]
 }

@@ -10,12 +10,12 @@ import { serverAsyncLocalStorage } from "./variables.js";
  * @type {() => string}
  */
 export let getUrlOrigin = () => {
-	if (serverAsyncLocalStorage) {
-		return serverAsyncLocalStorage.getStore()?.origin ?? "http://fallback.com";
-	} else if (typeof window !== "undefined") {
-		return window.location.origin;
-	}
-	return "http://fallback.com";
+  if (serverAsyncLocalStorage) {
+    return serverAsyncLocalStorage.getStore()?.origin ?? "http://fallback.com";
+  } else if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return "http://fallback.com";
 };
 
 /**
@@ -27,5 +27,5 @@ export let getUrlOrigin = () => {
  * @param {() => string} fn - The new implementation for `getUrlOrigin()`.
  */
 export let overwriteGetUrlOrigin = (fn) => {
-	getUrlOrigin = fn;
+  getUrlOrigin = fn;
 };

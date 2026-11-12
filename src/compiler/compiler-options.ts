@@ -1,438 +1,438 @@
 import type { Runtime } from "./runtime/type.js";
 
 export type RouteStrategy =
-	| {
-			/**
-			 * URLPattern-compatible matcher.
-			 */
-			match: string;
-			/**
-			 * Strategy override for matching requests.
-			 */
-			strategy: Runtime["strategy"];
-			/**
-			 * Prevent mutually exclusive configuration (`exclude` + `strategy`).
-			 */
-			exclude?: never;
-	  }
-	| {
-			/**
-			 * URLPattern-compatible matcher.
-			 */
-			match: string;
-			/**
-			 * Exclude matching requests from i18n middleware behavior.
-			 */
-			exclude: true;
-			/**
-			 * Prevent mutually exclusive configuration (`exclude` + `strategy`).
-			 */
-			strategy?: never;
-	  };
+  | {
+      /**
+       * URLPattern-compatible matcher.
+       */
+      match: string;
+      /**
+       * Strategy override for matching requests.
+       */
+      strategy: Runtime["strategy"];
+      /**
+       * Prevent mutually exclusive configuration (`exclude` + `strategy`).
+       */
+      exclude?: never;
+    }
+  | {
+      /**
+       * URLPattern-compatible matcher.
+       */
+      match: string;
+      /**
+       * Exclude matching requests from i18n middleware behavior.
+       */
+      exclude: true;
+      /**
+       * Prevent mutually exclusive configuration (`exclude` + `strategy`).
+       */
+      strategy?: never;
+    };
 
 export const defaultCompilerOptions = {
-	outputStructure: "message-modules",
-	emitGitIgnore: true,
-	includeEslintDisableComment: true,
-	emitPrettierIgnore: true,
-	emitReadme: true,
-	emitTsDeclarations: false,
-	cleanOutdir: true,
-	disableAsyncLocalStorage: false,
-	lazyUrlPatternPolyfill: false,
-	localStorageKey: "PARAGLIDE_LOCALE",
-	isServer: "typeof window === 'undefined'",
-	isDevelopment: "true",
-	strategy: ["cookie", "globalVariable", "baseLocale"],
-	cookieName: "PARAGLIDE_LOCALE",
-	cookieMaxAge: 60 * 60 * 24 * 400,
-	cookieDomain: "",
+  outputStructure: "message-modules",
+  emitGitIgnore: true,
+  includeEslintDisableComment: true,
+  emitPrettierIgnore: true,
+  emitReadme: true,
+  emitTsDeclarations: false,
+  cleanOutdir: true,
+  disableAsyncLocalStorage: false,
+  lazyUrlPatternPolyfill: false,
+  localStorageKey: "PARAGLIDE_LOCALE",
+  isServer: "typeof window === 'undefined'",
+  isDevelopment: "true",
+  strategy: ["cookie", "globalVariable", "baseLocale"],
+  cookieName: "PARAGLIDE_LOCALE",
+  cookieMaxAge: 60 * 60 * 24 * 400,
+  cookieDomain: "",
 } as const satisfies Partial<CompilerOptions>;
 
 export type CompilerOptions = {
-	/**
-	 * The path to the inlang project.
-	 *
-	 * @example
-	 * ```diff
-	 * await compile({
-	 * + project: "./project.inlang",
-	 *   outdir: "./src/paraglide"
-	 * })
-	 * ```
-	 */
-	project: string;
-	/**
-	 * The path to the output directory.
-	 *
-	 * @example
-	 * ```diff
-	 * await compile({
-	 *   project: "./project.inlang",
-	 * + outdir: "./src/paraglide"
-	 * })
-	 * ```
-	 */
-	outdir: string;
-	/**
-	 * The strategy to use for getting the locale.
-	 *
-	 * The order of the strategy defines the precedence of matches.
-	 *
-	 * For example, in `['url', 'cookie', 'baseLocale']`, the locale will be
-	 * first tried to be detected in the url, then in a cookie, and finally
-	 * fallback to the base locale.
-	 *
-	 * The default ensures that the browser takes a cookie approach,
-	 * server-side takes the globalVariable (because cookie is unavailable),
-	 * whereas both fallback to the base locale if not available.
-	 *
-	 * Custom strategies with the pattern `custom-[A-Za-z0-9_-]+` are supported.
-	 *
-	 * @default ["cookie", "globalVariable", "baseLocale"]
-	 */
-	strategy?: Runtime["strategy"];
-	/**
-	 * Route-level strategy overrides.
-	 *
-	 * Routes are matched in declaration order. The first matching rule wins.
-	 * `match` uses URLPattern syntax.
-	 *
-	 * - `strategy`: Override locale resolution for the matched route.
-	 * - `exclude: true`: Skip i18n middleware behavior for the matched route.
-	 *
-	 * @example
-	 * ```ts
-	 * routeStrategies: [
-	 *   { match: "/dashboard/:path(.*)?", strategy: ["cookie", "baseLocale"] },
-	 *   { match: "/api/:path(.*)?", exclude: true }
-	 * ]
-	 * ```
-	 */
-	routeStrategies?: RouteStrategy[];
-	/**
-	 * The name of the localStorage key to use for the localStorage strategy.
-	 *
-	 * @default 'PARAGLIDE_LOCALE'
-	 */
-	localStorageKey?: string;
-	/**
-	 * Tree-shaking flag if the code is running on the server.
-	 *
-	 * Dependent on the bundler, this flag must be adapted to
-	 * enable tree-shaking.
-	 *
-	 * @example
-	 *   // vite
-	 *   isServer: "import.meta.env.SSR"
-	 *
-	 * @default typeof window === "undefined"
-	 */
-	isServer?: string;
-	/**
-	 * JavaScript expression controlling development-only runtime diagnostics.
-	 *
-	 * Bundler integrations set this for their development and production modes.
-	 * Standalone compilation keeps diagnostics enabled unless explicitly disabled.
-	 * Set to "false" for production output to allow dead-code elimination.
-	 *
-	 * @default "true"
-	 */
-	isDevelopment?: string;
-	/**
-	 * Compile-time locale constant used for per-locale tree-shaking.
-	 *
-	 * This is experimental and opt-in. It should be a JavaScript expression
-	 * (not a quoted literal) that resolves to a locale or `undefined` at build time.
-	 * You can pass a string literal (e.g. `"de"`) for programmatic builds, or an
-	 * injected env/define expression for bundler-driven builds.
-	 *
-	 * High-level flow for per-locale builds:
-	 *
-	 * client request (/)
-	 *         |
-	 *         v
-	 *   +----------------------+
-	 *   | detect locale        |
-	 *   | (cookie/Accept-L)    |
-	 *   | pick build prefix    |
-	 *   +----------------------+
-	 *         | if "de"
-	 *         v
-	 *    serve dist/de/...  <----> serve dist/en/...
-	 *    (HTML + assets)          (HTML + assets)
-	 *
-	 * @see https://github.com/opral/paraglide-js/issues/88#issuecomment-3634754638
-	 *
-	 * @example
-	 *   // Vite define
-	 *   experimentalStaticLocale: "typeof __PARAGLIDE_STATIC_LOCALE__ === 'undefined' ? undefined : __PARAGLIDE_STATIC_LOCALE__"
-	 *
-	 * @example
-	 *   // Programmatic compile (literal)
-	 *   experimentalStaticLocale: '"de"'
-	 */
-	experimentalStaticLocale?: string;
-	/**
-	 * The name of the cookie to use for the cookie strategy.
-	 *
-	 * @default 'PARAGLIDE_LOCALE'
-	 */
-	cookieName?: string;
-	/**
-	 * The max-age in seconds of the cookie until it expires.
-	 *
-	 * @default 60 * 60 * 24 * 400
-	 */
-	cookieMaxAge?: number;
-	/**
-	 * The host to which the cookie will be sent.
-	 * If undefined or empty, the domain attribute is omitted from the cookie, scoping it to the exact current domain only (no subdomains).
-	 * If specified, the cookie will be available to the specified domain and all its subdomains.
-	 *
-	 * Use this when you need cookies to be shared across subdomains (e.g., between `app.example.com` and `api.example.com`).
-	 * The default behavior (no domain) ensures better compatibility with server-side cookies that don't specify a domain attribute.
-	 *
-	 * @example
-	 * ```ts
-	 * // Default: exact domain only (compatible with server-side cookies)
-	 * cookieDomain: undefined // Cookie: "PARAGLIDE_LOCALE=en; path=/; max-age=34560000"
-	 *
-	 * // Subdomain sharing: available across all subdomains
-	 * cookieDomain: "example.com" // Cookie: "PARAGLIDE_LOCALE=en; path=/; max-age=34560000; domain=example.com"
-	 * ```
-	 *
-	 * @default "" (no domain attribute, exact domain only)
-	 */
-	cookieDomain?: string;
-	/**
-	 * The `SameSite` attribute of the cookie.
-	 *
-	 * If undefined, the attribute is omitted and the browser applies its own default.
-	 * Set it when the cookie must match a policy, for example the one a server uses
-	 * when it writes the same cookie with `Set-Cookie`.
-	 *
-	 * `"none"` requires `cookieSecure` to be `true` or `"auto"` because browsers
-	 * reject `SameSite=None` cookies without the `Secure` attribute. With `"auto"`,
-	 * the cookie is still dropped on plain `http://` pages.
-	 *
-	 * @example
-	 * ```ts
-	 * cookieSameSite: "lax" // Cookie: "PARAGLIDE_LOCALE=en; path=/; max-age=34560000; samesite=lax"
-	 * ```
-	 *
-	 * @default undefined (no samesite attribute)
-	 */
-	cookieSameSite?: "lax" | "strict" | "none";
-	/**
-	 * Whether the cookie gets the `Secure` attribute.
-	 *
-	 * - `true` always adds it. Pages served over plain `http://` cannot set a
-	 *   `Secure` cookie, except on `localhost`.
-	 * - `"auto"` adds it only when the page is served over `https:`, so the cookie
-	 *   keeps working on plain `http://` hosts other than localhost, like a LAN IP
-	 *   or an internal staging server. With `cookieSameSite: "none"`, the cookie
-	 *   still needs `https:`.
-	 * - `false` never adds it.
-	 *
-	 * Server code that reads `cookieSecure` from the runtime has to resolve `"auto"`
-	 * itself, for example from the request protocol or `X-Forwarded-Proto`.
-	 *
-	 * @example
-	 * ```ts
-	 * cookieSecure: "auto" // on https: "PARAGLIDE_LOCALE=en; path=/; max-age=34560000; secure"
-	 * ```
-	 *
-	 * @default false
-	 */
-	cookieSecure?: boolean | "auto";
-	/**
-	 * If `emitPrettierIgnore` is set to `true` a `.prettierignore` file will be emitted in the output directory. Defaults to `true`.
-	 *
-	 * ```diff
-	 *   - outdir/
-	 *     - messages/
-	 * +   - .prettierignore
-	 *     - messages.js
-	 *     - runtime.js
-	 * ```
-	 *
-	 * @default true
-	 */
-	emitPrettierIgnore?: boolean;
-	/**
-	 * If `emitReadme` is set to `true` a `README.md` file will be emitted in the output directory. Defaults to `true`.
-	 *
-	 * The README helps LLMs understand the compiled output.
-	 * See https://llmstxt.org/ for format guidelines.
-	 *
-	 * ```diff
-	 *   - outdir/
-	 *     - messages/
-	 * +   - README.md
-	 *     - messages.js
-	 *     - runtime.js
-	 * ```
-	 *
-	 * @default true
-	 */
-	emitReadme?: boolean;
-	/**
-	 * Emit `.d.ts` files directly for the generated output.
-	 *
-	 * Useful when `allowJs: true` cannot be set in your `tsconfig.json`
-	 * (e.g., due to project constraints or conflicting compiler options), or when
-	 * an editor language server caches stale JSDoc types for generated messages.
-	 *
-	 * Declarations are generated from message metadata and runtime declaration
-	 * templates. No TypeScript installation is required.
-	 *
-	 * @example
-	 * ```ts
-	 * await compile({
-	 *   project: "./project.inlang",
-	 *   outdir: "./src/paraglide",
-	 *   emitTsDeclarations: true,
-	 * });
-	 * ```
-	 *
-	 * @default false
-	 */
-	emitTsDeclarations?: boolean;
-	/**
-	 * https://paraglidejs.com/strategy#url
-	 */
-	urlPatterns?: Runtime["urlPatterns"];
-	/**
-	 * Load the URLPattern polyfill only when the target runtime lacks URLPattern.
-	 * Applies when custom `urlPatterns` or `routeStrategies` require matching.
-	 *
-	 * Enabling this emits a conditional top-level `await import(...)`. Requires
-	 * Vite 7+ or another ESM toolchain and runtime supporting top-level await.
-	 * CommonJS and IIFE output are not supported when enabled. Importers wait for
-	 * initialization automatically; routing APIs remain synchronous.
-	 *
-	 * Defaults to a static polyfill import. Built-in default routing without
-	 * route strategies does not include the polyfill in either mode.
-	 *
-	 * @default false
-	 */
-	lazyUrlPatternPolyfill?: boolean;
-	/**
-	 * Controls trailing slash canonicalization for localized URLs.
-	 *
-	 * Canonicalization happens before URL pattern matching and after URL
-	 * localization. If omitted, Paraglide keeps its existing trailing slash
-	 * behavior.
-	 */
-	trailingSlash?: "always" | "never";
-	/**
-	 * Whether to include an eslint-disable comment at the top of each .js file.
-	 *
-	 * @default true
-	 */
-	includeEslintDisableComment?: boolean;
-	/**
-	 * Replaces AsyncLocalStorage with a synchronous implementation.
-	 *
-	 * Leave AsyncLocalStorage enabled by default. This option is a
-	 * compatibility fallback for runtimes that do not provide
-	 * AsyncLocalStorage or `node:async_hooks`.
-	 *
-	 * ⚠️ WARNING: Only use this option when your runtime also guarantees
-	 * request isolation. Disabling AsyncLocalStorage in multi-request
-	 * server environments risks cross-request pollution where state from
-	 * one request could leak into another concurrent request.
-	 */
-	disableAsyncLocalStorage?: boolean;
-	/**
-	 * If `emitGitIgnore` is set to `true` a `.gitignore` file will be emitted in the output directory. Defaults to `true`.
-	 *
-	 * ```diff
-	 *   - outdir/
-	 *     - messages/
-	 * +   - .gitignore
-	 *     - messages.js
-	 *     - runtime.js
-	 * ```
-	 *
-	 * @default true
-	 */
-	emitGitIgnore?: boolean;
-	/**
-	 * The `outputStructure` defines how modules are structured in the output.
-	 *
-	 * - `message-modules` - Each module is a physical message file. Default for the CLI.
-	 * - `virtual-modules` - Individual messages served by Vite, with combined declarations. Default for Vite builds; requires the Vite plugin.
-	 * - `locale-modules` - Each module is a locale.
-	 *
-	 * Vite serve and Vitest use `locale-modules` to reduce HTTP requests. Vite builds
-	 * use `virtual-modules`, keeping public entry points physical while avoiding
-	 * individual message files. Other bundler plugins use `locale-modules` in
-	 * development and `message-modules` in production. Explicit layouts override
-	 * these defaults.
-	 *
-	 * **`message-modules`**
-	 *
-	 * Messages have their own module which eases tree-shaking for bundlers.
-	 *
-	 * ```diff
-	 *   - outdir/
-	 *     - messages/
-	 * +   - blue_elephant_tree/
-	 * +     - index.js
-	 * +     - en.js
-	 * +     - fr.js
-	 * +   - sky_phone_bottle/
-	 * +     - index.js
-	 * +     - en.js
-	 * +     - fr.js
-	 *     - ...
-	 *   - messages.js
-	 *   - runtime.js
-	 * ```
-	 *
-	 * **`locale-modules`**
-	 *
-	 * Messages are bundled in a per locale module. Bundlers often struggle with tree-shaking this structure,
-	 * which can lead to more inefficient tree-shaking and larger bundle sizes compared to `message-modules`.
-	 *
-	 * The benefit are substantially fewer files which is needed in large projects.
-	 *
-	 * ```diff
-	 *   - outdir/
-	 *     - messages/
-	 * +     - de.js
-	 * +     - en.js
-	 * +     - fr.js
-	 *       - ...
-	 *   - messages.js
-	 *   - runtime.js
-	 * ```
-	 *
-	 * @default "message-modules"
-	 */
-	outputStructure?: "locale-modules" | "message-modules" | "virtual-modules";
-	/**
-	 * Messages per generated module in the message-modules layout.
-	 * Values above one group messages into shards and preserve messages.js exports,
-	 * while replacing per-message module paths with shard files. Defaults to one.
-	 * Locale-specialized builds currently require the default value.
-	 *
-	 * @default 1
-	 */
-	messageModuleSize?: number;
-	/**
-	 * Whether to clean the output directory before writing the new files.
-	 *
-	 * @default true
-	 */
-	cleanOutdir?: boolean;
+  /**
+   * The path to the inlang project.
+   *
+   * @example
+   * ```diff
+   * await compile({
+   * + project: "./project.inlang",
+   *   outdir: "./src/paraglide"
+   * })
+   * ```
+   */
+  project: string;
+  /**
+   * The path to the output directory.
+   *
+   * @example
+   * ```diff
+   * await compile({
+   *   project: "./project.inlang",
+   * + outdir: "./src/paraglide"
+   * })
+   * ```
+   */
+  outdir: string;
+  /**
+   * The strategy to use for getting the locale.
+   *
+   * The order of the strategy defines the precedence of matches.
+   *
+   * For example, in `['url', 'cookie', 'baseLocale']`, the locale will be
+   * first tried to be detected in the url, then in a cookie, and finally
+   * fallback to the base locale.
+   *
+   * The default ensures that the browser takes a cookie approach,
+   * server-side takes the globalVariable (because cookie is unavailable),
+   * whereas both fallback to the base locale if not available.
+   *
+   * Custom strategies with the pattern `custom-[A-Za-z0-9_-]+` are supported.
+   *
+   * @default ["cookie", "globalVariable", "baseLocale"]
+   */
+  strategy?: Runtime["strategy"];
+  /**
+   * Route-level strategy overrides.
+   *
+   * Routes are matched in declaration order. The first matching rule wins.
+   * `match` uses URLPattern syntax.
+   *
+   * - `strategy`: Override locale resolution for the matched route.
+   * - `exclude: true`: Skip i18n middleware behavior for the matched route.
+   *
+   * @example
+   * ```ts
+   * routeStrategies: [
+   *   { match: "/dashboard/:path(.*)?", strategy: ["cookie", "baseLocale"] },
+   *   { match: "/api/:path(.*)?", exclude: true }
+   * ]
+   * ```
+   */
+  routeStrategies?: RouteStrategy[];
+  /**
+   * The name of the localStorage key to use for the localStorage strategy.
+   *
+   * @default 'PARAGLIDE_LOCALE'
+   */
+  localStorageKey?: string;
+  /**
+   * Tree-shaking flag if the code is running on the server.
+   *
+   * Dependent on the bundler, this flag must be adapted to
+   * enable tree-shaking.
+   *
+   * @example
+   *   // vite
+   *   isServer: "import.meta.env.SSR"
+   *
+   * @default typeof window === "undefined"
+   */
+  isServer?: string;
+  /**
+   * JavaScript expression controlling development-only runtime diagnostics.
+   *
+   * Bundler integrations set this for their development and production modes.
+   * Standalone compilation keeps diagnostics enabled unless explicitly disabled.
+   * Set to "false" for production output to allow dead-code elimination.
+   *
+   * @default "true"
+   */
+  isDevelopment?: string;
+  /**
+   * Compile-time locale constant used for per-locale tree-shaking.
+   *
+   * This is experimental and opt-in. It should be a JavaScript expression
+   * (not a quoted literal) that resolves to a locale or `undefined` at build time.
+   * You can pass a string literal (e.g. `"de"`) for programmatic builds, or an
+   * injected env/define expression for bundler-driven builds.
+   *
+   * High-level flow for per-locale builds:
+   *
+   * client request (/)
+   *         |
+   *         v
+   *   +----------------------+
+   *   | detect locale        |
+   *   | (cookie/Accept-L)    |
+   *   | pick build prefix    |
+   *   +----------------------+
+   *         | if "de"
+   *         v
+   *    serve dist/de/...  <----> serve dist/en/...
+   *    (HTML + assets)          (HTML + assets)
+   *
+   * @see https://github.com/opral/paraglide-js/issues/88#issuecomment-3634754638
+   *
+   * @example
+   *   // Vite define
+   *   experimentalStaticLocale: "typeof __PARAGLIDE_STATIC_LOCALE__ === 'undefined' ? undefined : __PARAGLIDE_STATIC_LOCALE__"
+   *
+   * @example
+   *   // Programmatic compile (literal)
+   *   experimentalStaticLocale: '"de"'
+   */
+  experimentalStaticLocale?: string;
+  /**
+   * The name of the cookie to use for the cookie strategy.
+   *
+   * @default 'PARAGLIDE_LOCALE'
+   */
+  cookieName?: string;
+  /**
+   * The max-age in seconds of the cookie until it expires.
+   *
+   * @default 60 * 60 * 24 * 400
+   */
+  cookieMaxAge?: number;
+  /**
+   * The host to which the cookie will be sent.
+   * If undefined or empty, the domain attribute is omitted from the cookie, scoping it to the exact current domain only (no subdomains).
+   * If specified, the cookie will be available to the specified domain and all its subdomains.
+   *
+   * Use this when you need cookies to be shared across subdomains (e.g., between `app.example.com` and `api.example.com`).
+   * The default behavior (no domain) ensures better compatibility with server-side cookies that don't specify a domain attribute.
+   *
+   * @example
+   * ```ts
+   * // Default: exact domain only (compatible with server-side cookies)
+   * cookieDomain: undefined // Cookie: "PARAGLIDE_LOCALE=en; path=/; max-age=34560000"
+   *
+   * // Subdomain sharing: available across all subdomains
+   * cookieDomain: "example.com" // Cookie: "PARAGLIDE_LOCALE=en; path=/; max-age=34560000; domain=example.com"
+   * ```
+   *
+   * @default "" (no domain attribute, exact domain only)
+   */
+  cookieDomain?: string;
+  /**
+   * The `SameSite` attribute of the cookie.
+   *
+   * If undefined, the attribute is omitted and the browser applies its own default.
+   * Set it when the cookie must match a policy, for example the one a server uses
+   * when it writes the same cookie with `Set-Cookie`.
+   *
+   * `"none"` requires `cookieSecure` to be `true` or `"auto"` because browsers
+   * reject `SameSite=None` cookies without the `Secure` attribute. With `"auto"`,
+   * the cookie is still dropped on plain `http://` pages.
+   *
+   * @example
+   * ```ts
+   * cookieSameSite: "lax" // Cookie: "PARAGLIDE_LOCALE=en; path=/; max-age=34560000; samesite=lax"
+   * ```
+   *
+   * @default undefined (no samesite attribute)
+   */
+  cookieSameSite?: "lax" | "strict" | "none";
+  /**
+   * Whether the cookie gets the `Secure` attribute.
+   *
+   * - `true` always adds it. Pages served over plain `http://` cannot set a
+   *   `Secure` cookie, except on `localhost`.
+   * - `"auto"` adds it only when the page is served over `https:`, so the cookie
+   *   keeps working on plain `http://` hosts other than localhost, like a LAN IP
+   *   or an internal staging server. With `cookieSameSite: "none"`, the cookie
+   *   still needs `https:`.
+   * - `false` never adds it.
+   *
+   * Server code that reads `cookieSecure` from the runtime has to resolve `"auto"`
+   * itself, for example from the request protocol or `X-Forwarded-Proto`.
+   *
+   * @example
+   * ```ts
+   * cookieSecure: "auto" // on https: "PARAGLIDE_LOCALE=en; path=/; max-age=34560000; secure"
+   * ```
+   *
+   * @default false
+   */
+  cookieSecure?: boolean | "auto";
+  /**
+   * If `emitPrettierIgnore` is set to `true` a `.prettierignore` file will be emitted in the output directory. Defaults to `true`.
+   *
+   * ```diff
+   *   - outdir/
+   *     - messages/
+   * +   - .prettierignore
+   *     - messages.js
+   *     - runtime.js
+   * ```
+   *
+   * @default true
+   */
+  emitPrettierIgnore?: boolean;
+  /**
+   * If `emitReadme` is set to `true` a `README.md` file will be emitted in the output directory. Defaults to `true`.
+   *
+   * The README helps LLMs understand the compiled output.
+   * See https://llmstxt.org/ for format guidelines.
+   *
+   * ```diff
+   *   - outdir/
+   *     - messages/
+   * +   - README.md
+   *     - messages.js
+   *     - runtime.js
+   * ```
+   *
+   * @default true
+   */
+  emitReadme?: boolean;
+  /**
+   * Emit `.d.ts` files directly for the generated output.
+   *
+   * Useful when `allowJs: true` cannot be set in your `tsconfig.json`
+   * (e.g., due to project constraints or conflicting compiler options), or when
+   * an editor language server caches stale JSDoc types for generated messages.
+   *
+   * Declarations are generated from message metadata and runtime declaration
+   * templates. No TypeScript installation is required.
+   *
+   * @example
+   * ```ts
+   * await compile({
+   *   project: "./project.inlang",
+   *   outdir: "./src/paraglide",
+   *   emitTsDeclarations: true,
+   * });
+   * ```
+   *
+   * @default false
+   */
+  emitTsDeclarations?: boolean;
+  /**
+   * https://paraglidejs.com/strategy#url
+   */
+  urlPatterns?: Runtime["urlPatterns"];
+  /**
+   * Load the URLPattern polyfill only when the target runtime lacks URLPattern.
+   * Applies when custom `urlPatterns` or `routeStrategies` require matching.
+   *
+   * Enabling this emits a conditional top-level `await import(...)`. Requires
+   * Vite 7+ or another ESM toolchain and runtime supporting top-level await.
+   * CommonJS and IIFE output are not supported when enabled. Importers wait for
+   * initialization automatically; routing APIs remain synchronous.
+   *
+   * Defaults to a static polyfill import. Built-in default routing without
+   * route strategies does not include the polyfill in either mode.
+   *
+   * @default false
+   */
+  lazyUrlPatternPolyfill?: boolean;
+  /**
+   * Controls trailing slash canonicalization for localized URLs.
+   *
+   * Canonicalization happens before URL pattern matching and after URL
+   * localization. If omitted, Paraglide keeps its existing trailing slash
+   * behavior.
+   */
+  trailingSlash?: "always" | "never";
+  /**
+   * Whether to include an eslint-disable comment at the top of each .js file.
+   *
+   * @default true
+   */
+  includeEslintDisableComment?: boolean;
+  /**
+   * Replaces AsyncLocalStorage with a synchronous implementation.
+   *
+   * Leave AsyncLocalStorage enabled by default. This option is a
+   * compatibility fallback for runtimes that do not provide
+   * AsyncLocalStorage or `node:async_hooks`.
+   *
+   * ⚠️ WARNING: Only use this option when your runtime also guarantees
+   * request isolation. Disabling AsyncLocalStorage in multi-request
+   * server environments risks cross-request pollution where state from
+   * one request could leak into another concurrent request.
+   */
+  disableAsyncLocalStorage?: boolean;
+  /**
+   * If `emitGitIgnore` is set to `true` a `.gitignore` file will be emitted in the output directory. Defaults to `true`.
+   *
+   * ```diff
+   *   - outdir/
+   *     - messages/
+   * +   - .gitignore
+   *     - messages.js
+   *     - runtime.js
+   * ```
+   *
+   * @default true
+   */
+  emitGitIgnore?: boolean;
+  /**
+   * The `outputStructure` defines how modules are structured in the output.
+   *
+   * - `message-modules` - Each module is a physical message file. Default for the CLI.
+   * - `virtual-modules` - Individual messages served by Vite, with combined declarations. Default for Vite builds; requires the Vite plugin.
+   * - `locale-modules` - Each module is a locale.
+   *
+   * Vite serve and Vitest use `locale-modules` to reduce HTTP requests. Vite builds
+   * use `virtual-modules`, keeping public entry points physical while avoiding
+   * individual message files. Other bundler plugins use `locale-modules` in
+   * development and `message-modules` in production. Explicit layouts override
+   * these defaults.
+   *
+   * **`message-modules`**
+   *
+   * Messages have their own module which eases tree-shaking for bundlers.
+   *
+   * ```diff
+   *   - outdir/
+   *     - messages/
+   * +   - blue_elephant_tree/
+   * +     - index.js
+   * +     - en.js
+   * +     - fr.js
+   * +   - sky_phone_bottle/
+   * +     - index.js
+   * +     - en.js
+   * +     - fr.js
+   *     - ...
+   *   - messages.js
+   *   - runtime.js
+   * ```
+   *
+   * **`locale-modules`**
+   *
+   * Messages are bundled in a per locale module. Bundlers often struggle with tree-shaking this structure,
+   * which can lead to more inefficient tree-shaking and larger bundle sizes compared to `message-modules`.
+   *
+   * The benefit are substantially fewer files which is needed in large projects.
+   *
+   * ```diff
+   *   - outdir/
+   *     - messages/
+   * +     - de.js
+   * +     - en.js
+   * +     - fr.js
+   *       - ...
+   *   - messages.js
+   *   - runtime.js
+   * ```
+   *
+   * @default "message-modules"
+   */
+  outputStructure?: "locale-modules" | "message-modules" | "virtual-modules";
+  /**
+   * Messages per generated module in the message-modules layout.
+   * Values above one group messages into shards and preserve messages.js exports,
+   * while replacing per-message module paths with shard files. Defaults to one.
+   * Locale-specialized builds currently require the default value.
+   *
+   * @default 1
+   */
+  messageModuleSize?: number;
+  /**
+   * Whether to clean the output directory before writing the new files.
+   *
+   * @default true
+   */
+  cleanOutdir?: boolean;
 
-	/**
-	 * The file system to use. Defaults to `await import('node:fs')`.
-	 *
-	 * Useful for testing the paraglide compiler by mocking the fs.
-	 */
-	fs?: any;
+  /**
+   * The file system to use. Defaults to `await import('node:fs')`.
+   *
+   * Useful for testing the paraglide compiler by mocking the fs.
+   */
+  fs?: any;
 };

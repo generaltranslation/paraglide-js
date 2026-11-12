@@ -2,8 +2,8 @@ import { toLocale } from "./check-locale.js";
 import { cookieName } from "./variables.js";
 
 const localeCookiePattern = /* @__PURE__ */ (() => {
-	const cookieNamePattern = cookieName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	return new RegExp(`(?:^|;\\s*)${cookieNamePattern}=([^;]*)`);
+  const cookieNamePattern = cookieName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|;\\s*)${cookieNamePattern}=([^;]*)`);
 })();
 
 const noCachedLocale = Symbol();
@@ -14,15 +14,15 @@ let cachedLocaleFromCookie = noCachedLocale;
  * Clears the cached locale from `document.cookie`.
  */
 export function clearLocaleCookieCache() {
-	cachedLocaleFromCookie = noCachedLocale;
+  cachedLocaleFromCookie = noCachedLocale;
 }
 
 function scheduleLocaleCookieCacheClear() {
-	if (typeof queueMicrotask === "function") {
-		queueMicrotask(clearLocaleCookieCache);
-	} else {
-		Promise.resolve().then(clearLocaleCookieCache);
-	}
+  if (typeof queueMicrotask === "function") {
+    queueMicrotask(clearLocaleCookieCache);
+  } else {
+    Promise.resolve().then(clearLocaleCookieCache);
+  }
 }
 
 /**
@@ -34,21 +34,21 @@ function scheduleLocaleCookieCacheClear() {
  * @returns {Locale | undefined}
  */
 export function extractLocaleFromCookie() {
-	if (typeof document === "undefined") {
-		return;
-	}
-	if (cachedLocaleFromCookie !== noCachedLocale) {
-		return cachedLocaleFromCookie;
-	}
-	let match;
-	try {
-		match = document.cookie.match(localeCookiePattern);
-	} catch {
-		// document.cookie throws in sandboxed iframes and other opaque origins
-		return;
-	}
-	const locale = match?.[1];
-	cachedLocaleFromCookie = toLocale(locale);
-	scheduleLocaleCookieCacheClear();
-	return cachedLocaleFromCookie;
+  if (typeof document === "undefined") {
+    return;
+  }
+  if (cachedLocaleFromCookie !== noCachedLocale) {
+    return cachedLocaleFromCookie;
+  }
+  let match;
+  try {
+    match = document.cookie.match(localeCookiePattern);
+  } catch {
+    // document.cookie throws in sandboxed iframes and other opaque origins
+    return;
+  }
+  const locale = match?.[1];
+  cachedLocaleFromCookie = toLocale(locale);
+  scheduleLocaleCookieCacheClear();
+  return cachedLocaleFromCookie;
 }

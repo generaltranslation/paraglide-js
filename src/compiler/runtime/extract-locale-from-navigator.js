@@ -12,26 +12,26 @@ import { toLocale } from "./check-locale.js";
  * @returns {Locale | undefined}
  */
 export function extractLocaleFromNavigator() {
-	if (!navigator?.languages?.length) {
-		return undefined;
-	}
+  if (!navigator?.languages?.length) {
+    return undefined;
+  }
 
-	const languages = navigator.languages.map((lang) => ({
-		fullTag: lang,
-		baseTag: lang.split("-")[0],
-	}));
+  const languages = navigator.languages.map((lang) => ({
+    fullTag: lang,
+    baseTag: lang.split("-")[0],
+  }));
 
-	for (const lang of languages) {
-		const fullLocale = toLocale(lang.fullTag);
-		if (fullLocale) {
-			return fullLocale;
-		}
+  for (const lang of languages) {
+    const fullLocale = toLocale(lang.fullTag);
+    if (fullLocale) {
+      return fullLocale;
+    }
 
-		const baseLocale = toLocale(lang.baseTag);
-		if (baseLocale) {
-			return baseLocale;
-		}
-	}
+    const baseLocale = toLocale(lang.baseTag);
+    if (baseLocale) {
+      return baseLocale;
+    }
+  }
 
-	return undefined;
+  return undefined;
 }

@@ -6,7 +6,7 @@ const source = new URL("../src/compiler/declarations/", import.meta.url);
 const destination = new URL("../dist/compiler/declarations/", import.meta.url);
 await fs.mkdir(destination, { recursive: true });
 for (const file of await fs.readdir(source)) {
-	if (file.endsWith(".d.ts.template")) {
-		await fs.copyFile(new URL(file, source), new URL(file, destination));
-	}
+  if (file.endsWith(".d.ts.template")) {
+    await fs.copyFile(new URL(file, source), new URL(file, destination));
+  }
 }

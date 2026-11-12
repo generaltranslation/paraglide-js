@@ -5,67 +5,67 @@ import { perLocaleBuildStaticLocaleExpression } from "../../compiler/per-locale-
 import type { PerLocaleBuildSettings } from "./types.js";
 import { createViteLocaleEnvironmentPlugin } from "./vite-environments.js";
 import {
-	loadParaglideConfig,
-	resolveCompilerOptions,
-	type ParaglideConfig,
+  loadParaglideConfig,
+  resolveCompilerOptions,
+  type ParaglideConfig,
 } from "../../services/config/index.js";
 import type { ParaglidePluginOptions } from "../unplugin.js";
 
 export function createPerLocaleBuildPlugins(args: {
-	compilerOptions: ParaglidePluginOptions;
-	createCompilerPlugin: (options: ParaglidePluginOptions) => Plugin;
+  compilerOptions: ParaglidePluginOptions;
+  createCompilerPlugin: (options: ParaglidePluginOptions) => Plugin;
 }): Plugin[] {
-	// Config file values are not known yet — they are validated in
-	// loadSettings once the config has been loaded.
-	validateExplicitCompilerOptions(args.compilerOptions, undefined);
-	const compilerOptions = createPerLocaleCompilerOptions(args.compilerOptions);
-	// Project root as reported by vite. Config file discovery starts here.
-	let discoveryRoot: string | undefined;
-	return [
-		{
-			name: "paraglide-config-discovery-root",
-			enforce: "pre",
-			// The locale-environment plugin loads settings from its own
-			// `config` hook, which runs BEFORE any `configResolved`. Capture
-			// an explicitly configured root here so it is available in time;
-			// `configResolved` still overwrites it with Vite's final value
-			// (covering roots supplied via CLI flags).
-			async config(config, environment) {
-				if (config.root !== undefined) discoveryRoot = config.root;
-				if (environment.command === "serve") {
-					let loaded;
-					try {
-						loaded = await loadParaglideConfig({
-							projectDir: resolve(
-								discoveryRoot ?? process.cwd(),
-								args.compilerOptions.project
-							),
-						});
-					} catch {
-						// The compiler plugin owns diagnostics and recovery in dev.
-						return;
-					}
-					validateExplicitCompilerOptions(args.compilerOptions, loaded?.config);
-				}
-			},
-			configResolved(config) {
-				discoveryRoot = config.root;
-			},
-		},
-		args.createCompilerPlugin(compilerOptions),
-		createViteLocaleEnvironmentPlugin({
-			settings: () => loadSettings(args.compilerOptions, discoveryRoot),
-		}),
-	];
+  // Config file values are not known yet — they are validated in
+  // loadSettings once the config has been loaded.
+  validateExplicitCompilerOptions(args.compilerOptions, undefined);
+  const compilerOptions = createPerLocaleCompilerOptions(args.compilerOptions);
+  // Project root as reported by vite. Config file discovery starts here.
+  let discoveryRoot: string | undefined;
+  return [
+    {
+      name: "paraglide-config-discovery-root",
+      enforce: "pre",
+      // The locale-environment plugin loads settings from its own
+      // `config` hook, which runs BEFORE any `configResolved`. Capture
+      // an explicitly configured root here so it is available in time;
+      // `configResolved` still overwrites it with Vite's final value
+      // (covering roots supplied via CLI flags).
+      async config(config, environment) {
+        if (config.root !== undefined) discoveryRoot = config.root;
+        if (environment.command === "serve") {
+          let loaded;
+          try {
+            loaded = await loadParaglideConfig({
+              projectDir: resolve(
+                discoveryRoot ?? process.cwd(),
+                args.compilerOptions.project
+              ),
+            });
+          } catch {
+            // The compiler plugin owns diagnostics and recovery in dev.
+            return;
+          }
+          validateExplicitCompilerOptions(args.compilerOptions, loaded?.config);
+        }
+      },
+      configResolved(config) {
+        discoveryRoot = config.root;
+      },
+    },
+    args.createCompilerPlugin(compilerOptions),
+    createViteLocaleEnvironmentPlugin({
+      settings: () => loadSettings(args.compilerOptions, discoveryRoot),
+    }),
+  ];
 }
 
 function createPerLocaleCompilerOptions(
-	compilerOptions: ParaglidePluginOptions
+  compilerOptions: ParaglidePluginOptions
 ): ParaglidePluginOptions {
-	return {
-		...compilerOptions,
-		experimentalStaticLocale: perLocaleBuildStaticLocaleExpression,
-	};
+  return {
+    ...compilerOptions,
+    experimentalStaticLocale: perLocaleBuildStaticLocaleExpression,
+  };
 }
 
 // Values that come from the paraglide config file are only known after
@@ -73,46 +73,46 @@ function createPerLocaleCompilerOptions(
 // explicitly set values conflict; unset ones fall back to the per-locale
 // defaults.
 function validateExplicitCompilerOptions(
-	options: ParaglidePluginOptions,
-	config: ParaglideConfig | undefined
+  options: ParaglidePluginOptions,
+  config: ParaglideConfig | undefined
 ): void {
-	const explicit = {
-		experimentalStaticLocale:
-			options.experimentalStaticLocale ?? config?.experimentalStaticLocale,
-	};
-	if (explicit.experimentalStaticLocale !== undefined) {
-		throw new Error(
-			"experimentalPerLocaleBuild cannot be combined with experimentalStaticLocale because it controls the compiler's static locale expression."
-		);
-	}
+  const explicit = {
+    experimentalStaticLocale:
+      options.experimentalStaticLocale ?? config?.experimentalStaticLocale,
+  };
+  if (explicit.experimentalStaticLocale !== undefined) {
+    throw new Error(
+      "experimentalPerLocaleBuild cannot be combined with experimentalStaticLocale because it controls the compiler's static locale expression."
+    );
+  }
 }
 
 async function loadSettings(
-	options: ParaglidePluginOptions,
-	discoveryRoot?: string | undefined
+  options: ParaglidePluginOptions,
+  discoveryRoot?: string | undefined
 ): Promise<PerLocaleBuildSettings> {
-	const root = discoveryRoot ?? process.cwd();
-	const loaded = await loadParaglideConfig({
-		projectDir: resolve(root, options.project),
-	});
-	validateExplicitCompilerOptions(options, loaded?.config);
-	const { project } = resolveCompilerOptions({
-		config: loaded?.config,
-		overrides: options,
-		root,
-	});
-	const { loadProjectFromDirectory } = await import("@inlang/sdk");
-	const loadedProject = await loadProjectFromDirectory({
-		path: project,
-		fs: options.fs ?? nodeFs,
-	});
-	try {
-		const settings = await loadedProject.settings.get();
-		return {
-			baseLocale: settings.baseLocale,
-			locales: [...settings.locales],
-		};
-	} finally {
-		await loadedProject.close();
-	}
+  const root = discoveryRoot ?? process.cwd();
+  const loaded = await loadParaglideConfig({
+    projectDir: resolve(root, options.project),
+  });
+  validateExplicitCompilerOptions(options, loaded?.config);
+  const { project } = resolveCompilerOptions({
+    config: loaded?.config,
+    overrides: options,
+    root,
+  });
+  const { loadProjectFromDirectory } = await import("@inlang/sdk");
+  const loadedProject = await loadProjectFromDirectory({
+    path: project,
+    fs: options.fs ?? nodeFs,
+  });
+  try {
+    const settings = await loadedProject.settings.get();
+    return {
+      baseLocale: settings.baseLocale,
+      locales: [...settings.locales],
+    };
+  } finally {
+    await loadedProject.close();
+  }
 }

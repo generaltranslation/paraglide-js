@@ -7,12 +7,12 @@ import { h } from "vue";
 import { m } from "./paraglide/messages.js";
 
 const markup = {
-	link: ({ children, options }) => h("a", { href: options.to }, children),
+  link: ({ children, options }) => h("a", { href: options.to }, children),
 };
 </script>
 
 <template>
-	<ParaglideMessage :message="m.cta" :inputs="{}" :markup="markup" />
+  <ParaglideMessage :message="m.cta" :inputs="{}" :markup="markup" />
 </template>
 ```
 

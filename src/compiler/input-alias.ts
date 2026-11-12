@@ -20,33 +20,33 @@ import type { Declaration } from "@inlang/sdk";
  *   resolveInputAlias("countPlural", declarations) // undefined
  */
 export function resolveInputAlias(
-	name: string,
-	declarations: readonly Declaration[]
+  name: string,
+  declarations: readonly Declaration[]
 ): string | undefined {
-	const visited = new Set<string>();
-	let current = name;
+  const visited = new Set<string>();
+  let current = name;
 
-	while (!visited.has(current)) {
-		visited.add(current);
-		// first declaration wins, consistent with compileVariableAccess()
-		const declaration = declarations.find(
-			(candidate) => candidate.name === current
-		);
-		if (!declaration) {
-			return undefined;
-		}
-		if (declaration.type === "input-variable") {
-			return declaration.name;
-		}
-		if (
-			declaration.value.annotation ||
-			declaration.value.arg.type !== "variable-reference"
-		) {
-			return undefined;
-		}
-		current = declaration.value.arg.name;
-	}
+  while (!visited.has(current)) {
+    visited.add(current);
+    // first declaration wins, consistent with compileVariableAccess()
+    const declaration = declarations.find(
+      (candidate) => candidate.name === current
+    );
+    if (!declaration) {
+      return undefined;
+    }
+    if (declaration.type === "input-variable") {
+      return declaration.name;
+    }
+    if (
+      declaration.value.annotation ||
+      declaration.value.arg.type !== "variable-reference"
+    ) {
+      return undefined;
+    }
+    current = declaration.value.arg.name;
+  }
 
-	// cyclic local variable references
-	return undefined;
+  // cyclic local variable references
+  return undefined;
 }

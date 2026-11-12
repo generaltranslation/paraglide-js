@@ -35,37 +35,37 @@ import { extractLocaleFromRequestWithStrategies } from "./extract-locale-from-re
  * @returns {Promise<Locale>} The extracted locale.
  */
 export const extractLocaleFromRequestAsync = async (request, options = {}) => {
-	/** @type {string|undefined} */
-	let locale;
-	const effectiveRequestUrl = resolveEffectiveRequestUrlFromRequestAsync(
-		request,
-		options.effectiveRequestUrl
-	);
-	const strategy = getStrategyForUrl(effectiveRequestUrl);
+  /** @type {string|undefined} */
+  let locale;
+  const effectiveRequestUrl = resolveEffectiveRequestUrlFromRequestAsync(
+    request,
+    options.effectiveRequestUrl
+  );
+  const strategy = getStrategyForUrl(effectiveRequestUrl);
 
-	// Process custom strategies first, in order
-	for (const strat of strategy) {
-		if (isCustomStrategy(strat) && customServerStrategies.has(strat)) {
-			const handler = customServerStrategies.get(strat);
-			if (handler) {
-				/** @type {string|undefined} */
-				locale = await handler.getLocale(request);
-			}
+  // Process custom strategies first, in order
+  for (const strat of strategy) {
+    if (isCustomStrategy(strat) && customServerStrategies.has(strat)) {
+      const handler = customServerStrategies.get(strat);
+      if (handler) {
+        /** @type {string|undefined} */
+        locale = await handler.getLocale(request);
+      }
 
-			// If we got a valid locale from this custom strategy, use it
-			const matchedLocale = toLocale(locale);
-			if (matchedLocale) {
-				return matchedLocale;
-			}
-		}
-	}
+      // If we got a valid locale from this custom strategy, use it
+      const matchedLocale = toLocale(locale);
+      if (matchedLocale) {
+        return matchedLocale;
+      }
+    }
+  }
 
-	// If no custom strategy provided a valid locale, fall back to sync version
-	return extractLocaleFromRequestWithStrategies(
-		request,
-		strategy,
-		effectiveRequestUrl
-	);
+  // If no custom strategy provided a valid locale, fall back to sync version
+  return extractLocaleFromRequestWithStrategies(
+    request,
+    strategy,
+    effectiveRequestUrl
+  );
 };
 
 /**
@@ -74,12 +74,12 @@ export const extractLocaleFromRequestAsync = async (request, options = {}) => {
  * @returns {URL}
  */
 function resolveEffectiveRequestUrlFromRequestAsync(
-	request,
-	effectiveRequestUrl = request.url
+  request,
+  effectiveRequestUrl = request.url
 ) {
-	if (effectiveRequestUrl instanceof URL) {
-		return new URL(effectiveRequestUrl.href);
-	}
+  if (effectiveRequestUrl instanceof URL) {
+    return new URL(effectiveRequestUrl.href);
+  }
 
-	return new URL(effectiveRequestUrl, request.url);
+  return new URL(effectiveRequestUrl, request.url);
 }

@@ -44,35 +44,35 @@ Use `urlPatterns` to define different routing rules per tenant domain:
 
 ```js
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "baseLocale"],
-	urlPatterns: [
-		// Localhost for development (use path prefixes)
-		{
-			pattern: "http://localhost::port?/:path(.*)?",
-			localized: [
-				["fr", "http://localhost::port?/fr/:path(.*)?"],
-				["en", "http://localhost::port?/:path(.*)?"],
-			],
-		},
-		// customer1.fr => French default, English via /en/
-		{
-			pattern: "https://customer1.fr/:path(.*)?",
-			localized: [
-				["fr", "https://customer1.fr/:path(.*)?"],
-				["en", "https://customer1.fr/en/:path(.*)?"],
-			],
-		},
-		// customer2.com => English default, French via /fr/
-		{
-			pattern: "https://customer2.com/:path(.*)?",
-			localized: [
-				["en", "https://customer2.com/:path(.*)?"],
-				["fr", "https://customer2.com/fr/:path(.*)?"],
-			],
-		},
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "baseLocale"],
+  urlPatterns: [
+    // Localhost for development (use path prefixes)
+    {
+      pattern: "http://localhost::port?/:path(.*)?",
+      localized: [
+        ["fr", "http://localhost::port?/fr/:path(.*)?"],
+        ["en", "http://localhost::port?/:path(.*)?"],
+      ],
+    },
+    // customer1.fr => French default, English via /en/
+    {
+      pattern: "https://customer1.fr/:path(.*)?",
+      localized: [
+        ["fr", "https://customer1.fr/:path(.*)?"],
+        ["en", "https://customer1.fr/en/:path(.*)?"],
+      ],
+    },
+    // customer2.com => English default, French via /fr/
+    {
+      pattern: "https://customer2.com/:path(.*)?",
+      localized: [
+        ["en", "https://customer2.com/:path(.*)?"],
+        ["fr", "https://customer2.com/fr/:path(.*)?"],
+      ],
+    },
+  ],
 });
 ```
 
@@ -135,41 +135,41 @@ Redirect unsupported locales to a 404 page:
 
 ```js
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "baseLocale"],
-	urlPatterns: [
-		// Customer1 - only supports en and de
-		{
-			pattern: "https://customer1.com/:path(.*)?",
-			localized: [
-				["en", "https://customer1.com/:path(.*)?"],
-				["de", "https://customer1.com/de/:path(.*)?"],
-				["fr", "https://customer1.com/404"],  // Unsupported → 404
-				["es", "https://customer1.com/404"],
-			],
-		},
-		// Customer2 - only supports fr and es
-		{
-			pattern: "https://customer2.com/:path(.*)?",
-			localized: [
-				["fr", "https://customer2.com/:path(.*)?"],
-				["es", "https://customer2.com/es/:path(.*)?"],
-				["en", "https://customer2.com/404"],  // Unsupported → 404
-				["de", "https://customer2.com/404"],
-			],
-		},
-		// Customer3 - supports all locales
-		{
-			pattern: "https://customer3.com/:path(.*)?",
-			localized: [
-				["en", "https://customer3.com/:path(.*)?"],
-				["de", "https://customer3.com/de/:path(.*)?"],
-				["fr", "https://customer3.com/fr/:path(.*)?"],
-				["es", "https://customer3.com/es/:path(.*)?"],
-			],
-		},
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "baseLocale"],
+  urlPatterns: [
+    // Customer1 - only supports en and de
+    {
+      pattern: "https://customer1.com/:path(.*)?",
+      localized: [
+        ["en", "https://customer1.com/:path(.*)?"],
+        ["de", "https://customer1.com/de/:path(.*)?"],
+        ["fr", "https://customer1.com/404"],  // Unsupported → 404
+        ["es", "https://customer1.com/404"],
+      ],
+    },
+    // Customer2 - only supports fr and es
+    {
+      pattern: "https://customer2.com/:path(.*)?",
+      localized: [
+        ["fr", "https://customer2.com/:path(.*)?"],
+        ["es", "https://customer2.com/es/:path(.*)?"],
+        ["en", "https://customer2.com/404"],  // Unsupported → 404
+        ["de", "https://customer2.com/404"],
+      ],
+    },
+    // Customer3 - supports all locales
+    {
+      pattern: "https://customer3.com/:path(.*)?",
+      localized: [
+        ["en", "https://customer3.com/:path(.*)?"],
+        ["de", "https://customer3.com/de/:path(.*)?"],
+        ["fr", "https://customer3.com/fr/:path(.*)?"],
+        ["es", "https://customer3.com/es/:path(.*)?"],
+      ],
+    },
+  ],
 });
 ```
 

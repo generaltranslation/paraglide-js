@@ -1,14 +1,14 @@
 import { toLocale } from "./check-locale.js";
 import {
-	baseLocale,
-	TREE_SHAKE_DEFAULT_URL_PATTERN_USED,
+  baseLocale,
+  TREE_SHAKE_DEFAULT_URL_PATTERN_USED,
 } from "./variables.js";
 import { normalizeTrailingSlash } from "./normalize-trailing-slash.js";
 import { execUrlPattern } from "./exec-url-pattern.js";
 import { getUrlPattern } from "./url-pattern-cache.js";
 import {
-	getUrlPatternCandidates,
-	getRoutingConfigVersion,
+  getUrlPatternCandidates,
+  getRoutingConfigVersion,
 } from "./url-pattern-index.js";
 
 let cachedLocaleConfigVersion = -1;
@@ -35,49 +35,49 @@ let cachedLocale;
  * @returns {Locale|undefined} The extracted locale, or undefined if no locale is found.
  */
 export function extractLocaleFromUrl(url) {
-	const urlString = typeof url === "string" ? url : url.href;
+  const urlString = typeof url === "string" ? url : url.href;
 
-	const configVersion = TREE_SHAKE_DEFAULT_URL_PATTERN_USED
-		? 0
-		: getRoutingConfigVersion();
-	if (cachedUrl === urlString && cachedLocaleConfigVersion === configVersion) {
-		return cachedLocale;
-	}
+  const configVersion = TREE_SHAKE_DEFAULT_URL_PATTERN_USED
+    ? 0
+    : getRoutingConfigVersion();
+  if (cachedUrl === urlString && cachedLocaleConfigVersion === configVersion) {
+    return cachedLocale;
+  }
 
-	/** @type {Locale | undefined} */
-	let result;
-	if (TREE_SHAKE_DEFAULT_URL_PATTERN_USED) {
-		const urlObj =
-			typeof url === "string"
-				? new URL(url, "http://example.com")
-				: new URL(url);
-		result = defaultUrlPatternExtractLocale(normalizeTrailingSlash(urlObj));
-	} else {
-		const urlObj = normalizeTrailingSlash(
-			typeof url === "string" ? new URL(url) : new URL(url)
-		);
+  /** @type {Locale | undefined} */
+  let result;
+  if (TREE_SHAKE_DEFAULT_URL_PATTERN_USED) {
+    const urlObj =
+      typeof url === "string"
+        ? new URL(url, "http://example.com")
+        : new URL(url);
+    result = defaultUrlPatternExtractLocale(normalizeTrailingSlash(urlObj));
+  } else {
+    const urlObj = normalizeTrailingSlash(
+      typeof url === "string" ? new URL(url) : new URL(url)
+    );
 
-		// Iterate over URL patterns
-		for (const element of getUrlPatternCandidates(urlObj)) {
-			for (const [locale, localizedPattern] of element.localized) {
-				const match = execUrlPattern(
-					getUrlPattern(localizedPattern, urlObj),
-					urlObj
-				);
+    // Iterate over URL patterns
+    for (const element of getUrlPatternCandidates(urlObj)) {
+      for (const [locale, localizedPattern] of element.localized) {
+        const match = execUrlPattern(
+          getUrlPattern(localizedPattern, urlObj),
+          urlObj
+        );
 
-				if (match) {
-					result = locale;
-					break;
-				}
-			}
-			if (result) break;
-		}
-	}
+        if (match) {
+          result = locale;
+          break;
+        }
+      }
+      if (result) break;
+    }
+  }
 
-	cachedLocaleConfigVersion = configVersion;
-	cachedUrl = urlString;
-	cachedLocale = result;
-	return result;
+  cachedLocaleConfigVersion = configVersion;
+  cachedUrl = urlString;
+  cachedLocale = result;
+  return result;
 }
 
 /**
@@ -87,6 +87,6 @@ export function extractLocaleFromUrl(url) {
  * @returns {Locale | undefined} The extracted locale, or undefined if no locale is found.
  */
 function defaultUrlPatternExtractLocale(url) {
-	const pathSegments = url.pathname.split("/").filter(Boolean);
-	return toLocale(pathSegments[0]) || baseLocale;
+  const pathSegments = url.pathname.split("/").filter(Boolean);
+  return toLocale(pathSegments[0]) || baseLocale;
 }

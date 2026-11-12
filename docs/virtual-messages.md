@@ -15,13 +15,13 @@ import { defineConfig } from "vite";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 
 export default defineConfig({
-	plugins: [
-		paraglideVitePlugin({
-			project: "./project.inlang",
-			outdir: "./src/paraglide",
-			outputStructure: "virtual-modules", // opt in during development too
-		}),
-	],
+  plugins: [
+    paraglideVitePlugin({
+      project: "./project.inlang",
+      outdir: "./src/paraglide",
+      outputStructure: "virtual-modules", // opt in during development too
+    }),
+  ],
 });
 ```
 
@@ -42,8 +42,8 @@ find them in one place:
 
 ```ts
 export default {
-	outdir: "./src/paraglide",
-	outputStructure: "virtual-modules",
+  outdir: "./src/paraglide",
+  outputStructure: "virtual-modules",
 };
 ```
 
@@ -149,9 +149,9 @@ scripts against its generated messages, select a physical layout explicitly:
 
 ```ts
 paraglideVitePlugin({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	outputStructure: "message-modules",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  outputStructure: "message-modules",
 });
 ```
 

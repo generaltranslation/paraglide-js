@@ -1,13 +1,13 @@
 import type {
-	Declaration,
-	FunctionReference,
-	Literal,
-	VariableReference,
+  Declaration,
+  FunctionReference,
+  Literal,
+  VariableReference,
 } from "@inlang/sdk";
 import {
-	compileVariableAccess,
-	isValidIdentifier,
-	quotePropertyKey,
+  compileVariableAccess,
+  isValidIdentifier,
+  quotePropertyKey,
 } from "./variable-access.js";
 import { escapeForDoubleQuoteString } from "../services/codegen/escape.js";
 import { Logger } from "../services/logger/index.js";
@@ -20,16 +20,16 @@ import { registryBinding } from "./registry.js";
  * @see createRegistry()
  */
 const registryFunctionByAnnotation = new Map([
-	["plural", "plural"],
-	["number", "number"],
-	["datetime", "datetime"],
-	["relativetime", "relativetime"],
-	// `#` in ICU MessageFormat 1 plurals, as imported by the ICU1 plugin
-	["icu:pound", "icuPound"],
-	// `{d, date, short}` and `{d, time, short}` in ICU MessageFormat 1, as
-	// imported by the ICU1 plugin, see icuStyleAnnotation()
-	["date", "datetime"],
-	["time", "datetime"],
+  ["plural", "plural"],
+  ["number", "number"],
+  ["datetime", "datetime"],
+  ["relativetime", "relativetime"],
+  // `#` in ICU MessageFormat 1 plurals, as imported by the ICU1 plugin
+  ["icu:pound", "icuPound"],
+  // `{d, date, short}` and `{d, time, short}` in ICU MessageFormat 1, as
+  // imported by the ICU1 plugin, see icuStyleAnnotation()
+  ["date", "datetime"],
+  ["time", "datetime"],
 ]);
 
 /**
@@ -37,15 +37,15 @@ const registryFunctionByAnnotation = new Map([
  * registry function.
  */
 const displayedRegistryFunctions = Array.from(
-	registryFunctionByAnnotation.keys()
+  registryFunctionByAnnotation.keys()
 );
 
 export function isRegistryFunction(name: string): boolean {
-	return registryFunctionByAnnotation.has(name);
+  return registryFunctionByAnnotation.has(name);
 }
 
 export function registryFunctionNamesForDisplay(): string {
-	return displayedRegistryFunctions.join(", ");
+  return displayedRegistryFunctions.join(", ");
 }
 
 const logger = new Logger();
@@ -65,13 +65,13 @@ const warnedUnsupportedAnnotations = new Set<string>();
  * imported from other i18n libraries (e.g. i18next's `{{value, customFormat}}`).
  */
 export function ignoreUnknownFormatter(name: string, value: string): string {
-	if (!warnedUnsupportedAnnotations.has(name)) {
-		warnedUnsupportedAnnotations.add(name);
-		logger.warn(
-			`The formatter "${name}" is unknown and will be ignored. The value is interpolated without formatting. Supported formatters: ${registryFunctionNamesForDisplay()}.`
-		);
-	}
-	return value;
+  if (!warnedUnsupportedAnnotations.has(name)) {
+    warnedUnsupportedAnnotations.add(name);
+    logger.warn(
+      `The formatter "${name}" is unknown and will be ignored. The value is interpolated without formatting. Supported formatters: ${registryFunctionNamesForDisplay()}.`
+    );
+  }
+  return value;
 }
 
 /**
@@ -89,36 +89,36 @@ export type RegistryUsage = Set<string>;
  *   >> 'registry.number("en", i?.count, {})'
  */
 export function compileAnnotation(
-	str: string,
-	locale: string,
-	annotation?: FunctionReference,
-	declarations?: Declaration[],
-	registryUsage?: RegistryUsage
+  str: string,
+  locale: string,
+  annotation?: FunctionReference,
+  declarations?: Declaration[],
+  registryUsage?: RegistryUsage
 ): string {
-	if (!annotation) {
-		return str;
-	}
-	if (annotation.name === "relativetime") {
-		validateRelativeTimeOptions(annotation);
-	}
-	if (offsetAnnotations.has(annotation.name)) {
-		validateOffsetOptions(annotation);
-	}
-	const functionName =
-		registryFunctionByAnnotation.get(annotation.name) ?? annotation.name;
-	registryUsage?.add(functionName);
-	const options = withDefaultDateTimeStyles(
-		icuStyleAnnotation(annotation)
-	).options;
-	// the options of `date` and `time` are those of `datetime`
-	const optionsOf = functionName === "datetime" ? "datetime" : annotation.name;
-	// compileOptions emits a plain data object, so the registry can safely cache it.
-	const cacheable =
-		["plural", "number", "datetime", "relativetime"].includes(functionName) &&
-		!options.some((option) => option.name === "__proto__")
-			? ", true"
-			: "";
-	return `${registryBinding}.${functionName}("${locale}", ${str}, ${compileOptions(optionsOf, options, declarations)}${cacheable})`;
+  if (!annotation) {
+    return str;
+  }
+  if (annotation.name === "relativetime") {
+    validateRelativeTimeOptions(annotation);
+  }
+  if (offsetAnnotations.has(annotation.name)) {
+    validateOffsetOptions(annotation);
+  }
+  const functionName =
+    registryFunctionByAnnotation.get(annotation.name) ?? annotation.name;
+  registryUsage?.add(functionName);
+  const options = withDefaultDateTimeStyles(
+    icuStyleAnnotation(annotation)
+  ).options;
+  // the options of `date` and `time` are those of `datetime`
+  const optionsOf = functionName === "datetime" ? "datetime" : annotation.name;
+  // compileOptions emits a plain data object, so the registry can safely cache it.
+  const cacheable =
+    ["plural", "number", "datetime", "relativetime"].includes(functionName) &&
+    !options.some((option) => option.name === "__proto__")
+      ? ", true"
+      : "";
+  return `${registryBinding}.${functionName}("${locale}", ${str}, ${compileOptions(optionsOf, options, declarations)}${cacheable})`;
 }
 
 const icuDateTimeStyles = new Set(["short", "medium", "long", "full"]);
@@ -141,59 +141,59 @@ const intlNumberStyles = new Set(["decimal", "percent", "currency", "unit"]);
  *   >> { name: "date", options: [{ name: "dateStyle", value: "short" }] }
  */
 export function icuStyleAnnotation(
-	annotation: FunctionReference
+  annotation: FunctionReference
 ): FunctionReference {
-	const style = annotation.options.find((option) => option.name === "style");
-	const others = annotation.options.filter((option) => option !== style);
-	const literal = (name: string, value: string) => ({
-		name,
-		value: { type: "literal" as const, value },
-	});
+  const style = annotation.options.find((option) => option.name === "style");
+  const others = annotation.options.filter((option) => option !== style);
+  const literal = (name: string, value: string) => ({
+    name,
+    value: { type: "literal" as const, value },
+  });
 
-	if (annotation.name === "date" || annotation.name === "time") {
-		const optionName = annotation.name === "date" ? "dateStyle" : "timeStyle";
-		if (style?.value.type === "literal") {
-			if (icuDateTimeStyles.has(style.value.value)) {
-				return {
-					...annotation,
-					options: [literal(optionName, style.value.value), ...others],
-				};
-			}
-			ignoreUnknownStyle(annotation.name, style.value.value);
-		} else if (style) {
-			return {
-				...annotation,
-				options: [{ name: optionName, value: style.value }, ...others],
-			};
-		}
-		// without a style, withDefaultDateTimeStyles() applies the default
-		return { ...annotation, options: others };
-	}
+  if (annotation.name === "date" || annotation.name === "time") {
+    const optionName = annotation.name === "date" ? "dateStyle" : "timeStyle";
+    if (style?.value.type === "literal") {
+      if (icuDateTimeStyles.has(style.value.value)) {
+        return {
+          ...annotation,
+          options: [literal(optionName, style.value.value), ...others],
+        };
+      }
+      ignoreUnknownStyle(annotation.name, style.value.value);
+    } else if (style) {
+      return {
+        ...annotation,
+        options: [{ name: optionName, value: style.value }, ...others],
+      };
+    }
+    // without a style, withDefaultDateTimeStyles() applies the default
+    return { ...annotation, options: others };
+  }
 
-	if (annotation.name === "number" && style?.value.type === "literal") {
-		const value = style.value.value;
-		if (value === "integer") {
-			const hasFractionDigits = others.some(
-				(option) => option.name === "maximumFractionDigits"
-			);
-			return {
-				...annotation,
-				options: hasFractionDigits
-					? others
-					: [literal("maximumFractionDigits", "0"), ...others],
-			};
-		}
-		const hasCurrency = others.some((option) => option.name === "currency");
-		if (
-			!intlNumberStyles.has(value) ||
-			(value === "currency" && !hasCurrency)
-		) {
-			ignoreUnknownStyle(annotation.name, value);
-			return { ...annotation, options: others };
-		}
-	}
+  if (annotation.name === "number" && style?.value.type === "literal") {
+    const value = style.value.value;
+    if (value === "integer") {
+      const hasFractionDigits = others.some(
+        (option) => option.name === "maximumFractionDigits"
+      );
+      return {
+        ...annotation,
+        options: hasFractionDigits
+          ? others
+          : [literal("maximumFractionDigits", "0"), ...others],
+      };
+    }
+    const hasCurrency = others.some((option) => option.name === "currency");
+    if (
+      !intlNumberStyles.has(value) ||
+      (value === "currency" && !hasCurrency)
+    ) {
+      ignoreUnknownStyle(annotation.name, value);
+      return { ...annotation, options: others };
+    }
+  }
 
-	return annotation;
+  return annotation;
 }
 
 /**
@@ -202,19 +202,19 @@ export function icuStyleAnnotation(
  * `dateStyle` and `timeStyle` cannot be combined with the others: Intl throws.
  */
 const dateTimeFieldOptions = new Set([
-	"dateStyle",
-	"timeStyle",
-	"weekday",
-	"era",
-	"year",
-	"month",
-	"day",
-	"dayPeriod",
-	"hour",
-	"minute",
-	"second",
-	"fractionalSecondDigits",
-	"timeZoneName",
+  "dateStyle",
+  "timeStyle",
+  "weekday",
+  "era",
+  "year",
+  "month",
+  "day",
+  "dayPeriod",
+  "hour",
+  "minute",
+  "second",
+  "fractionalSecondDigits",
+  "timeZoneName",
 ]);
 
 /**
@@ -230,15 +230,15 @@ const dateTimeFieldOptions = new Set([
  *   `dateStyle=medium timeStyle=short`, e.g. "Oct 9, 2026, 4:30 PM".
  */
 const defaultDateTimeStyles = new Map<string, Array<[string, string]>>([
-	["date", [["dateStyle", "medium"]]],
-	["time", [["timeStyle", "medium"]]],
-	[
-		"datetime",
-		[
-			["dateStyle", "medium"],
-			["timeStyle", "short"],
-		],
-	],
+  ["date", [["dateStyle", "medium"]]],
+  ["time", [["timeStyle", "medium"]]],
+  [
+    "datetime",
+    [
+      ["dateStyle", "medium"],
+      ["timeStyle", "short"],
+    ],
+  ],
 ]);
 
 /**
@@ -250,40 +250,40 @@ const defaultDateTimeStyles = new Map<string, Array<[string, string]>>([
  *   >> { name: "datetime", options: [{ name: "dateStyle", value: "medium" }, { name: "timeStyle", value: "short" }] }
  */
 export function withDefaultDateTimeStyles(
-	annotation: FunctionReference
+  annotation: FunctionReference
 ): FunctionReference {
-	const defaults = defaultDateTimeStyles.get(annotation.name);
-	if (
-		!defaults ||
-		annotation.options.some((option) => dateTimeFieldOptions.has(option.name))
-	) {
-		return annotation;
-	}
-	return {
-		...annotation,
-		options: [
-			...defaults.map(([name, value]) => ({
-				name,
-				value: { type: "literal" as const, value },
-			})),
-			...annotation.options,
-		],
-	};
+  const defaults = defaultDateTimeStyles.get(annotation.name);
+  if (
+    !defaults ||
+    annotation.options.some((option) => dateTimeFieldOptions.has(option.name))
+  ) {
+    return annotation;
+  }
+  return {
+    ...annotation,
+    options: [
+      ...defaults.map(([name, value]) => ({
+        name,
+        value: { type: "literal" as const, value },
+      })),
+      ...annotation.options,
+    ],
+  };
 }
 
 const warnedUnknownStyles = new Set<string>();
 
 function ignoreUnknownStyle(name: string, style: string): void {
-	const key = `${name} ${style}`;
-	if (warnedUnknownStyles.has(key)) return;
-	warnedUnknownStyles.add(key);
-	logger.warn(
-		`The style "${style}" of the formatter "${name}" is not supported and will be ignored.${
-			name === "number" && style === "currency"
-				? ' The "currency" style needs a "currency" option.'
-				: ""
-		}`
-	);
+  const key = `${name} ${style}`;
+  if (warnedUnknownStyles.has(key)) return;
+  warnedUnknownStyles.add(key);
+  logger.warn(
+    `The style "${style}" of the formatter "${name}" is not supported and will be ignored.${
+      name === "number" && style === "currency"
+        ? ' The "currency" style needs a "currency" option.'
+        : ""
+    }`
+  );
 }
 
 /**
@@ -295,183 +295,183 @@ function ignoreUnknownStyle(name: string, style: string): void {
  *   annotationVariableReferences(annotation) // ["unit"]
  */
 export function annotationVariableReferences(
-	annotation: FunctionReference
+  annotation: FunctionReference
 ): string[] {
-	const names: string[] = [];
-	for (const option of annotation.options) {
-		if (option.value.type === "variable-reference") {
-			names.push(option.value.name);
-		} else if (
-			annotation.name === "relativetime" &&
-			option.name === "unit" &&
-			isDollarVariableReference(option.value.value)
-		) {
-			names.push(option.value.value.slice(1));
-		}
-	}
-	return names;
+  const names: string[] = [];
+  for (const option of annotation.options) {
+    if (option.value.type === "variable-reference") {
+      names.push(option.value.name);
+    } else if (
+      annotation.name === "relativetime" &&
+      option.name === "unit" &&
+      isDollarVariableReference(option.value.value)
+    ) {
+      names.push(option.value.value.slice(1));
+    }
+  }
+  return names;
 }
 
 function compileOptions(
-	annotationName: string,
-	options: FunctionReference["options"],
-	declarations?: Declaration[]
+  annotationName: string,
+  options: FunctionReference["options"],
+  declarations?: Declaration[]
 ): string {
-	if (options.length === 0) {
-		return "{}";
-	}
-	const entries: string[] = options.map((option) => {
-		// MessageFormat option names may contain `-`, `.` and a `:` namespace
-		const key = isValidIdentifier(option.name)
-			? option.name
-			: quotePropertyKey(option.name);
-		return `${key}: ${compileOptionLiteralOrVarRef(
-			annotationName,
-			option.name,
-			option.value,
-			declarations
-		)}`;
-	});
-	const code = "{ " + entries.join(", ") + " }";
+  if (options.length === 0) {
+    return "{}";
+  }
+  const entries: string[] = options.map((option) => {
+    // MessageFormat option names may contain `-`, `.` and a `:` namespace
+    const key = isValidIdentifier(option.name)
+      ? option.name
+      : quotePropertyKey(option.name);
+    return `${key}: ${compileOptionLiteralOrVarRef(
+      annotationName,
+      option.name,
+      option.value,
+      declarations
+    )}`;
+  });
+  const code = "{ " + entries.join(", ") + " }";
 
-	return code;
+  return code;
 }
 
 const numericOptionNamesByAnnotation: Record<string, ReadonlySet<string>> = {
-	number: new Set([
-		"minimumIntegerDigits",
-		"minimumFractionDigits",
-		"maximumFractionDigits",
-		"minimumSignificantDigits",
-		"maximumSignificantDigits",
-		"roundingIncrement",
-	]),
-	plural: new Set([
-		"minimumIntegerDigits",
-		"minimumFractionDigits",
-		"maximumFractionDigits",
-		"minimumSignificantDigits",
-		"maximumSignificantDigits",
-	]),
-	datetime: new Set(["fractionalSecondDigits"]),
+  number: new Set([
+    "minimumIntegerDigits",
+    "minimumFractionDigits",
+    "maximumFractionDigits",
+    "minimumSignificantDigits",
+    "maximumSignificantDigits",
+    "roundingIncrement",
+  ]),
+  plural: new Set([
+    "minimumIntegerDigits",
+    "minimumFractionDigits",
+    "maximumFractionDigits",
+    "minimumSignificantDigits",
+    "maximumSignificantDigits",
+  ]),
+  datetime: new Set(["fractionalSecondDigits"]),
 };
 
 const booleanOptionNamesByAnnotation: Record<string, ReadonlySet<string>> = {
-	number: new Set(["useGrouping"]),
-	datetime: new Set(["hour12"]),
+  number: new Set(["useGrouping"]),
+  datetime: new Set(["hour12"]),
 };
 
 const jsNonNegativeIntegerPattern = /^(?:0|[1-9]\d*)$/;
 
 function compileOptionLiteralOrVarRef(
-	annotationName: string,
-	optionName: string,
-	value: Literal | VariableReference,
-	declarations?: Declaration[]
+  annotationName: string,
+  optionName: string,
+  value: Literal | VariableReference,
+  declarations?: Declaration[]
 ): string {
-	if (value.type === "variable-reference") {
-		if (annotationName === "relativetime" && optionName === "unit") {
-			return `/** @type {import("../registry.js").RelativeTimeFormatUnit} */ (${compileVariableAccess(value.name, declarations)})`;
-		}
-		return compileVariableAccess(value.name, declarations);
-	}
+  if (value.type === "variable-reference") {
+    if (annotationName === "relativetime" && optionName === "unit") {
+      return `/** @type {import("../registry.js").RelativeTimeFormatUnit} */ (${compileVariableAccess(value.name, declarations)})`;
+    }
+    return compileVariableAccess(value.name, declarations);
+  }
 
-	if (
-		annotationName === "relativetime" &&
-		optionName === "unit" &&
-		isDollarVariableReference(value.value)
-	) {
-		return `/** @type {import("../registry.js").RelativeTimeFormatUnit} */ (${compileVariableAccess(value.value.slice(1), declarations)})`;
-	}
+  if (
+    annotationName === "relativetime" &&
+    optionName === "unit" &&
+    isDollarVariableReference(value.value)
+  ) {
+    return `/** @type {import("../registry.js").RelativeTimeFormatUnit} */ (${compileVariableAccess(value.value.slice(1), declarations)})`;
+  }
 
-	if (shouldEmitNumberLiteral(annotationName, optionName, value.value)) {
-		return value.value;
-	}
+  if (shouldEmitNumberLiteral(annotationName, optionName, value.value)) {
+    return value.value;
+  }
 
-	if (shouldEmitBooleanLiteral(annotationName, optionName, value.value)) {
-		return value.value;
-	}
+  if (shouldEmitBooleanLiteral(annotationName, optionName, value.value)) {
+    return value.value;
+  }
 
-	if (offsetAnnotations.has(annotationName) && optionName === "offset") {
-		// validated by validateOffsetOptions()
-		return String(Number(value.value));
-	}
+  if (offsetAnnotations.has(annotationName) && optionName === "offset") {
+    // validated by validateOffsetOptions()
+    return String(Number(value.value));
+  }
 
-	return `"${escapeForDoubleQuoteString(value.value)}"`;
+  return `"${escapeForDoubleQuoteString(value.value)}"`;
 }
 
 function shouldEmitNumberLiteral(
-	annotationName: string,
-	optionName: string,
-	literal: string
+  annotationName: string,
+  optionName: string,
+  literal: string
 ): boolean {
-	return (
-		numericOptionNamesByAnnotation[annotationName]?.has(optionName) === true &&
-		jsNonNegativeIntegerPattern.test(literal)
-	);
+  return (
+    numericOptionNamesByAnnotation[annotationName]?.has(optionName) === true &&
+    jsNonNegativeIntegerPattern.test(literal)
+  );
 }
 
 function shouldEmitBooleanLiteral(
-	annotationName: string,
-	optionName: string,
-	literal: string
+  annotationName: string,
+  optionName: string,
+  literal: string
 ): boolean {
-	return (
-		booleanOptionNamesByAnnotation[annotationName]?.has(optionName) === true &&
-		(literal === "true" || literal === "false")
-	);
+  return (
+    booleanOptionNamesByAnnotation[annotationName]?.has(optionName) === true &&
+    (literal === "true" || literal === "false")
+  );
 }
 
 const relativeTimeUnits = new Set([
-	"year",
-	"years",
-	"quarter",
-	"quarters",
-	"month",
-	"months",
-	"week",
-	"weeks",
-	"day",
-	"days",
-	"hour",
-	"hours",
-	"minute",
-	"minutes",
-	"second",
-	"seconds",
+  "year",
+  "years",
+  "quarter",
+  "quarters",
+  "month",
+  "months",
+  "week",
+  "weeks",
+  "day",
+  "days",
+  "hour",
+  "hours",
+  "minute",
+  "minutes",
+  "second",
+  "seconds",
 ]);
 
 function validateRelativeTimeOptions(annotation: FunctionReference): void {
-	const unitOptions = annotation.options.filter(
-		(option) => option.name === "unit"
-	);
+  const unitOptions = annotation.options.filter(
+    (option) => option.name === "unit"
+  );
 
-	if (unitOptions.length === 0) {
-		throw new Error('The "relativetime" formatter requires a "unit" option.');
-	}
+  if (unitOptions.length === 0) {
+    throw new Error('The "relativetime" formatter requires a "unit" option.');
+  }
 
-	if (unitOptions.length > 1) {
-		throw new Error(
-			'The "relativetime" formatter requires exactly one "unit" option.'
-		);
-	}
+  if (unitOptions.length > 1) {
+    throw new Error(
+      'The "relativetime" formatter requires exactly one "unit" option.'
+    );
+  }
 
-	const [unitOption] = unitOptions;
-	if (!unitOption || unitOption.value.type === "variable-reference") {
-		return;
-	}
+  const [unitOption] = unitOptions;
+  if (!unitOption || unitOption.value.type === "variable-reference") {
+    return;
+  }
 
-	if (isDollarVariableReference(unitOption.value.value)) {
-		return;
-	}
+  if (isDollarVariableReference(unitOption.value.value)) {
+    return;
+  }
 
-	if (!relativeTimeUnits.has(unitOption.value.value)) {
-		throw new Error(
-			`Invalid "relativetime" unit "${unitOption.value.value}". Expected one of: ${Array.from(
-				relativeTimeUnits
-			).join(", ")}.`
-		);
-	}
+  if (!relativeTimeUnits.has(unitOption.value.value)) {
+    throw new Error(
+      `Invalid "relativetime" unit "${unitOption.value.value}". Expected one of: ${Array.from(
+        relativeTimeUnits
+      ).join(", ")}.`
+    );
+  }
 }
 
 /**
@@ -486,19 +486,19 @@ const offsetAnnotations = new Set(["plural", "icu:pound"]);
 const offsetPattern = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/;
 
 function validateOffsetOptions(annotation: FunctionReference): void {
-	for (const option of annotation.options) {
-		if (
-			option.name === "offset" &&
-			option.value.type === "literal" &&
-			!offsetPattern.test(option.value.value)
-		) {
-			throw new Error(
-				`Invalid "${annotation.name}" offset "${option.value.value}". Expected a number.`
-			);
-		}
-	}
+  for (const option of annotation.options) {
+    if (
+      option.name === "offset" &&
+      option.value.type === "literal" &&
+      !offsetPattern.test(option.value.value)
+    ) {
+      throw new Error(
+        `Invalid "${annotation.name}" offset "${option.value.value}". Expected a number.`
+      );
+    }
+  }
 }
 
 function isDollarVariableReference(value: string): boolean {
-	return value.startsWith("$") && value.length > 1;
+  return value.startsWith("$") && value.length > 1;
 }

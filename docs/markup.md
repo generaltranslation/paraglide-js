@@ -21,9 +21,9 @@ Markup lets translators control where emphasis, links, and inline UI appear, whi
 
 ```json
 {
-	"hello": "Hello {name}",
-	"cta": "{#link to=|/docs| @track}Read docs{/link}",
-	"nested_cta": "{#link to=|/docs|}{#strong}Read docs{/strong}{/link}"
+  "hello": "Hello {name}",
+  "cta": "{#link to=|/docs| @track}Read docs{/link}",
+  "nested_cta": "{#link to=|/docs|}{#strong}Read docs{/strong}{/link}"
 }
 ```
 
@@ -56,7 +56,7 @@ When markup exists, compiled messages also expose `message.parts()`, and framewo
 
 ```json
 {
-	"welcome": "{#b}Hi {name}{/b}{#icon/}"
+  "welcome": "{#b}Hi {name}{/b}{#icon/}"
 }
 ```
 
@@ -69,12 +69,12 @@ m.welcome({ name: "Ada" });
 
 ```tsx
 <ParaglideMessage
-	message={m.welcome}
-	inputs={{ name: "Ada" }}
-	markup={{
-		b: ({ children }) => <b>{children}</b>,
-		icon: () => <span aria-hidden="true" className="icon-wave" />,
-	}}
+  message={m.welcome}
+  inputs={{ name: "Ada" }}
+  markup={{
+    b: ({ children }) => <b>{children}</b>,
+    icon: () => <span aria-hidden="true" className="icon-wave" />,
+  }}
 />
 ```
 
@@ -99,22 +99,22 @@ import { ParaglideMessage } from "@inlang/paraglide-js-react";
 import { m } from "./paraglide/messages.js";
 
 export function ContactCta() {
-	return (
-		<ParaglideMessage
-			message={m.cta}
-			inputs={{}}
-			markup={{
-				link: ({ children, options, attributes }) => (
-					<a
-						href={options.to}
-						data-track={attributes.track === true ? "true" : "false"}
-					>
-						{children}
-					</a>
-				),
-			}}
-		/>
-	);
+  return (
+    <ParaglideMessage
+      message={m.cta}
+      inputs={{}}
+      markup={{
+        link: ({ children, options, attributes }) => (
+          <a
+            href={options.to}
+            data-track={attributes.track === true ? "true" : "false"}
+          >
+            {children}
+          </a>
+        ),
+      }}
+    />
+  );
 }
 ```
 
@@ -131,12 +131,12 @@ import { h } from "vue";
 import { m } from "./paraglide/messages.js";
 
 const markup = {
-	link: ({ children, options }) => h("a", { href: options.to }, children),
+  link: ({ children, options }) => h("a", { href: options.to }, children),
 };
 </script>
 
 <template>
-	<ParaglideMessage :message="m.cta" :inputs="{}" :markup="markup" />
+  <ParaglideMessage :message="m.cta" :inputs="{}" :markup="markup" />
 </template>
 ```
 
@@ -146,16 +146,16 @@ Package: [`@inlang/paraglide-js-svelte`](https://www.npmjs.com/package/@inlang/p
 
 ```svelte
 <script lang="ts">
-	import { ParaglideMessage } from "@inlang/paraglide-js-svelte";
-	import { m } from "./paraglide/messages.js";
+  import { ParaglideMessage } from "@inlang/paraglide-js-svelte";
+  import { m } from "./paraglide/messages.js";
 </script>
 
 <ParaglideMessage message={m.cta} inputs={{}}>
-	{#snippet link({ children, options })}
-		<a href={options.to}>
-			{@render children?.()}
-		</a>
-	{/snippet}
+  {#snippet link({ children, options })}
+    <a href={options.to}>
+      {@render children?.()}
+    </a>
+  {/snippet}
 </ParaglideMessage>
 ```
 
@@ -168,13 +168,13 @@ import { ParaglideMessage } from "@inlang/paraglide-js-solid";
 import { m } from "./paraglide/messages.js";
 
 const view = (
-	<ParaglideMessage
-		message={m.cta}
-		inputs={{}}
-		markup={{
-			link: ({ children, options }) => <a href={options.to}>{children}</a>,
-		}}
-	/>
+  <ParaglideMessage
+    message={m.cta}
+    inputs={{}}
+    markup={{
+      link: ({ children, options }) => <a href={options.to}>{children}</a>,
+    }}
+  />
 );
 ```
 

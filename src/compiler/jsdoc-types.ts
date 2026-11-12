@@ -3,21 +3,21 @@ import { renderInputMatchTypeVariants } from "./match-literals.js";
 import { isValidIdentifier, quotePropertyKey } from "./variable-access.js";
 
 export type InputMatchTypes = Map<
-	string,
-	{ literals: Set<string>; hasCatchAll: boolean }
+  string,
+  { literals: Set<string>; hasCatchAll: boolean }
 >;
 
 export function jsDocBundleFunctionTypes(args: {
-	inputs: InputVariable[];
-	locales: string[];
-	matchTypes?: InputMatchTypes;
-	inputTypeOverride?: string;
+  inputs: InputVariable[];
+  locales: string[];
+  matchTypes?: InputMatchTypes;
+  inputTypeOverride?: string;
 }): string {
-	const localesUnion = args.locales.map((locale) => `"${locale}"`).join(" | ");
-	const inputType =
-		args.inputTypeOverride ?? inputsType(args.inputs, args.matchTypes);
+  const localesUnion = args.locales.map((locale) => `"${locale}"`).join(" | ");
+  const inputType =
+    args.inputTypeOverride ?? inputsType(args.inputs, args.matchTypes);
 
-	return `
+  return `
 * @param {${inputType}} inputs
 * @param {{ locale?: ${localesUnion} }} options
 * @returns {LocalizedString}`;
@@ -32,53 +32,53 @@ export function jsDocBundleFunctionTypes(args: {
  *   >> "{ age: NonNullable<unknown> }"
  */
 export function inputsType(
-	inputs: InputVariable[],
-	matchTypes?: InputMatchTypes
+  inputs: InputVariable[],
+  matchTypes?: InputMatchTypes
 ): string {
-	if (inputs.length === 0) {
-		return "{}";
-	}
+  if (inputs.length === 0) {
+    return "{}";
+  }
 
-	// Deduplicate inputs by name to avoid TypeScript errors with duplicate properties in JSDoc
-	const uniqueInputMap = new Map<string, InputVariable>();
+  // Deduplicate inputs by name to avoid TypeScript errors with duplicate properties in JSDoc
+  const uniqueInputMap = new Map<string, InputVariable>();
 
-	for (const input of inputs) {
-		uniqueInputMap.set(input.name, input);
-	}
+  for (const input of inputs) {
+    uniqueInputMap.set(input.name, input);
+  }
 
-	const uniqueInputs = Array.from(uniqueInputMap.values());
+  const uniqueInputs = Array.from(uniqueInputMap.values());
 
-	const inputParams = uniqueInputs
-		.map((input) => {
-			const name = isValidIdentifier(input.name)
-				? input.name
-				: quotePropertyKey(input.name);
-			return `${name}: ${resolveInputType(input.name, matchTypes)}`;
-		})
-		.join(", ");
-	return `{ ${inputParams} }`;
+  const inputParams = uniqueInputs
+    .map((input) => {
+      const name = isValidIdentifier(input.name)
+        ? input.name
+        : quotePropertyKey(input.name);
+      return `${name}: ${resolveInputType(input.name, matchTypes)}`;
+    })
+    .join(", ");
+  return `{ ${inputParams} }`;
 }
 
 function resolveInputType(name: string, matchTypes?: InputMatchTypes): string {
-	if (!matchTypes) return "NonNullable<unknown>";
+  if (!matchTypes) return "NonNullable<unknown>";
 
-	const info = matchTypes.get(name);
-	if (!info) return "NonNullable<unknown>";
-	if (info.hasCatchAll) return "NonNullable<unknown>";
+  const info = matchTypes.get(name);
+  if (!info) return "NonNullable<unknown>";
+  if (info.hasCatchAll) return "NonNullable<unknown>";
 
-	const literals = Array.from(info.literals);
-	if (literals.length === 0) return "NonNullable<unknown>";
+  const literals = Array.from(info.literals);
+  if (literals.length === 0) return "NonNullable<unknown>";
 
-	literals.sort();
-	return literals
-		.flatMap((value) => renderInputMatchTypeVariants(value))
-		.filter((value, index, values) => values.indexOf(value) === index)
-		.join(" | ");
+  literals.sort();
+  return literals
+    .flatMap((value) => renderInputMatchTypeVariants(value))
+    .filter((value, index, values) => values.indexOf(value) === index)
+    .join(" | ");
 }
 
 export function inputTypeForName(
-	name: string,
-	matchTypes?: InputMatchTypes
+  name: string,
+  matchTypes?: InputMatchTypes
 ): string {
-	return resolveInputType(name, matchTypes);
+  return resolveInputType(name, matchTypes);
 }

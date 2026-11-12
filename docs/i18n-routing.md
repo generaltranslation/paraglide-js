@@ -22,9 +22,9 @@ Add `url` to your strategy array to enable URL-based locale detection:
 
 ```js
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "baseLocale"],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "baseLocale"],
 });
 ```
 
@@ -50,8 +50,8 @@ Set `lazyUrlPatternPolyfill: true` in your compiler options or
 
 ```js
 export default {
-	lazyUrlPatternPolyfill: true,
-	// Your urlPatterns or routeStrategies configuration
+  lazyUrlPatternPolyfill: true,
+  // Your urlPatterns or routeStrategies configuration
 };
 ```
 
@@ -60,7 +60,7 @@ top-level await. The generated runtime conditionally awaits the polyfill import:
 
 ```js
 if (typeof URLPattern === "undefined") {
-	await import("@inlang/paraglide-js/urlpattern-polyfill");
+  await import("@inlang/paraglide-js/urlpattern-polyfill");
 }
 ```
 
@@ -110,8 +110,8 @@ Patterns are evaluated in array order. The first match wins, so place specific p
 
 ```js
 urlPatterns: [
-	{ pattern: "/blog/:id", localized: [...] },  // Specific first
-	{ pattern: "/:path(.*)?", localized: [...] }, // Wildcard last
+  { pattern: "/blog/:id", localized: [...] },  // Specific first
+  { pattern: "/:path(.*)?", localized: [...] }, // Wildcard last
 ]
 ```
 
@@ -141,26 +141,26 @@ https://example.com/de/about
 
 ```js
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "cookie"],
-	urlPatterns: [
-		{
-			pattern: "/",
-			localized: [
-				["de", "/de"],
-				["en", "/"],
-			],
-		},
-		{
-			pattern: "/:path(.*)?",
-			localized: [
-				["de", "/de/:path(.*)?"],
-				// make sure to match the least specific path last
-				["en", "/:path(.*)?"],
-			],
-		},
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "cookie"],
+  urlPatterns: [
+    {
+      pattern: "/",
+      localized: [
+        ["de", "/de"],
+        ["en", "/"],
+      ],
+    },
+    {
+      pattern: "/:path(.*)?",
+      localized: [
+        ["de", "/de/:path(.*)?"],
+        // make sure to match the least specific path last
+        ["en", "/:path(.*)?"],
+      ],
+    },
+  ],
 });
 ```
 
@@ -179,25 +179,25 @@ Some frameworks like SvelteKit model locale-aware routes with a required `[local
 
 ```js
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "cookie"],
-	urlPatterns: [
-		{
-			pattern: "/",
-			localized: [
-				["en", "/en"],
-				["fr", "/fr"],
-			],
-		},
-		{
-			pattern: "/:path(.*)?",
-			localized: [
-				["en", "/en/:path(.*)?"],
-				["fr", "/fr/:path(.*)?"],
-			],
-		},
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "cookie"],
+  urlPatterns: [
+    {
+      pattern: "/",
+      localized: [
+        ["en", "/en"],
+        ["fr", "/fr"],
+      ],
+    },
+    {
+      pattern: "/:path(.*)?",
+      localized: [
+        ["en", "/en/:path(.*)?"],
+        ["fr", "/fr/:path(.*)?"],
+      ],
+    },
+  ],
 });
 ```
 
@@ -211,27 +211,27 @@ Some routes (like `/dashboard` or `/app`) may need i18n but shouldn't have a loc
 
 ```js
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "cookie", "baseLocale"],
-	urlPatterns: [
-		// Dashboard routes - no locale prefix
-		{
-			pattern: "/dashboard/:path(.*)?",
-			localized: [
-				["en", "/dashboard/:path(.*)?"],
-				["de", "/dashboard/:path(.*)?"], // Same path for all locales
-			],
-		},
-		// Other routes - use locale prefix
-		{
-			pattern: "/:path(.*)?",
-			localized: [
-				["de", "/de/:path(.*)?"],
-				["en", "/:path(.*)?"],
-			],
-		},
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "cookie", "baseLocale"],
+  urlPatterns: [
+    // Dashboard routes - no locale prefix
+    {
+      pattern: "/dashboard/:path(.*)?",
+      localized: [
+        ["en", "/dashboard/:path(.*)?"],
+        ["de", "/dashboard/:path(.*)?"], // Same path for all locales
+      ],
+    },
+    // Other routes - use locale prefix
+    {
+      pattern: "/:path(.*)?",
+      localized: [
+        ["de", "/de/:path(.*)?"],
+        ["en", "/:path(.*)?"],
+      ],
+    },
+  ],
 });
 ```
 
@@ -257,34 +257,34 @@ Here's a simple example with translated path segments:
 
 ```js
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "cookie"],
-	urlPatterns: [
-		// Specific translated routes
-		{
-			pattern: "/about",
-			localized: [
-				["en", "/about"],
-				["de", "/ueber-uns"],
-			],
-		},
-		{
-			pattern: "/products/:id",
-			localized: [
-				["en", "/products/:id"],
-				["de", "/produkte/:id"],
-			],
-		},
-		// Wildcard for untranslated routes - same path for all locales
-		{
-			pattern: "/:path(.*)?",
-			localized: [
-				["en", "/:path(.*)?"],
-				["de", "/:path(.*)?"],
-			],
-		},
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "cookie"],
+  urlPatterns: [
+    // Specific translated routes
+    {
+      pattern: "/about",
+      localized: [
+        ["en", "/about"],
+        ["de", "/ueber-uns"],
+      ],
+    },
+    {
+      pattern: "/products/:id",
+      localized: [
+        ["en", "/products/:id"],
+        ["de", "/produkte/:id"],
+      ],
+    },
+    // Wildcard for untranslated routes - same path for all locales
+    {
+      pattern: "/:path(.*)?",
+      localized: [
+        ["en", "/:path(.*)?"],
+        ["de", "/:path(.*)?"],
+      ],
+    },
+  ],
 });
 ```
 
@@ -302,27 +302,27 @@ When using domain-based routing, you need separate patterns for localhost and pr
 
 ```js
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "cookie"],
-	urlPatterns: [
-		// Localhost: use path prefixes since subdomains aren't available locally
-		{
-			pattern: "http://localhost::port?/:path(.*)?",
-			localized: [
-				["en", "http://localhost::port?/en/:path(.*)?"],
-				["de", "http://localhost::port?/de/:path(.*)?"],
-			],
-		},
-		// Production: use subdomains
-		{
-			pattern: "https://example.com/:path(.*)?",
-			localized: [
-				["en", "https://example.com/:path(.*)?"],
-				["de", "https://de.example.com/:path(.*)?"],
-			],
-		},
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "cookie"],
+  urlPatterns: [
+    // Localhost: use path prefixes since subdomains aren't available locally
+    {
+      pattern: "http://localhost::port?/:path(.*)?",
+      localized: [
+        ["en", "http://localhost::port?/en/:path(.*)?"],
+        ["de", "http://localhost::port?/de/:path(.*)?"],
+      ],
+    },
+    // Production: use subdomains
+    {
+      pattern: "https://example.com/:path(.*)?",
+      localized: [
+        ["en", "https://example.com/:path(.*)?"],
+        ["de", "https://de.example.com/:path(.*)?"],
+      ],
+    },
+  ],
 });
 ```
 
@@ -345,18 +345,18 @@ This allows the pattern to match both `/about` and `/shop/about`.
 
 ```js
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "cookie"],
-	urlPatterns: [
-		{
-			pattern: "/{shop/}?:path(.*)?",
-			localized: [
-				["en", "/{shop/}?en/:path(.*)?"],
-				["de", "/{shop/}?de/:path(.*)?"],
-			],
-		},
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "cookie"],
+  urlPatterns: [
+    {
+      pattern: "/{shop/}?:path(.*)?",
+      localized: [
+        ["en", "/{shop/}?en/:path(.*)?"],
+        ["de", "/{shop/}?de/:path(.*)?"],
+      ],
+    },
+  ],
 });
 ```
 
@@ -376,27 +376,27 @@ https://example.com/de/specific-path    // Redirects to 404 in German
 
 ```js
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "cookie"],
-	urlPatterns: [
-		// Route only available in English
-		{
-			pattern: "/specific-path",
-			localized: [
-				["en", "/specific-path"],
-				["de", "/de/404"], // German visitors get redirected to 404
-			],
-		},
-		// Catch-all for other routes
-		{
-			pattern: "/:path(.*)?",
-			localized: [
-				["de", "/de/:path(.*)?"],
-				["en", "/:path(.*)?"],
-			],
-		},
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "cookie"],
+  urlPatterns: [
+    // Route only available in English
+    {
+      pattern: "/specific-path",
+      localized: [
+        ["en", "/specific-path"],
+        ["de", "/de/404"], // German visitors get redirected to 404
+      ],
+    },
+    // Catch-all for other routes
+    {
+      pattern: "/:path(.*)?",
+      localized: [
+        ["de", "/de/:path(.*)?"],
+        ["en", "/:path(.*)?"],
+      ],
+    },
+  ],
 });
 ```
 
@@ -427,11 +427,11 @@ Use `{ url }` in the browser and `{ request }` on the server. If a proxy or load
 import { shouldRedirect } from "./paraglide/runtime.js";
 
 async function checkRedirect() {
-	const decision = await shouldRedirect({ url: window.location.href });
+  const decision = await shouldRedirect({ url: window.location.href });
 
-	if (decision.shouldRedirect) {
-		window.location.href = decision.redirectUrl.href;
-	}
+  if (decision.shouldRedirect) {
+    window.location.href = decision.redirectUrl.href;
+  }
 }
 
 // Call on route change or app init
@@ -445,11 +445,11 @@ import { redirect } from "@tanstack/router";
 import { shouldRedirect } from "./paraglide/runtime.js";
 
 export const beforeLoad = async ({ location }) => {
-	const decision = await shouldRedirect({ url: location.href });
+  const decision = await shouldRedirect({ url: location.href });
 
-	if (decision.shouldRedirect) {
-		throw redirect({ to: decision.redirectUrl.href });
-	}
+  if (decision.shouldRedirect) {
+    throw redirect({ to: decision.redirectUrl.href });
+  }
 };
 ```
 
@@ -464,27 +464,27 @@ Treat every resulting redirect as a document navigation, including same-origin U
 
 ```svelte
 <script lang="ts">
-	import { afterNavigate } from "$app/navigation";
-	import { onMount } from "svelte";
-	import { shouldRedirect } from "$lib/paraglide/runtime";
+  import { afterNavigate } from "$app/navigation";
+  import { onMount } from "svelte";
+  import { shouldRedirect } from "$lib/paraglide/runtime";
 
-	async function syncLocaleUrl(url: string) {
-		const decision = await shouldRedirect({ url });
+  async function syncLocaleUrl(url: string) {
+    const decision = await shouldRedirect({ url });
 
-		if (decision.shouldRedirect && decision.redirectUrl) {
-			window.location.href = decision.redirectUrl.href;
-		}
-	}
+    if (decision.shouldRedirect && decision.redirectUrl) {
+      window.location.href = decision.redirectUrl.href;
+    }
+  }
 
-	onMount(() => {
-		void syncLocaleUrl(window.location.href);
-	});
+  onMount(() => {
+    void syncLocaleUrl(window.location.href);
+  });
 
-	afterNavigate((navigation) => {
-		if (navigation.to) {
-			void syncLocaleUrl(navigation.to.url.href);
-		}
-	});
+  afterNavigate((navigation) => {
+    if (navigation.to) {
+      void syncLocaleUrl(navigation.to.url.href);
+    }
+  });
 </script>
 ```
 
@@ -496,17 +496,17 @@ Pass the browser-facing URL as `effectiveRequestUrl`. Derive it from trusted pro
 import { shouldRedirect } from "./paraglide/runtime.js";
 
 export async function handle(request: Request) {
-	const effectiveRequestUrl = new URL(request.url);
-	effectiveRequestUrl.protocol = "https:";
-	effectiveRequestUrl.host = "app.example.com";
+  const effectiveRequestUrl = new URL(request.url);
+  effectiveRequestUrl.protocol = "https:";
+  effectiveRequestUrl.host = "app.example.com";
 
-	const decision = await shouldRedirect({ request, effectiveRequestUrl });
+  const decision = await shouldRedirect({ request, effectiveRequestUrl });
 
-	if (decision.shouldRedirect) {
-		return Response.redirect(decision.redirectUrl, 307);
-	}
+  if (decision.shouldRedirect) {
+    return Response.redirect(decision.redirectUrl, 307);
+  }
 
-	return render(request, decision.locale);
+  return render(request, decision.locale);
 }
 ```
 
@@ -523,8 +523,8 @@ To verify your patterns work correctly:
 ```ts
 // Add logging to your existing middleware handler
 paraglideMiddleware(request, ({ request, locale }) => {
-	console.log(`URL: ${request.url} → Locale: ${locale}`);
-	return yourAppHandler(request); // Your existing handler
+  console.log(`URL: ${request.url} → Locale: ${locale}`);
+  return yourAppHandler(request); // Your existing handler
 });
 ```
 
@@ -561,13 +561,13 @@ Use `routeStrategies` instead. This pattern is common when public pages are loca
 
 ```ts
 compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	strategy: ["url", "cookie", "baseLocale"],
-	routeStrategies: [
-		{ match: "/dashboard/:path(.*)?", strategy: ["cookie", "baseLocale"] },
-		{ match: "/api/:path(.*)?", exclude: true },
-	],
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["url", "cookie", "baseLocale"],
+  routeStrategies: [
+    { match: "/dashboard/:path(.*)?", strategy: ["cookie", "baseLocale"] },
+    { match: "/api/:path(.*)?", exclude: true },
+  ],
 });
 ```
 
@@ -581,40 +581,40 @@ _Examples below show `urlPatterns` arrays only, omitting the `compile()` wrapper
 
 ```js
 urlPatterns: [
-	// INCORRECT ORDER: The wildcard pattern will match everything,
-	// so the specific pattern will never be reached
-	{
-		pattern: "https://example.com/:path(.*)?", // This will match ANY path
-		localized: [
-			["en", "https://example.com/:path(.*)?"],
-			["de", "https://example.com/de/:path(.*)?"],
-		],
-	},
-	{
-		pattern: "https://example.com/blog/:id", // This will never be reached
-		localized: [
-			["en", "https://example.com/blog/:id"],
-			["de", "https://example.com/de/blog/:id"],
-		],
-	},
+  // INCORRECT ORDER: The wildcard pattern will match everything,
+  // so the specific pattern will never be reached
+  {
+    pattern: "https://example.com/:path(.*)?", // This will match ANY path
+    localized: [
+      ["en", "https://example.com/:path(.*)?"],
+      ["de", "https://example.com/de/:path(.*)?"],
+    ],
+  },
+  {
+    pattern: "https://example.com/blog/:id", // This will never be reached
+    localized: [
+      ["en", "https://example.com/blog/:id"],
+      ["de", "https://example.com/de/blog/:id"],
+    ],
+  },
 ];
 
 // CORRECT ORDER: Specific patterns first, then more general patterns
 urlPatterns: [
-	{
-		pattern: "https://example.com/blog/:id", // Specific pattern first
-		localized: [
-			["en", "https://example.com/blog/:id"],
-			["de", "https://example.com/de/blog/:id"],
-		],
-	},
-	{
-		pattern: "https://example.com/:path(.*)?", // General pattern last
-		localized: [
-			["en", "https://example.com/:path(.*)?"],
-			["de", "https://example.com/de/:path(.*)?"],
-		],
-	},
+  {
+    pattern: "https://example.com/blog/:id", // Specific pattern first
+    localized: [
+      ["en", "https://example.com/blog/:id"],
+      ["de", "https://example.com/de/blog/:id"],
+    ],
+  },
+  {
+    pattern: "https://example.com/:path(.*)?", // General pattern last
+    localized: [
+      ["en", "https://example.com/:path(.*)?"],
+      ["de", "https://example.com/de/:path(.*)?"],
+    ],
+  },
 ];
 ```
 
@@ -668,9 +668,9 @@ URLPattern treats `/about` and `/about/` as different paths. You can make Paragl
 
 ```ts
 paraglideVitePlugin({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
-	trailingSlash: "never", // or "always"
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  trailingSlash: "never", // or "always"
 });
 ```
 

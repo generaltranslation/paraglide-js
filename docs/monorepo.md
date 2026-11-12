@@ -53,7 +53,7 @@ The simplest option is to make shared UI components accept already translated st
 ```tsx
 // packages/ui/src/save-button.tsx
 export function SaveButton(props: { label: string }) {
-	return <button>{props.label}</button>;
+  return <button>{props.label}</button>;
 }
 ```
 
@@ -77,20 +77,20 @@ npx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/parag
 ```ts
 // packages/ui/src/i18n.ts
 import {
-	overwriteGetLocale,
-	overwriteSetLocale,
-	type Locale,
+  overwriteGetLocale,
+  overwriteSetLocale,
+  type Locale,
 } from "./paraglide/runtime.js";
 
 export function initUiI18n(options: {
-	getLocale: () => Locale;
-	setLocale: (
-		locale: Locale,
-		options?: { reload?: boolean }
-	) => void | Promise<void>;
+  getLocale: () => Locale;
+  setLocale: (
+    locale: Locale,
+    options?: { reload?: boolean }
+  ) => void | Promise<void>;
 }) {
-	overwriteGetLocale(options.getLocale);
-	overwriteSetLocale(options.setLocale);
+  overwriteGetLocale(options.getLocale);
+  overwriteSetLocale(options.setLocale);
 }
 ```
 
@@ -107,7 +107,7 @@ initUiI18n({ getLocale, setLocale });
 import * as m from "./paraglide/messages.js";
 
 export function SaveButton() {
-	return <button>{m.save()}</button>;
+  return <button>{m.save()}</button>;
 }
 ```
 
@@ -141,17 +141,17 @@ monorepo/
 ```json
 // packages/i18n/package.json
 {
-	"name": "@myorg/i18n",
-	"devDependencies": {
-		"@inlang/paraglide-js": "latest"
-	},
-	"scripts": {
-		"build": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations"
-	},
-	"exports": {
-		"./messages": "./src/paraglide/messages.js",
-		"./runtime": "./src/paraglide/runtime.js"
-	}
+  "name": "@myorg/i18n",
+  "devDependencies": {
+    "@inlang/paraglide-js": "latest"
+  },
+  "scripts": {
+    "build": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --emit-ts-declarations"
+  },
+  "exports": {
+    "./messages": "./src/paraglide/messages.js",
+    "./runtime": "./src/paraglide/runtime.js"
+  }
 }
 ```
 

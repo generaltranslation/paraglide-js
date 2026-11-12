@@ -3,8 +3,8 @@ import { normalizeTrailingSlash } from "./normalize-trailing-slash.js";
 import { execUrlPattern } from "./exec-url-pattern.js";
 import { getUrlPattern } from "./url-pattern-cache.js";
 import {
-	getRouteStrategyCandidates,
-	getRoutingConfigVersion,
+  getRouteStrategyCandidates,
+  getRoutingConfigVersion,
 } from "./url-pattern-index.js";
 import { routeStrategies, strategy } from "./variables.js";
 
@@ -25,43 +25,43 @@ let cachedRouteStrategy;
  * @returns {{ match: string; strategy?: typeof strategy; exclude?: boolean } | undefined}
  */
 export function findMatchingRouteStrategy(url) {
-	if (routeStrategies.length === 0) {
-		return undefined;
-	}
+  if (routeStrategies.length === 0) {
+    return undefined;
+  }
 
-	const urlString = typeof url === "string" ? url : url.href;
-	const configVersion = getRoutingConfigVersion();
-	if (
-		cachedRouteStrategyUrl === urlString &&
-		cachedRouteConfigVersion === configVersion
-	) {
-		return cachedRouteStrategy;
-	}
+  const urlString = typeof url === "string" ? url : url.href;
+  const configVersion = getRoutingConfigVersion();
+  if (
+    cachedRouteStrategyUrl === urlString &&
+    cachedRouteConfigVersion === configVersion
+  ) {
+    return cachedRouteStrategy;
+  }
 
-	const publicUrl = normalizeTrailingSlash(
-		new URL(urlString, "http://example.com")
-	);
-	const canonicalUrl = deLocalizeUrl(publicUrl);
-	const candidateUrls =
-		canonicalUrl.href === publicUrl.href
-			? [publicUrl]
-			: [publicUrl, canonicalUrl];
-	let match;
-	for (const candidateUrl of candidateUrls) {
-		for (const routeStrategy of getRouteStrategyCandidates(candidateUrl)) {
-			const pattern = getUrlPattern(routeStrategy.match, candidateUrl);
-			if (execUrlPattern(pattern, candidateUrl)) {
-				match = routeStrategy;
-				break;
-			}
-		}
-		if (match) break;
-	}
+  const publicUrl = normalizeTrailingSlash(
+    new URL(urlString, "http://example.com")
+  );
+  const canonicalUrl = deLocalizeUrl(publicUrl);
+  const candidateUrls =
+    canonicalUrl.href === publicUrl.href
+      ? [publicUrl]
+      : [publicUrl, canonicalUrl];
+  let match;
+  for (const candidateUrl of candidateUrls) {
+    for (const routeStrategy of getRouteStrategyCandidates(candidateUrl)) {
+      const pattern = getUrlPattern(routeStrategy.match, candidateUrl);
+      if (execUrlPattern(pattern, candidateUrl)) {
+        match = routeStrategy;
+        break;
+      }
+    }
+    if (match) break;
+  }
 
-	cachedRouteConfigVersion = configVersion;
-	cachedRouteStrategyUrl = urlString;
-	cachedRouteStrategy = match;
-	return match;
+  cachedRouteConfigVersion = configVersion;
+  cachedRouteStrategyUrl = urlString;
+  cachedRouteStrategy = match;
+  return match;
 }
 
 /**
@@ -74,15 +74,15 @@ export function findMatchingRouteStrategy(url) {
  * @returns {typeof strategy}
  */
 export function getStrategyForUrl(url) {
-	const routeStrategy = findMatchingRouteStrategy(url);
-	if (
-		routeStrategy &&
-		routeStrategy.exclude !== true &&
-		Array.isArray(routeStrategy.strategy)
-	) {
-		return routeStrategy.strategy;
-	}
-	return strategy;
+  const routeStrategy = findMatchingRouteStrategy(url);
+  if (
+    routeStrategy &&
+    routeStrategy.exclude !== true &&
+    Array.isArray(routeStrategy.strategy)
+  ) {
+    return routeStrategy.strategy;
+  }
+  return strategy;
 }
 
 /**
@@ -92,5 +92,5 @@ export function getStrategyForUrl(url) {
  * @returns {boolean}
  */
 export function isExcludedByRouteStrategy(url) {
-	return findMatchingRouteStrategy(url)?.exclude === true;
+  return findMatchingRouteStrategy(url)?.exclude === true;
 }

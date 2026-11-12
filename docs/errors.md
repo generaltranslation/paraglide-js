@@ -27,11 +27,11 @@ overwriteSetLocale((locale) => console.log(`Set locale to ${locale}`));
 
 // Your app rendering entrypoint.
 export default function App() {
-	return (
-		<div>
-			<p>Hello world</p>
-		</div>
-	);
+  return (
+    <div>
+      <p>Hello world</p>
+    </div>
+  );
 }
 ```
 
@@ -63,7 +63,7 @@ app.use(paraglideMiddleware);
 
 // ✅ this will work
 app.get("/", (req, res) => {
-	console.log(m.hello());
+  console.log(m.hello());
 });
 ```
 

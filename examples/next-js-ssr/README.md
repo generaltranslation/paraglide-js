@@ -32,20 +32,20 @@ Add the plugin to `next.config.mjs`:
 import { paraglideWebpackPlugin } from "@inlang/paraglide-js";
 
 export default {
-	cacheComponents: true,
-	skipProxyUrlNormalize: true,
-	partialPrefetching: true,
-	webpack(config) {
-		config.plugins.push(
-			paraglideWebpackPlugin({
-				project: "./project.inlang",
-				outdir: "./src/paraglide",
-				emitTsDeclarations: true,
-				strategy: ["url", "cookie", "baseLocale"],
-			})
-		);
-		return config;
-	},
+  cacheComponents: true,
+  skipProxyUrlNormalize: true,
+  partialPrefetching: true,
+  webpack(config) {
+    config.plugins.push(
+      paraglideWebpackPlugin({
+        project: "./project.inlang",
+        outdir: "./src/paraglide",
+        emitTsDeclarations: true,
+        strategy: ["url", "cookie", "baseLocale"],
+      })
+    );
+    return config;
+  },
 };
 ```
 
@@ -78,17 +78,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { paraglideMiddleware } from "./paraglide/server";
 
 export function proxy(request: NextRequest) {
-	return paraglideMiddleware(request, ({ request, locale }) => {
-		const url = new URL(request.url);
-		url.pathname = `/${locale}${url.pathname === "/" ? "" : url.pathname}`;
-		const headers = new Headers(request.headers);
-		headers.set("x-paraglide-locale", locale);
-		return NextResponse.rewrite(url, { request: { headers } });
-	});
+  return paraglideMiddleware(request, ({ request, locale }) => {
+    const url = new URL(request.url);
+    url.pathname = `/${locale}${url.pathname === "/" ? "" : url.pathname}`;
+    const headers = new Headers(request.headers);
+    headers.set("x-paraglide-locale", locale);
+    return NextResponse.rewrite(url, { request: { headers } });
+  });
 }
 
 export const config = {
-	matcher: ["/((?!api|_next|.*\\..*).*)"],
+  matcher: ["/((?!api|_next|.*\\..*).*)"],
 };
 ```
 
@@ -107,26 +107,26 @@ import { isLocale, getTextDirection, locales } from "@/paraglide/runtime";
 import ClientSideLocaleSwitch from "./ClientSideLocaleSwitch";
 
 export function generateStaticParams() {
-	return locales.map((locale) => ({ locale }));
+  return locales.map((locale) => ({ locale }));
 }
 
 export default async function RootLayout({
-	children,
-	params,
+  children,
+  params,
 }: {
-	children: React.ReactNode;
-	params: Promise<{ locale: string }>;
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
-	const { locale } = await params;
-	if (!isLocale(locale)) notFound();
-	return (
-		<html lang={locale} dir={getTextDirection(locale)}>
-			<body>
-				<ClientSideLocaleSwitch locale={locale} />
-				<Suspense fallback={<p>Loading page...</p>}>{children}</Suspense>
-			</body>
-		</html>
-	);
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  return (
+    <html lang={locale} dir={getTextDirection(locale)}>
+      <body>
+        <ClientSideLocaleSwitch locale={locale} />
+        <Suspense fallback={<p>Loading page...</p>}>{children}</Suspense>
+      </body>
+    </html>
+  );
 }
 ```
 
@@ -141,18 +141,18 @@ import { m } from "@/paraglide/messages";
 import { isLocale, localizeHref } from "@/paraglide/runtime";
 
 export default async function Page({
-	params,
+  params,
 }: {
-	params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string }>;
 }) {
-	const { locale } = await params;
-	if (!isLocale(locale)) notFound();
-	return (
-		<>
-			<p>{m.example_message({ username: "Samuel" }, { locale })}</p>
-			<Link href={localizeHref("/subpage", { locale })}>Subpage</Link>
-		</>
-	);
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  return (
+    <>
+      <p>{m.example_message({ username: "Samuel" }, { locale })}</p>
+      <Link href={localizeHref("/subpage", { locale })}>Subpage</Link>
+    </>
+  );
 }
 ```
 
@@ -168,13 +168,13 @@ import { m } from "@/paraglide/messages";
 import { localizeHref, setLocale, type Locale } from "@/paraglide/runtime";
 
 export default function ClientSideLocaleSwitch({ locale }: { locale: Locale }) {
-	return (
-		<>
-			<p>{m.example_message({ username: "Client" }, { locale })}</p>
-			<Link href={localizeHref("/", { locale: "de" })}>German</Link>
-			<button onClick={() => setLocale("de")}>Switch to German</button>
-		</>
-	);
+  return (
+    <>
+      <p>{m.example_message({ username: "Client" }, { locale })}</p>
+      <Link href={localizeHref("/", { locale: "de" })}>German</Link>
+      <button onClick={() => setLocale("de")}>Switch to German</button>
+    </>
+  );
 }
 ```
 
@@ -189,13 +189,13 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 
 async function RequestDetails() {
-	const locale = (await headers()).get("x-paraglide-locale");
-	return <p>Request locale: {locale}</p>;
+  const locale = (await headers()).get("x-paraglide-locale");
+  return <p>Request locale: {locale}</p>;
 }
 
 // Inside a page:
 <Suspense fallback={<p>Loading request...</p>}>
-	<RequestDetails />
+  <RequestDetails />
 </Suspense>;
 ```
 

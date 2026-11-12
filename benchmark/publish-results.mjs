@@ -7,160 +7,160 @@ import { inspectLocaleGraphs } from "./check-locale-graphs.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const output =
-	process.env.BENCHMARK_OUTPUT ?? path.join(root, ".work/benchmark");
+  process.env.BENCHMARK_OUTPUT ?? path.join(root, ".work/benchmark");
 process.chdir(root);
 const read = async (file) => JSON.parse(await fs.readFile(file, "utf8"));
 const expected = scenarios.length * variants.length;
 let data;
 if (process.argv.includes("--saved")) {
-	data = await read("results/results.json");
+  data = await read("results/results.json");
 } else {
-	const summary = await read(path.join(output, "summary.json"));
-	const raw = await read(path.join(output, "results.json"));
-	const checks = await read(path.join(output, "correctness.json"));
-	if (
-		raw.results.length !== expected * settings.repeats ||
-		raw.results.some((r) => !r.valid || r.steps.length !== 4) ||
-		summary.summary.length !== expected ||
-		summary.summary.some((r) => r.repeats !== settings.repeats) ||
-		checks.length !== expected ||
-		checks.some((r) => !r.valid) ||
-		raw.settings.languageSwitch !== "document" ||
-		raw.settings.pageLoading !== "parallel"
-	)
-		throw Error("Publish only the complete validated per-locale matrix");
-	data = {
-		measuredAt: raw.measuredAt,
-		versions: raw.versions,
-		settings: raw.settings,
-		environment: raw.environment,
-		workspaceCompiler: await read(path.join(output, "compiler-source.json")),
-		validation: {
-			builds: checks.length,
-			journeys: raw.results.length,
-			stringsChecked: checks.reduce((sum, r) => sum + r.messagesChecked, 0),
-			pluralAssertions: checks.reduce((sum, r) => sum + r.pluralAssertions, 0),
-		},
-		graphValidation: await inspectLocaleGraphs(output, raw, fixture),
-		summary: summary.summary.map((r) => ({
-			variant: r.variant,
-			localeCount: r.localeCount,
-			used: r.used,
-			total: r.total,
-			initialWire: r.initialWire,
-			journeyWire: r.journeyWire,
-			steps: Object.fromEntries(
-				Object.entries(r.steps).map(([key, value]) => [
-					key,
-					{ readyMs: value.readyMs, wire: value.wire },
-				])
-			),
-		})),
-	};
-	await fs.copyFile(path.join(output, "summary.csv"), "results/summary.csv");
+  const summary = await read(path.join(output, "summary.json"));
+  const raw = await read(path.join(output, "results.json"));
+  const checks = await read(path.join(output, "correctness.json"));
+  if (
+    raw.results.length !== expected * settings.repeats ||
+    raw.results.some((r) => !r.valid || r.steps.length !== 4) ||
+    summary.summary.length !== expected ||
+    summary.summary.some((r) => r.repeats !== settings.repeats) ||
+    checks.length !== expected ||
+    checks.some((r) => !r.valid) ||
+    raw.settings.languageSwitch !== "document" ||
+    raw.settings.pageLoading !== "parallel"
+  )
+    throw Error("Publish only the complete validated per-locale matrix");
+  data = {
+    measuredAt: raw.measuredAt,
+    versions: raw.versions,
+    settings: raw.settings,
+    environment: raw.environment,
+    workspaceCompiler: await read(path.join(output, "compiler-source.json")),
+    validation: {
+      builds: checks.length,
+      journeys: raw.results.length,
+      stringsChecked: checks.reduce((sum, r) => sum + r.messagesChecked, 0),
+      pluralAssertions: checks.reduce((sum, r) => sum + r.pluralAssertions, 0),
+    },
+    graphValidation: await inspectLocaleGraphs(output, raw, fixture),
+    summary: summary.summary.map((r) => ({
+      variant: r.variant,
+      localeCount: r.localeCount,
+      used: r.used,
+      total: r.total,
+      initialWire: r.initialWire,
+      journeyWire: r.journeyWire,
+      steps: Object.fromEntries(
+        Object.entries(r.steps).map(([key, value]) => [
+          key,
+          { readyMs: value.readyMs, wire: value.wire },
+        ])
+      ),
+    })),
+  };
+  await fs.copyFile(path.join(output, "summary.csv"), "results/summary.csv");
 }
 const names = {
-	paraglide: "Paraglide JS",
-	"paraglide-per-locale": "Paraglide · per locale",
-	"i18next-bundled": "i18next bundled",
-	"i18next-http-global": "i18next HTTP catalog",
-	"i18next-http-routes": "i18next HTTP routes",
+  paraglide: "Paraglide JS",
+  "paraglide-per-locale": "Paraglide · per locale",
+  "i18next-bundled": "i18next bundled",
+  "i18next-http-global": "i18next HTTP catalog",
+  "i18next-http-routes": "i18next HTTP routes",
 };
 const groups = scenarios.map((s) =>
-	variants.map((variant) =>
-		data.summary.find(
-			(r) =>
-				r.variant === variant &&
-				r.localeCount === s.localeCount &&
-				r.total === s.total &&
-				r.used === s.used
-		)
-	)
+  variants.map((variant) =>
+    data.summary.find(
+      (r) =>
+        r.variant === variant &&
+        r.localeCount === s.localeCount &&
+        r.total === s.total &&
+        r.used === s.used
+    )
+  )
 );
 if (
-	data.summary.length !== expected ||
-	groups.some((rows) => rows.some((r) => !r))
+  data.summary.length !== expected ||
+  groups.some((rows) => rows.some((r) => !r))
 )
-	throw Error("Missing implementation or scenario");
+  throw Error("Missing implementation or scenario");
 const localeCount = scenarios.length;
 if (
-	data.graphValidation.lazyRouteIsolation !== localeCount ||
-	data.graphValidation.inactiveLocaleIsolation !== localeCount
+  data.graphValidation.lazyRouteIsolation !== localeCount ||
+  data.graphValidation.inactiveLocaleIsolation !== localeCount
 )
-	throw Error("Incomplete route/locale isolation checks");
+  throw Error("Incomplete route/locale isolation checks");
 const comparisons = (variant) => {
-	const pairs = groups.flatMap((rows) =>
-		rows
-			.filter((r) => r.variant.startsWith("i18next"))
-			.map((other) => ({
-				paraglide: rows.find((r) => r.variant === variant),
-				other,
-			}))
-	);
-	return {
-		comparisonCount: pairs.length,
-		initialReadyWins: pairs.filter(
-			({ paraglide: p, other: o }) =>
-				p.steps.initial.readyMs.median < o.steps.initial.readyMs.median
-		).length,
-		initialByteWins: pairs.filter(
-			({ paraglide: p, other: o }) =>
-				p.initialWire.median < o.initialWire.median
-		).length,
-		journeyByteWins: pairs.filter(
-			({ paraglide: p, other: o }) =>
-				p.journeyWire.median < o.journeyWire.median
-		).length,
-		byteLosses: pairs.filter(
-			({ paraglide: p, other: o }) =>
-				p.initialWire.median > o.initialWire.median ||
-				p.journeyWire.median > o.journeyWire.median
-		).length,
-	};
+  const pairs = groups.flatMap((rows) =>
+    rows
+      .filter((r) => r.variant.startsWith("i18next"))
+      .map((other) => ({
+        paraglide: rows.find((r) => r.variant === variant),
+        other,
+      }))
+  );
+  return {
+    comparisonCount: pairs.length,
+    initialReadyWins: pairs.filter(
+      ({ paraglide: p, other: o }) =>
+        p.steps.initial.readyMs.median < o.steps.initial.readyMs.median
+    ).length,
+    initialByteWins: pairs.filter(
+      ({ paraglide: p, other: o }) =>
+        p.initialWire.median < o.initialWire.median
+    ).length,
+    journeyByteWins: pairs.filter(
+      ({ paraglide: p, other: o }) =>
+        p.journeyWire.median < o.journeyWire.median
+    ).length,
+    byteLosses: pairs.filter(
+      ({ paraglide: p, other: o }) =>
+        p.initialWire.median > o.initialWire.median ||
+        p.journeyWire.median > o.journeyWire.median
+    ).length,
+  };
 };
 data.overview = {
-	...comparisons("paraglide"),
-	perLocale: comparisons("paraglide-per-locale"),
+  ...comparisons("paraglide"),
+  perLocale: comparisons("paraglide-per-locale"),
 };
 const { summary: rows, ...metadata } = data;
 await fs.writeFile(
-	"results/results.json",
-	JSON.stringify(metadata, null, 2).slice(0, -2) +
-		',\n  "summary": [\n' +
-		rows.map((r) => "    " + JSON.stringify(r)).join(",\n") +
-		"\n  ]\n}\n"
+  "results/results.json",
+  JSON.stringify(metadata, null, 2).slice(0, -2) +
+    ',\n  "summary": [\n' +
+    rows.map((r) => "    " + JSON.stringify(r)).join(",\n") +
+    "\n  ]\n}\n"
 );
 const header = `| Locales | Used / route | Catalog | ${variants.map((v) => names[v]).join(" | ")} |\n| --- | --- | --- | ${variants.map(() => "---").join(" | ")} |\n`;
 const table = (metric) =>
-	header +
-	groups
-		.map(
-			(rows) =>
-				`| ${rows[0].localeCount} | ${rows[0].used} | ${rows[0].total} | ${rows.map(metric).join(" | ")} |`
-		)
-		.join("\n");
+  header +
+  groups
+    .map(
+      (rows) =>
+        `| ${rows[0].localeCount} | ${rows[0].used} | ${rows[0].total} | ${rows.map(metric).join(" | ")} |`
+    )
+    .join("\n");
 const kib = (bytes) => `${(bytes / 1024).toFixed(1)} KiB`;
 const ms = (value) => `${value.toFixed(0)} ms`;
 const example = (variant) =>
-	data.summary.find(
-		(r) =>
-			r.localeCount === 10 &&
-			r.used === 200 &&
-			r.total === 1000 &&
-			r.variant === variant
-	);
+  data.summary.find(
+    (r) =>
+      r.localeCount === 10 &&
+      r.used === 200 &&
+      r.total === 1000 &&
+      r.variant === variant
+  );
 const perLocale = example("paraglide-per-locale"),
-	httpRoutes = example("i18next-http-routes");
+  httpRoutes = example("i18next-http-routes");
 const measured = new Date(data.measuredAt).toLocaleDateString("en-US", {
-	year: "numeric",
-	month: "long",
-	day: "numeric",
-	timeZone: "America/Los_Angeles",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  timeZone: "America/Los_Angeles",
 });
 const stats = data.overview.perLocale;
 await fs.writeFile(
-	"README.md",
-	`---
+  "README.md",
+  `---
 description: "Compare Paraglide JS and i18next: translated DOM readiness, Brotli transfer, per-locale splitting, and reproducible Vite 8 results."
 ---
 
@@ -259,5 +259,5 @@ Use \`SMOKE=1\` for one scenario/repetition without replacing published results.
 `
 );
 console.log(
-	`Published ${expected} configurations and ${data.validation.journeys} journeys`
+  `Published ${expected} configurations and ${data.validation.journeys} journeys`
 );

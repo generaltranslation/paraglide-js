@@ -3,8 +3,8 @@ import { defineConfig } from 'vite';
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
 
 export default defineConfig({
-	plugins: [
-		sveltekit(),
-		paraglideVitePlugin({ project: './project.inlang' }),
-	]
+  plugins: [
+    sveltekit(),
+    paraglideVitePlugin({ project: './project.inlang' }),
+  ]
 });

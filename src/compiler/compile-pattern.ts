@@ -1,22 +1,22 @@
 import type {
-	Attribute,
-	Declaration,
-	Expression,
-	Option,
-	Pattern,
-	VariableReference,
+  Attribute,
+  Declaration,
+  Expression,
+  Option,
+  Pattern,
+  VariableReference,
 } from "@inlang/sdk";
 import type { Compiled } from "./types.js";
 import { escapeForTemplateLiteral } from "../services/codegen/escape.js";
 import {
-	compileInputAccess,
-	compileLocalVariableName,
+  compileInputAccess,
+  compileLocalVariableName,
 } from "./variable-access.js";
 import {
-	compileAnnotation,
-	ignoreUnknownFormatter,
-	isRegistryFunction,
-	type RegistryUsage,
+  compileAnnotation,
+  ignoreUnknownFormatter,
+  isRegistryFunction,
+  type RegistryUsage,
 } from "./compile-annotation.js";
 
 export type CompilePatternMode = "string" | "parts";
@@ -35,110 +35,110 @@ export type CompilePatternMode = "string" | "parts";
  *   // code will be: `Your age is ${i?.age}`
  */
 export const compilePattern = (args: {
-	pattern: Pattern;
-	declarations: Declaration[];
-	mode?: CompilePatternMode;
-	/**
-	 * The locale of the message the pattern belongs to.
-	 *
-	 * Required to compile expressions with annotations like
-	 * `{ annotation: { type: "function-reference", name: "number" } }`
-	 * into `registry.number(locale, ...)` calls.
-	 */
-	locale?: string;
-	/**
-	 * Collects the registry functions the compiled pattern calls.
-	 */
-	registryUsage?: RegistryUsage;
+  pattern: Pattern;
+  declarations: Declaration[];
+  mode?: CompilePatternMode;
+  /**
+   * The locale of the message the pattern belongs to.
+   *
+   * Required to compile expressions with annotations like
+   * `{ annotation: { type: "function-reference", name: "number" } }`
+   * into `registry.number(locale, ...)` calls.
+   */
+  locale?: string;
+  /**
+   * Collects the registry functions the compiled pattern calls.
+   */
+  registryUsage?: RegistryUsage;
 }): Compiled<Pattern> => {
-	const mode = args.mode ?? "string";
+  const mode = args.mode ?? "string";
 
-	if (mode === "parts") {
-		return compilePatternToParts(args);
-	}
+  if (mode === "parts") {
+    return compilePatternToParts(args);
+  }
 
-	return compilePatternToString(args);
+  return compilePatternToString(args);
 };
 
 function compilePatternToString(args: {
-	pattern: Pattern;
-	declarations: Declaration[];
-	locale?: string;
-	registryUsage?: RegistryUsage;
+  pattern: Pattern;
+  declarations: Declaration[];
+  locale?: string;
+  registryUsage?: RegistryUsage;
 }): Compiled<Pattern> {
-	let result = "";
+  let result = "";
 
-	for (const part of args.pattern) {
-		switch (part.type) {
-			case "text":
-				result += escapeForTemplateLiteral(part.value);
-				break;
-			case "expression":
-				result += `\${${compileExpression(
-					part,
-					args.declarations,
-					args.locale,
-					args.registryUsage
-				)}}`;
-				break;
-			case "markup-start":
-			case "markup-end":
-			case "markup-standalone":
-				// Markup wrappers are omitted for plain string output.
-				break;
-		}
-	}
+  for (const part of args.pattern) {
+    switch (part.type) {
+      case "text":
+        result += escapeForTemplateLiteral(part.value);
+        break;
+      case "expression":
+        result += `\${${compileExpression(
+          part,
+          args.declarations,
+          args.locale,
+          args.registryUsage
+        )}}`;
+        break;
+      case "markup-start":
+      case "markup-end":
+      case "markup-standalone":
+        // Markup wrappers are omitted for plain string output.
+        break;
+    }
+  }
 
-	return {
-		code: `\`${result}\``,
-		node: args.pattern,
-	};
+  return {
+    code: `\`${result}\``,
+    node: args.pattern,
+  };
 }
 
 function compilePatternToParts(args: {
-	pattern: Pattern;
-	declarations: Declaration[];
-	locale?: string;
-	registryUsage?: RegistryUsage;
+  pattern: Pattern;
+  declarations: Declaration[];
+  locale?: string;
+  registryUsage?: RegistryUsage;
 }): Compiled<Pattern> {
-	const compiledParts: string[] = [];
+  const compiledParts: string[] = [];
 
-	for (const part of args.pattern) {
-		switch (part.type) {
-			case "text":
-				compiledParts.push(
-					`{ type: "text", value: ${stringLiteral(part.value)} }`
-				);
-				break;
-			case "expression":
-				compiledParts.push(
-					`{ type: "text", value: String(${compileExpression(
-						part,
-						args.declarations,
-						args.locale,
-						args.registryUsage
-					)}) }`
-				);
-				break;
-			case "markup-start":
-			case "markup-end":
-			case "markup-standalone":
-				compiledParts.push(
-					`{ type: ${stringLiteral(part.type)}, name: ${stringLiteral(
-						part.name
-					)}, options: ${compileMarkupOptions(
-						part.options ?? [],
-						args.declarations
-					)}, attributes: ${compileMarkupAttributes(part.attributes ?? [])} }`
-				);
-				break;
-		}
-	}
+  for (const part of args.pattern) {
+    switch (part.type) {
+      case "text":
+        compiledParts.push(
+          `{ type: "text", value: ${stringLiteral(part.value)} }`
+        );
+        break;
+      case "expression":
+        compiledParts.push(
+          `{ type: "text", value: String(${compileExpression(
+            part,
+            args.declarations,
+            args.locale,
+            args.registryUsage
+          )}) }`
+        );
+        break;
+      case "markup-start":
+      case "markup-end":
+      case "markup-standalone":
+        compiledParts.push(
+          `{ type: ${stringLiteral(part.type)}, name: ${stringLiteral(
+            part.name
+          )}, options: ${compileMarkupOptions(
+            part.options ?? [],
+            args.declarations
+          )}, attributes: ${compileMarkupAttributes(part.attributes ?? [])} }`
+        );
+        break;
+    }
+  }
 
-	return {
-		code: `[${compiledParts.join(", ")}]`,
-		node: args.pattern,
-	};
+  return {
+    code: `[${compiledParts.join(", ")}]`,
+    node: args.pattern,
+  };
 }
 
 /**
@@ -151,104 +151,104 @@ function compilePatternToParts(args: {
  * (e.g. i18next's `{{value, customFormat}}`).
  */
 function compileExpression(
-	expression: Expression,
-	declarations: Declaration[],
-	locale?: string,
-	registryUsage?: RegistryUsage
+  expression: Expression,
+  declarations: Declaration[],
+  locale?: string,
+  registryUsage?: RegistryUsage
 ): string {
-	const value = compileExpressionValue(expression, declarations);
-	const annotation = expression.annotation;
+  const value = compileExpressionValue(expression, declarations);
+  const annotation = expression.annotation;
 
-	if (!annotation) {
-		return value;
-	}
+  if (!annotation) {
+    return value;
+  }
 
-	if (!isRegistryFunction(annotation.name)) {
-		return ignoreUnknownFormatter(annotation.name, value);
-	}
+  if (!isRegistryFunction(annotation.name)) {
+    return ignoreUnknownFormatter(annotation.name, value);
+  }
 
-	if (locale === undefined) {
-		throw new Error(
-			`compilePattern() requires a locale to compile the formatter "${annotation.name}".`
-		);
-	}
+  if (locale === undefined) {
+    throw new Error(
+      `compilePattern() requires a locale to compile the formatter "${annotation.name}".`
+    );
+  }
 
-	return compileAnnotation(
-		value,
-		locale,
-		annotation,
-		declarations,
-		registryUsage
-	);
+  return compileAnnotation(
+    value,
+    locale,
+    annotation,
+    declarations,
+    registryUsage
+  );
 }
 
 function compileExpressionValue(
-	expression: Pick<Expression, "arg">,
-	declarations: Declaration[]
+  expression: Pick<Expression, "arg">,
+  declarations: Declaration[]
 ): string {
-	switch (expression.arg.type) {
-		case "literal":
-			return stringLiteral(expression.arg.value);
-		case "variable-reference":
-			return compileVariableReference(expression.arg, declarations);
-	}
+  switch (expression.arg.type) {
+    case "literal":
+      return stringLiteral(expression.arg.value);
+    case "variable-reference":
+      return compileVariableReference(expression.arg, declarations);
+  }
 }
 
 function compileVariableReference(
-	reference: VariableReference,
-	declarations: Declaration[]
+  reference: VariableReference,
+  declarations: Declaration[]
 ): string {
-	const declaration = declarations.find((decl) => decl.name === reference.name);
+  const declaration = declarations.find((decl) => decl.name === reference.name);
 
-	if (declaration?.type === "input-variable") {
-		return compileInputAccess(reference.name);
-	}
-	if (declaration?.type === "local-variable") {
-		return compileLocalVariableName(reference.name);
-	}
+  if (declaration?.type === "input-variable") {
+    return compileInputAccess(reference.name);
+  }
+  if (declaration?.type === "local-variable") {
+    return compileLocalVariableName(reference.name);
+  }
 
-	throw new Error(
-		`Variable reference "${reference.name}" not found in declarations`
-	);
+  throw new Error(
+    `Variable reference "${reference.name}" not found in declarations`
+  );
 }
 
 function compileMarkupOptions(
-	options: Option[],
-	declarations: Declaration[]
+  options: Option[],
+  declarations: Declaration[]
 ): string {
-	if (options.length === 0) {
-		return "{}";
-	}
+  if (options.length === 0) {
+    return "{}";
+  }
 
-	return `{ ${options
-		.map(
-			(option) =>
-				`${propertyKey(option.name)}: ${compileExpressionValue(
-					{ arg: option.value },
-					declarations
-				)}`
-		)
-		.join(", ")} }`;
+  return `{ ${options
+    .map(
+      (option) =>
+        `${propertyKey(option.name)}: ${compileExpressionValue(
+          { arg: option.value },
+          declarations
+        )}`
+    )
+    .join(", ")} }`;
 }
 
 function compileMarkupAttributes(attributes: Attribute[]): string {
-	if (attributes.length === 0) {
-		return "{}";
-	}
+  if (attributes.length === 0) {
+    return "{}";
+  }
 
-	return `{ ${attributes
-		.map((attribute) => {
-			const value =
-				attribute.value === true
-					? "true"
-					: stringLiteral(attribute.value.value);
-			return `${propertyKey(attribute.name)}: ${value}`;
-		})
-		.join(", ")} }`;
+  return `{ ${attributes
+    .map((attribute) => {
+      const value =
+        attribute.value === true
+          ? "true"
+          : stringLiteral(attribute.value.value);
+      return `${propertyKey(attribute.name)}: ${value}`;
+    })
+    .join(", ")} }`;
 }
 
 function stringLiteral(value: string): string {
-	return JSON.stringify(value);
+  return JSON.stringify(value);
 }
 
 /**
@@ -256,7 +256,7 @@ function stringLiteral(value: string): string {
  * prototype instead, so that one is computed.
  */
 function propertyKey(name: string): string {
-	return name === "__proto__"
-		? `[${stringLiteral(name)}]`
-		: stringLiteral(name);
+  return name === "__proto__"
+    ? `[${stringLiteral(name)}]`
+    : stringLiteral(name);
 }

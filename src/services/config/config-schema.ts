@@ -18,26 +18,26 @@ export type ParaglideConfig = Partial<Omit<CompilerOptions, "fs" | "project">>;
  * prefixed with `custom-` and are matched separately.
  */
 const BUILTIN_STRATEGY_NAMES = [
-	"cookie",
-	"baseLocale",
-	"globalVariable",
-	"url",
-	"preferredLanguage",
-	"localStorage",
+  "cookie",
+  "baseLocale",
+  "globalVariable",
+  "url",
+  "preferredLanguage",
+  "localStorage",
 ] as const satisfies readonly Exclude<
-	Runtime["strategy"][number],
-	`custom-${string}`
+  Runtime["strategy"][number],
+  `custom-${string}`
 >[];
 
 // Fails to compile when the runtime gains a strategy name that is neither
 // built-in above nor a `custom-` prefixed name.
 type UncoveredStrategies = Exclude<
-	Runtime["strategy"][number],
-	(typeof BUILTIN_STRATEGY_NAMES)[number] | `custom-${string}`
+  Runtime["strategy"][number],
+  (typeof BUILTIN_STRATEGY_NAMES)[number] | `custom-${string}`
 >;
 export type AllStrategiesCovered = [UncoveredStrategies] extends [never]
-	? true
-	: never;
+  ? true
+  : never;
 
 // Value-position pins so the type-level asserts below are actually
 // evaluated by tsc — an unused alias resolving to `never` would compile.
@@ -54,33 +54,33 @@ export const allStrategiesCovered: AllStrategiesCovered = true;
  * schema is narrowed to the compiler's type here.
  */
 const customStrategySchema = v.pipe(
-	v.string(),
-	v.regex(
-		/^custom-[A-Za-z0-9_-]+$/,
-		'Custom strategies must match "custom-" followed by alphanumeric characters, hyphens, or underscores.'
-	)
+  v.string(),
+  v.regex(
+    /^custom-[A-Za-z0-9_-]+$/,
+    'Custom strategies must match "custom-" followed by alphanumeric characters, hyphens, or underscores.'
+  )
 ) as v.BaseSchema<
-	string,
-	`custom-${string}`,
-	v.StringIssue | v.RegexIssue<string>
+  string,
+  `custom-${string}`,
+  v.StringIssue | v.RegexIssue<string>
 >;
 
 export const strategyNameSchema = v.union([
-	v.picklist(BUILTIN_STRATEGY_NAMES),
-	customStrategySchema,
+  v.picklist(BUILTIN_STRATEGY_NAMES),
+  customStrategySchema,
 ]);
 
 const routeStrategySchema = v.union([
-	v.object({
-		match: v.string(),
-		strategy: v.array(strategyNameSchema),
-		exclude: v.optional(v.never()),
-	}),
-	v.object({
-		match: v.string(),
-		exclude: v.literal(true),
-		strategy: v.optional(v.never()),
-	}),
+  v.object({
+    match: v.string(),
+    strategy: v.array(strategyNameSchema),
+    exclude: v.optional(v.never()),
+  }),
+  v.object({
+    match: v.string(),
+    exclude: v.literal(true),
+    strategy: v.optional(v.never()),
+  }),
 ]);
 
 /**
@@ -91,48 +91,48 @@ const routeStrategySchema = v.union([
  * `defaultCompilerOptions`.
  */
 export const paraglideConfigSchema = v.object({
-	outdir: v.optional(
-		v.pipe(v.string(), v.nonEmpty('"outdir" must not be empty'))
-	),
-	strategy: v.optional(v.array(strategyNameSchema)),
-	routeStrategies: v.optional(v.array(routeStrategySchema)),
-	localStorageKey: v.optional(v.string()),
-	isServer: v.optional(v.string()),
-	isDevelopment: v.optional(v.string()),
-	experimentalStaticLocale: v.optional(v.string()),
-	cookieName: v.optional(v.string()),
-	cookieMaxAge: v.optional(v.number()),
-	cookieDomain: v.optional(v.string()),
-	cookieSameSite: v.optional(v.picklist(["lax", "strict", "none"])),
-	cookieSecure: v.optional(v.union([v.boolean(), v.literal("auto")])),
-	emitPrettierIgnore: v.optional(v.boolean()),
-	emitReadme: v.optional(v.boolean()),
-	emitTsDeclarations: v.optional(v.boolean()),
-	urlPatterns: v.optional(
-		v.array(
-			v.object({
-				pattern: v.string(),
-				localized: v.array(v.tuple([v.string(), v.string()])),
-			})
-		)
-	),
-	trailingSlash: v.optional(v.picklist(["always", "never"])),
-	lazyUrlPatternPolyfill: v.optional(v.boolean()),
-	includeEslintDisableComment: v.optional(v.boolean()),
-	disableAsyncLocalStorage: v.optional(v.boolean()),
-	emitGitIgnore: v.optional(v.boolean()),
-	outputStructure: v.optional(
-		v.picklist(["message-modules", "locale-modules", "virtual-modules"])
-	),
-	messageModuleSize: v.optional(
-		v.pipe(
-			v.number(),
-			v.integer(),
-			v.minValue(1),
-			v.maxValue(Number.MAX_SAFE_INTEGER)
-		)
-	),
-	cleanOutdir: v.optional(v.boolean()),
+  outdir: v.optional(
+    v.pipe(v.string(), v.nonEmpty('"outdir" must not be empty'))
+  ),
+  strategy: v.optional(v.array(strategyNameSchema)),
+  routeStrategies: v.optional(v.array(routeStrategySchema)),
+  localStorageKey: v.optional(v.string()),
+  isServer: v.optional(v.string()),
+  isDevelopment: v.optional(v.string()),
+  experimentalStaticLocale: v.optional(v.string()),
+  cookieName: v.optional(v.string()),
+  cookieMaxAge: v.optional(v.number()),
+  cookieDomain: v.optional(v.string()),
+  cookieSameSite: v.optional(v.picklist(["lax", "strict", "none"])),
+  cookieSecure: v.optional(v.union([v.boolean(), v.literal("auto")])),
+  emitPrettierIgnore: v.optional(v.boolean()),
+  emitReadme: v.optional(v.boolean()),
+  emitTsDeclarations: v.optional(v.boolean()),
+  urlPatterns: v.optional(
+    v.array(
+      v.object({
+        pattern: v.string(),
+        localized: v.array(v.tuple([v.string(), v.string()])),
+      })
+    )
+  ),
+  trailingSlash: v.optional(v.picklist(["always", "never"])),
+  lazyUrlPatternPolyfill: v.optional(v.boolean()),
+  includeEslintDisableComment: v.optional(v.boolean()),
+  disableAsyncLocalStorage: v.optional(v.boolean()),
+  emitGitIgnore: v.optional(v.boolean()),
+  outputStructure: v.optional(
+    v.picklist(["message-modules", "locale-modules", "virtual-modules"])
+  ),
+  messageModuleSize: v.optional(
+    v.pipe(
+      v.number(),
+      v.integer(),
+      v.minValue(1),
+      v.maxValue(Number.MAX_SAFE_INTEGER)
+    )
+  ),
+  cleanOutdir: v.optional(v.boolean()),
 });
 
 // Fails to compile when the schema and the compiler options drift apart:
@@ -147,15 +147,15 @@ type SchemaOutput = v.InferOutput<typeof paraglideConfigSchema>;
 // definition) — this assertion is the only place that needs the
 // configurable-keys view.
 export type SchemaMatchesCompilerOptions = [keyof ParaglideConfig] extends [
-	keyof SchemaOutput,
+  keyof SchemaOutput,
 ]
-	? [keyof SchemaOutput] extends [keyof ParaglideConfig]
-		? SchemaOutput extends ParaglideConfig
-			? ParaglideConfig extends SchemaOutput
-				? true
-				: never
-			: never
-		: never
-	: never;
+  ? [keyof SchemaOutput] extends [keyof ParaglideConfig]
+    ? SchemaOutput extends ParaglideConfig
+      ? ParaglideConfig extends SchemaOutput
+        ? true
+        : never
+      : never
+    : never
+  : never;
 
 export const schemaMatchesCompilerOptions: SchemaMatchesCompilerOptions = true;

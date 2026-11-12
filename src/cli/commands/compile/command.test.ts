@@ -14,76 +14,76 @@ let watchers = new Map<string, Set<TestWatcher>>();
 // Test CLI event handling with real config files and controlled watch delivery.
 // fs.watch does not guarantee event timing, filenames, or one event per write.
 class TestWatcher extends EventEmitter implements fs.FSWatcher {
-	constructor(private readonly onClose: () => void) {
-		super();
-	}
-	close() {
-		this.onClose();
-		this.removeAllListeners();
-	}
-	ref() {
-		return this;
-	}
-	unref() {
-		return this;
-	}
+  constructor(private readonly onClose: () => void) {
+    super();
+  }
+  close() {
+    this.onClose();
+    this.removeAllListeners();
+  }
+  ref() {
+    return this;
+  }
+  unref() {
+    return this;
+  }
 }
 
 function notifyChange(
-	directory: string,
-	filename: string | null,
-	event: "change" | "rename" = "change"
+  directory: string,
+  filename: string | null,
+  event: "change" | "rename" = "change"
 ) {
-	const current = watchers.get(path.resolve(directory));
-	expect(current?.size).toBeGreaterThan(0);
-	for (const watcher of current ?? []) watcher.emit("change", event, filename);
+  const current = watchers.get(path.resolve(directory));
+  expect(current?.size).toBeGreaterThan(0);
+  for (const watcher of current ?? []) watcher.emit("change", event, filename);
 }
 
 beforeEach(() => {
-	vi.resetModules();
-	testDirectories = [];
-	initialSigintListeners = process.listeners("SIGINT");
-	watchers = new Map();
-	vi.spyOn(fs, "watch").mockImplementation(
-		(
-			filename: fs.PathLike,
-			options?:
-				| fs.WatchOptions
-				| BufferEncoding
-				| fs.WatchListener<string>
-				| fs.WatchListener<Buffer>
-				| null,
-			listener?: fs.WatchListener<string> | fs.WatchListener<Buffer>
-		) => {
-			const target = path.resolve(String(filename));
-			const current = watchers.get(target) ?? new Set<TestWatcher>();
-			watchers.set(target, current);
-			const watcher = new TestWatcher(() => current.delete(watcher));
-			const callback = typeof options === "function" ? options : listener;
-			if (callback) watcher.on("change", callback);
-			current.add(watcher);
-			return watcher;
-		}
-	);
+  vi.resetModules();
+  testDirectories = [];
+  initialSigintListeners = process.listeners("SIGINT");
+  watchers = new Map();
+  vi.spyOn(fs, "watch").mockImplementation(
+    (
+      filename: fs.PathLike,
+      options?:
+        | fs.WatchOptions
+        | BufferEncoding
+        | fs.WatchListener<string>
+        | fs.WatchListener<Buffer>
+        | null,
+      listener?: fs.WatchListener<string> | fs.WatchListener<Buffer>
+    ) => {
+      const target = path.resolve(String(filename));
+      const current = watchers.get(target) ?? new Set<TestWatcher>();
+      watchers.set(target, current);
+      const watcher = new TestWatcher(() => current.delete(watcher));
+      const callback = typeof options === "function" ? options : listener;
+      if (callback) watcher.on("change", callback);
+      current.add(watcher);
+      return watcher;
+    }
+  );
 });
 
 afterEach(async () => {
-	// Stop each CLI instance before deleting fixtures or restoring its mocks.
-	vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
-	for (const listener of process.listeners("SIGINT")) {
-		if (!initialSigintListeners.includes(listener)) {
-			listener("SIGINT");
-			process.removeListener("SIGINT", listener);
-		}
-	}
-	for (const current of watchers.values()) {
-		for (const watcher of current) watcher.close();
-	}
-	vi.useRealTimers();
-	vi.restoreAllMocks();
-	for (const directory of testDirectories) {
-		await rm(directory, { recursive: true, force: true });
-	}
+  // Stop each CLI instance before deleting fixtures or restoring its mocks.
+  vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+  for (const listener of process.listeners("SIGINT")) {
+    if (!initialSigintListeners.includes(listener)) {
+      listener("SIGINT");
+      process.removeListener("SIGINT", listener);
+    }
+  }
+  for (const current of watchers.values()) {
+    for (const watcher of current) watcher.close();
+  }
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  for (const directory of testDirectories) {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 /**
@@ -91,703 +91,703 @@ afterEach(async () => {
  * outdir — the layout of the new config-in-project model.
  */
 async function writeConfig(
-	projectDir: string,
-	outdir: string,
-	fileName = "paraglide.config.ts"
+  projectDir: string,
+  outdir: string,
+  fileName = "paraglide.config.ts"
 ) {
-	await mkdir(projectDir, { recursive: true });
-	await writeFile(
-		path.join(projectDir, fileName),
-		["export default {", `  outdir: ${JSON.stringify(outdir)},`, "}"].join("\n")
-	);
+  await mkdir(projectDir, { recursive: true });
+  await writeFile(
+    path.join(projectDir, fileName),
+    ["export default {", `  outdir: ${JSON.stringify(outdir)},`, "}"].join("\n")
+  );
 }
 
 async function createWorkspace() {
-	const workspace = await mkdtemp(path.join(tmpdir(), "paraglide-cli-"));
-	testDirectories.push(workspace);
-	const projectDir = path.join(workspace, "project.inlang");
-	return { workspace, projectDir };
+  const workspace = await mkdtemp(path.join(tmpdir(), "paraglide-cli-"));
+  testDirectories.push(workspace);
+  const projectDir = path.join(workspace, "project.inlang");
+  return { workspace, projectDir };
 }
 
 test("compile seeds existing outdir and disables cleaning (#743)", async () => {
-	const { workspace } = await createWorkspace();
-	const outdir = path.join(workspace, "output");
-	const { writeOutput } =
-		await import("../../../services/file-handling/write-output.js");
-	await writeOutput({
-		directory: outdir,
-		output: {
-			"runtime.js": "export const runtime = true;",
-		},
-		fs: nodeFs,
-	});
+  const { workspace } = await createWorkspace();
+  const outdir = path.join(workspace, "output");
+  const { writeOutput } =
+    await import("../../../services/file-handling/write-output.js");
+  await writeOutput({
+    directory: outdir,
+    output: {
+      "runtime.js": "export const runtime = true;",
+    },
+    fs: nodeFs,
+  });
 
-	const compileMock = vi.fn().mockResolvedValue({
-		outputHashes: {
-			"runtime.js": "next-hash",
-		},
-	});
-	vi.doMock("../../../compiler/compile.js", () => ({
-		compile: compileMock,
-	}));
-	const exitError = new Error("process.exit");
-	const exitMock = vi.spyOn(process, "exit").mockImplementation(() => {
-		throw exitError;
-	});
+  const compileMock = vi.fn().mockResolvedValue({
+    outputHashes: {
+      "runtime.js": "next-hash",
+    },
+  });
+  vi.doMock("../../../compiler/compile.js", () => ({
+    compile: compileMock,
+  }));
+  const exitError = new Error("process.exit");
+  const exitMock = vi.spyOn(process, "exit").mockImplementation(() => {
+    throw exitError;
+  });
 
-	const { compileCommand } = await import("./command.js");
+  const { compileCommand } = await import("./command.js");
 
-	await expect(
-		compileCommand.parseAsync(
-			[
-				"--project",
-				path.join(workspace, "project.inlang"),
-				"--outdir",
-				outdir,
-				"--silent",
-			],
-			{ from: "user" }
-		)
-	).rejects.toBe(exitError);
+  await expect(
+    compileCommand.parseAsync(
+      [
+        "--project",
+        path.join(workspace, "project.inlang"),
+        "--outdir",
+        outdir,
+        "--silent",
+      ],
+      { from: "user" }
+    )
+  ).rejects.toBe(exitError);
 
-	expect(compileMock).toHaveBeenCalledTimes(1);
-	expect(compileMock).toHaveBeenCalledWith(
-		expect.objectContaining({
-			outdir,
-			cleanOutdir: false,
-			previousCompilation: {
-				outputHashes: {
-					"runtime.js": expect.any(String),
-				},
-			},
-		})
-	);
-	expect(exitMock).toHaveBeenCalledWith(0);
+  expect(compileMock).toHaveBeenCalledTimes(1);
+  expect(compileMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      outdir,
+      cleanOutdir: false,
+      previousCompilation: {
+        outputHashes: {
+          "runtime.js": expect.any(String),
+        },
+      },
+    })
+  );
+  expect(exitMock).toHaveBeenCalledWith(0);
 });
 
 test("compile exposes and forwards compiler options missing from the CLI (#757)", async () => {
-	const testDirectory = await mkdtemp(path.join(tmpdir(), "paraglide-cli-"));
-	testDirectories.push(testDirectory);
-	const outdir = path.join(testDirectory, "output");
-	await nodeFs.mkdir(outdir, { recursive: true });
-	await nodeFs.writeFile(path.join(outdir, "custom.txt"), "keep me");
+  const testDirectory = await mkdtemp(path.join(tmpdir(), "paraglide-cli-"));
+  testDirectories.push(testDirectory);
+  const outdir = path.join(testDirectory, "output");
+  await nodeFs.mkdir(outdir, { recursive: true });
+  await nodeFs.writeFile(path.join(outdir, "custom.txt"), "keep me");
 
-	const compileMock = vi.fn().mockResolvedValue({ outputHashes: {} });
-	vi.doMock("../../../compiler/compile.js", () => ({
-		compile: compileMock,
-	}));
-	const exitError = new Error("process.exit");
-	vi.spyOn(process, "exit").mockImplementation(() => {
-		throw exitError;
-	});
+  const compileMock = vi.fn().mockResolvedValue({ outputHashes: {} });
+  vi.doMock("../../../compiler/compile.js", () => ({
+    compile: compileMock,
+  }));
+  const exitError = new Error("process.exit");
+  vi.spyOn(process, "exit").mockImplementation(() => {
+    throw exitError;
+  });
 
-	const { compileCommand } = await import("./command.js");
-	const help = compileCommand.helpInformation();
+  const { compileCommand } = await import("./command.js");
+  const help = compileCommand.helpInformation();
 
-	expect(help).toContain("--clean-outdir");
-	expect(help).toContain("--no-clean-outdir");
-	expect(help).toContain("--experimental-static-locale <expression>");
-	expect(help).toContain("--disable-async-local-storage");
-	expect(help).toContain("--message-module-size");
-	expect(help).toContain("--is-development <expression>");
+  expect(help).toContain("--clean-outdir");
+  expect(help).toContain("--no-clean-outdir");
+  expect(help).toContain("--experimental-static-locale <expression>");
+  expect(help).toContain("--disable-async-local-storage");
+  expect(help).toContain("--message-module-size");
+  expect(help).toContain("--is-development <expression>");
 
-	await expect(
-		compileCommand.parseAsync(
-			[
-				"--project",
-				path.join(testDirectory, "project.inlang"),
-				"--outdir",
-				outdir,
-				"--no-clean-outdir",
-				"--experimental-static-locale",
-				'import.meta.env.PARAGLIDE_LOCALE ?? "en"',
-				"--disable-async-local-storage",
-				"--message-module-size",
-				"512",
-				"--is-development",
-				"false",
-				"--silent",
-			],
-			{ from: "user" }
-		)
-	).rejects.toBe(exitError);
+  await expect(
+    compileCommand.parseAsync(
+      [
+        "--project",
+        path.join(testDirectory, "project.inlang"),
+        "--outdir",
+        outdir,
+        "--no-clean-outdir",
+        "--experimental-static-locale",
+        'import.meta.env.PARAGLIDE_LOCALE ?? "en"',
+        "--disable-async-local-storage",
+        "--message-module-size",
+        "512",
+        "--is-development",
+        "false",
+        "--silent",
+      ],
+      { from: "user" }
+    )
+  ).rejects.toBe(exitError);
 
-	expect(compileMock).toHaveBeenCalledTimes(1);
-	expect(compileMock).toHaveBeenCalledWith(
-		expect.objectContaining({
-			cleanOutdir: false,
-			disableAsyncLocalStorage: true,
-			messageModuleSize: 512,
-			isDevelopment: "false",
-			experimentalStaticLocale: 'import.meta.env.PARAGLIDE_LOCALE ?? "en"',
-			previousCompilation: undefined,
-		})
-	);
+  expect(compileMock).toHaveBeenCalledTimes(1);
+  expect(compileMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      cleanOutdir: false,
+      disableAsyncLocalStorage: true,
+      messageModuleSize: 512,
+      isDevelopment: "false",
+      experimentalStaticLocale: 'import.meta.env.PARAGLIDE_LOCALE ?? "en"',
+      previousCompilation: undefined,
+    })
+  );
 });
 
 test.each(["0", "1.5", "9007199254740992", "Infinity", "-1"])(
-	"compile rejects invalid --message-module-size %s before compiling",
-	async (size) => {
-		const compileMock = vi.fn();
-		vi.doMock("../../../compiler/compile.js", () => ({ compile: compileMock }));
-		const { compileCommand } = await import("./command.js");
-		compileCommand
-			.exitOverride()
-			.configureOutput({ writeErr: () => undefined });
-		await expect(
-			compileCommand.parseAsync(["--message-module-size", size, "--silent"], {
-				from: "user",
-			})
-		).rejects.toThrow(/positive safe integer/);
-		expect(compileMock).not.toHaveBeenCalled();
-	}
+  "compile rejects invalid --message-module-size %s before compiling",
+  async (size) => {
+    const compileMock = vi.fn();
+    vi.doMock("../../../compiler/compile.js", () => ({ compile: compileMock }));
+    const { compileCommand } = await import("./command.js");
+    compileCommand
+      .exitOverride()
+      .configureOutput({ writeErr: () => undefined });
+    await expect(
+      compileCommand.parseAsync(["--message-module-size", size, "--silent"], {
+        from: "user",
+      })
+    ).rejects.toThrow(/positive safe integer/);
+    expect(compileMock).not.toHaveBeenCalled();
+  }
 );
 
 test("compile --watch seeds existing outdir and disables cleaning on first compile (#688)", async () => {
-	const testDirectory = await mkdtemp(path.join(tmpdir(), "paraglide-cli-"));
-	testDirectories.push(testDirectory);
-	const outdir = path.join(testDirectory, "output");
-	const { writeOutput } =
-		await import("../../../services/file-handling/write-output.js");
-	await writeOutput({
-		directory: outdir,
-		output: {
-			"runtime.js": "export const runtime = true;",
-		},
-		fs: nodeFs,
-	});
+  const testDirectory = await mkdtemp(path.join(tmpdir(), "paraglide-cli-"));
+  testDirectories.push(testDirectory);
+  const outdir = path.join(testDirectory, "output");
+  const { writeOutput } =
+    await import("../../../services/file-handling/write-output.js");
+  await writeOutput({
+    directory: outdir,
+    output: {
+      "runtime.js": "export const runtime = true;",
+    },
+    fs: nodeFs,
+  });
 
-	const compileMock = vi.fn().mockResolvedValue({
-		outputHashes: {
-			"runtime.js": "next-hash",
-		},
-	});
-	vi.doMock("../../../compiler/compile.js", () => ({
-		compile: compileMock,
-	}));
+  const compileMock = vi.fn().mockResolvedValue({
+    outputHashes: {
+      "runtime.js": "next-hash",
+    },
+  });
+  vi.doMock("../../../compiler/compile.js", () => ({
+    compile: compileMock,
+  }));
 
-	const { compileCommand } = await import("./command.js");
+  const { compileCommand } = await import("./command.js");
 
-	await compileCommand.parseAsync(
-		[
-			"--project",
-			path.join(testDirectory, "project.inlang"),
-			"--outdir",
-			outdir,
-			"--watch",
-			"--silent",
-		],
-		{ from: "user" }
-	);
+  await compileCommand.parseAsync(
+    [
+      "--project",
+      path.join(testDirectory, "project.inlang"),
+      "--outdir",
+      outdir,
+      "--watch",
+      "--silent",
+    ],
+    { from: "user" }
+  );
 
-	expect(compileMock).toHaveBeenCalledTimes(1);
-	expect(compileMock).toHaveBeenCalledWith(
-		expect.objectContaining({
-			outdir,
-			cleanOutdir: false,
-			previousCompilation: {
-				outputHashes: {
-					"runtime.js": expect.any(String),
-				},
-			},
-		})
-	);
+  expect(compileMock).toHaveBeenCalledTimes(1);
+  expect(compileMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      outdir,
+      cleanOutdir: false,
+      previousCompilation: {
+        outputHashes: {
+          "runtime.js": expect.any(String),
+        },
+      },
+    })
+  );
 });
 
 describe("config file integration", () => {
-	test("compile reads options from a config file inside --project", async () => {
-		const { workspace, projectDir } = await createWorkspace();
-		const outdir = path.join(workspace, "from-config");
-		await writeConfig(projectDir, outdir);
+  test("compile reads options from a config file inside --project", async () => {
+    const { workspace, projectDir } = await createWorkspace();
+    const outdir = path.join(workspace, "from-config");
+    await writeConfig(projectDir, outdir);
 
-		const compileMock = vi.fn().mockResolvedValue({});
-		vi.doMock("../../../compiler/compile.js", () => ({
-			compile: compileMock,
-		}));
-		const exitError = new Error("process.exit");
-		vi.spyOn(process, "exit").mockImplementation(() => {
-			throw exitError;
-		});
+    const compileMock = vi.fn().mockResolvedValue({});
+    vi.doMock("../../../compiler/compile.js", () => ({
+      compile: compileMock,
+    }));
+    const exitError = new Error("process.exit");
+    vi.spyOn(process, "exit").mockImplementation(() => {
+      throw exitError;
+    });
 
-		const { compileCommand } = await import("./command.js");
+    const { compileCommand } = await import("./command.js");
 
-		await expect(
-			compileCommand.parseAsync(["--project", projectDir, "--silent"], {
-				from: "user",
-			})
-		).rejects.toBe(exitError);
+    await expect(
+      compileCommand.parseAsync(["--project", projectDir, "--silent"], {
+        from: "user",
+      })
+    ).rejects.toBe(exitError);
 
-		expect(compileMock).toHaveBeenCalledWith(
-			expect.objectContaining({
-				project: projectDir,
-				outdir,
-				strategy: ["cookie", "globalVariable", "baseLocale"],
-				emitReadme: true,
-			})
-		);
-	});
+    expect(compileMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        project: projectDir,
+        outdir,
+        strategy: ["cookie", "globalVariable", "baseLocale"],
+        emitReadme: true,
+      })
+    );
+  });
 
-	test("discovers the conventional ./project.inlang without flags", async () => {
-		const { workspace, projectDir } = await createWorkspace();
-		const outdir = path.join(workspace, "from-config");
-		await writeConfig(projectDir, outdir);
+  test("discovers the conventional ./project.inlang without flags", async () => {
+    const { workspace, projectDir } = await createWorkspace();
+    const outdir = path.join(workspace, "from-config");
+    await writeConfig(projectDir, outdir);
 
-		const compileMock = vi.fn().mockResolvedValue({});
-		vi.doMock("../../../compiler/compile.js", () => ({
-			compile: compileMock,
-		}));
-		const exitError = new Error("process.exit");
-		vi.spyOn(process, "exit").mockImplementation(() => {
-			throw exitError;
-		});
-		const cwdMock = vi.spyOn(process, "cwd").mockReturnValue(workspace);
+    const compileMock = vi.fn().mockResolvedValue({});
+    vi.doMock("../../../compiler/compile.js", () => ({
+      compile: compileMock,
+    }));
+    const exitError = new Error("process.exit");
+    vi.spyOn(process, "exit").mockImplementation(() => {
+      throw exitError;
+    });
+    const cwdMock = vi.spyOn(process, "cwd").mockReturnValue(workspace);
 
-		try {
-			const { compileCommand } = await import("./command.js");
+    try {
+      const { compileCommand } = await import("./command.js");
 
-			await expect(
-				compileCommand.parseAsync(["--silent"], { from: "user" })
-			).rejects.toBe(exitError);
+      await expect(
+        compileCommand.parseAsync(["--silent"], { from: "user" })
+      ).rejects.toBe(exitError);
 
-			expect(compileMock).toHaveBeenCalledWith(
-				expect.objectContaining({
-					project: projectDir,
-					outdir,
-				})
-			);
-		} finally {
-			cwdMock.mockRestore();
-		}
-	});
+      expect(compileMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          project: projectDir,
+          outdir,
+        })
+      );
+    } finally {
+      cwdMock.mockRestore();
+    }
+  });
 
-	test("announces the conventional project default when --project is omitted", async () => {
-		const { workspace, projectDir } = await createWorkspace();
-		const outdir = path.join(workspace, "from-config");
-		await writeConfig(projectDir, outdir);
+  test("announces the conventional project default when --project is omitted", async () => {
+    const { workspace, projectDir } = await createWorkspace();
+    const outdir = path.join(workspace, "from-config");
+    await writeConfig(projectDir, outdir);
 
-		const compileMock = vi.fn().mockResolvedValue({});
-		vi.doMock("../../../compiler/compile.js", () => ({
-			compile: compileMock,
-		}));
-		const exitError = new Error("process.exit");
-		vi.spyOn(process, "exit").mockImplementation(() => {
-			throw exitError;
-		});
-		const infoSpy = vi.spyOn(consola, "info").mockImplementation(() => {});
+    const compileMock = vi.fn().mockResolvedValue({});
+    vi.doMock("../../../compiler/compile.js", () => ({
+      compile: compileMock,
+    }));
+    const exitError = new Error("process.exit");
+    vi.spyOn(process, "exit").mockImplementation(() => {
+      throw exitError;
+    });
+    const infoSpy = vi.spyOn(consola, "info").mockImplementation(() => {});
 
-		const { compileCommand } = await import("./command.js");
-		const cwdMock = vi.spyOn(process, "cwd").mockReturnValue(workspace);
+    const { compileCommand } = await import("./command.js");
+    const cwdMock = vi.spyOn(process, "cwd").mockReturnValue(workspace);
 
-		try {
-			await expect(
-				compileCommand.parseAsync(
-					["--outdir", outdir], // no --project, no --silent
-					{ from: "user" }
-				)
-			).rejects.toBe(exitError);
+    try {
+      await expect(
+        compileCommand.parseAsync(
+          ["--outdir", outdir], // no --project, no --silent
+          { from: "user" }
+        )
+      ).rejects.toBe(exitError);
 
-			expect(compileMock).toHaveBeenCalledWith(
-				expect.objectContaining({
-					project: projectDir,
-					outdir,
-				})
-			);
-			expect(
-				infoSpy.mock.calls.some((call) =>
-					String(call[0]).includes("--project was not provided")
-				)
-			).toBe(true);
-		} finally {
-			cwdMock.mockRestore();
-		}
-	});
+      expect(compileMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          project: projectDir,
+          outdir,
+        })
+      );
+      expect(
+        infoSpy.mock.calls.some((call) =>
+          String(call[0]).includes("--project was not provided")
+        )
+      ).toBe(true);
+    } finally {
+      cwdMock.mockRestore();
+    }
+  });
 
-	test("command line flags override config file values", async () => {
-		const { workspace, projectDir } = await createWorkspace();
-		await writeConfig(projectDir, path.join(workspace, "from-config"));
+  test("command line flags override config file values", async () => {
+    const { workspace, projectDir } = await createWorkspace();
+    await writeConfig(projectDir, path.join(workspace, "from-config"));
 
-		const compileMock = vi.fn().mockResolvedValue({});
-		vi.doMock("../../../compiler/compile.js", () => ({
-			compile: compileMock,
-		}));
-		const exitError = new Error("process.exit");
-		vi.spyOn(process, "exit").mockImplementation(() => {
-			throw exitError;
-		});
+    const compileMock = vi.fn().mockResolvedValue({});
+    vi.doMock("../../../compiler/compile.js", () => ({
+      compile: compileMock,
+    }));
+    const exitError = new Error("process.exit");
+    vi.spyOn(process, "exit").mockImplementation(() => {
+      throw exitError;
+    });
 
-		const { compileCommand } = await import("./command.js");
+    const { compileCommand } = await import("./command.js");
 
-		await expect(
-			compileCommand.parseAsync(
-				[
-					"--project",
-					projectDir,
-					"--outdir",
-					"./from-flag",
-					"--strategy",
-					"cookie",
-					"baseLocale",
-					"--silent",
-				],
-				{ from: "user" }
-			)
-		).rejects.toBe(exitError);
+    await expect(
+      compileCommand.parseAsync(
+        [
+          "--project",
+          projectDir,
+          "--outdir",
+          "./from-flag",
+          "--strategy",
+          "cookie",
+          "baseLocale",
+          "--silent",
+        ],
+        { from: "user" }
+      )
+    ).rejects.toBe(exitError);
 
-		expect(compileMock).toHaveBeenCalledWith(
-			expect.objectContaining({
-				project: projectDir,
-				outdir: resolve(process.cwd(), "./from-flag"),
-				strategy: ["cookie", "baseLocale"],
-			})
-		);
-	});
+    expect(compileMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        project: projectDir,
+        outdir: resolve(process.cwd(), "./from-flag"),
+        strategy: ["cookie", "baseLocale"],
+      })
+    );
+  });
 
-	// Deleting the config file mid-watch falls back to the built-in
-	// defaults (same as never having a config); recreating it is picked up.
-	test("watch falls back to defaults when the config is deleted", async () => {
-		const { workspace, projectDir } = await createWorkspace();
-		const configPath = path.join(projectDir, "paraglide.config.ts");
-		const outdir = path.join(workspace, "from-config");
-		await writeConfig(projectDir, outdir);
+  // Deleting the config file mid-watch falls back to the built-in
+  // defaults (same as never having a config); recreating it is picked up.
+  test("watch falls back to defaults when the config is deleted", async () => {
+    const { workspace, projectDir } = await createWorkspace();
+    const configPath = path.join(projectDir, "paraglide.config.ts");
+    const outdir = path.join(workspace, "from-config");
+    await writeConfig(projectDir, outdir);
 
-		const compileMock = vi.fn().mockResolvedValue({});
-		vi.doMock("../../../compiler/compile.js", () => ({
-			compile: compileMock,
-		}));
+    const compileMock = vi.fn().mockResolvedValue({});
+    vi.doMock("../../../compiler/compile.js", () => ({
+      compile: compileMock,
+    }));
 
-		const { compileCommand } = await import("./command.js");
+    const { compileCommand } = await import("./command.js");
 
-		await compileCommand.parseAsync(
-			["--project", projectDir, "--watch", "--silent"],
-			{ from: "user" }
-		);
-		expect(compileMock).toHaveBeenCalledTimes(1);
-		expect(compileMock.mock.calls[0]![0].outdir).toBe(outdir);
+    await compileCommand.parseAsync(
+      ["--project", projectDir, "--watch", "--silent"],
+      { from: "user" }
+    );
+    expect(compileMock).toHaveBeenCalledTimes(1);
+    expect(compileMock.mock.calls[0]![0].outdir).toBe(outdir);
 
-		await rm(configPath);
-		notifyChange(projectDir, "paraglide.config.ts", "rename");
+    await rm(configPath);
+    notifyChange(projectDir, "paraglide.config.ts", "rename");
 
-		const deadline = Date.now() + 10_000;
-		while (compileMock.mock.calls.length < 2 && Date.now() < deadline) {
-			await new Promise((r) => setTimeout(r, 50));
-		}
+    const deadline = Date.now() + 10_000;
+    while (compileMock.mock.calls.length < 2 && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
 
-		expect(compileMock.mock.calls.length).toBeGreaterThanOrEqual(2);
-		for (const call of compileMock.mock.calls.slice(1)) {
-			// Default outdir, resolved against the working directory.
-			expect(
-				String(call[0].outdir).endsWith(path.join("src", "paraglide"))
-			).toBe(true);
-			expect(call[0].project).toBe(projectDir);
-		}
+    expect(compileMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    for (const call of compileMock.mock.calls.slice(1)) {
+      // Default outdir, resolved against the working directory.
+      expect(
+        String(call[0].outdir).endsWith(path.join("src", "paraglide"))
+      ).toBe(true);
+      expect(call[0].project).toBe(projectDir);
+    }
 
-		// Recreating the config with a different outdir is picked up again.
-		await writeConfig(projectDir, path.join(workspace, "recreated"));
-		notifyChange(projectDir, "paraglide.config.ts", "rename");
-		const recreateDeadline = Date.now() + 10_000;
-		while (
-			Date.now() < recreateDeadline &&
-			!compileMock.mock.calls.some((c) =>
-				String(c[0].outdir).endsWith("recreated")
-			)
-		) {
-			await new Promise((r) => setTimeout(r, 50));
-		}
-		expect(
-			compileMock.mock.calls.some((c) =>
-				String(c[0].outdir).endsWith("recreated")
-			)
-		).toBe(true);
-	});
+    // Recreating the config with a different outdir is picked up again.
+    await writeConfig(projectDir, path.join(workspace, "recreated"));
+    notifyChange(projectDir, "paraglide.config.ts", "rename");
+    const recreateDeadline = Date.now() + 10_000;
+    while (
+      Date.now() < recreateDeadline &&
+      !compileMock.mock.calls.some((c) =>
+        String(c[0].outdir).endsWith("recreated")
+      )
+    ) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    expect(
+      compileMock.mock.calls.some((c) =>
+        String(c[0].outdir).endsWith("recreated")
+      )
+    ).toBe(true);
+  });
 
-	// Renaming the config between formats switches to the new winner.
-	// A NEW non-config file appearing directly in the project directory (e.g.
-	// a locale JSON for a freshly added locale) must schedule a rebuild even
-	// though no per-file watcher exists for it yet.
-	test("watch recompiles when a new input appears in the project directory", async () => {
-		const { workspace, projectDir } = await createWorkspace();
-		await writeConfig(projectDir, path.join(workspace, "from-config"));
+  // Renaming the config between formats switches to the new winner.
+  // A NEW non-config file appearing directly in the project directory (e.g.
+  // a locale JSON for a freshly added locale) must schedule a rebuild even
+  // though no per-file watcher exists for it yet.
+  test("watch recompiles when a new input appears in the project directory", async () => {
+    const { workspace, projectDir } = await createWorkspace();
+    await writeConfig(projectDir, path.join(workspace, "from-config"));
 
-		const compileMock = vi.fn().mockResolvedValue({});
-		vi.doMock("../../../compiler/compile.js", () => ({
-			compile: compileMock,
-		}));
+    const compileMock = vi.fn().mockResolvedValue({});
+    vi.doMock("../../../compiler/compile.js", () => ({
+      compile: compileMock,
+    }));
 
-		const { compileCommand } = await import("./command.js");
+    const { compileCommand } = await import("./command.js");
 
-		await compileCommand.parseAsync(
-			["--project", projectDir, "--watch", "--silent"],
-			{ from: "user" }
-		);
-		expect(compileMock).toHaveBeenCalledTimes(1);
+    await compileCommand.parseAsync(
+      ["--project", projectDir, "--watch", "--silent"],
+      { from: "user" }
+    );
+    expect(compileMock).toHaveBeenCalledTimes(1);
 
-		await writeFile(path.join(projectDir, "es.json"), "{}");
-		notifyChange(projectDir, "es.json", "rename");
+    await writeFile(path.join(projectDir, "es.json"), "{}");
+    notifyChange(projectDir, "es.json", "rename");
 
-		const deadline = Date.now() + 10_000;
-		while (compileMock.mock.calls.length < 2 && Date.now() < deadline) {
-			await new Promise((r) => setTimeout(r, 50));
-		}
-		expect(compileMock.mock.calls.length).toBeGreaterThanOrEqual(2);
-	});
+    const deadline = Date.now() + 10_000;
+    while (compileMock.mock.calls.length < 2 && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    expect(compileMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
 
-	test("watch follows config renames between formats", async () => {
-		const { workspace, projectDir } = await createWorkspace();
-		const tsPath = path.join(projectDir, "paraglide.config.ts");
-		const jsPath = path.join(projectDir, "paraglide.config.js");
-		const outdirA = path.join(workspace, "out-ts");
-		const outdirB = path.join(workspace, "out-js");
-		await writeConfig(projectDir, outdirA);
+  test("watch follows config renames between formats", async () => {
+    const { workspace, projectDir } = await createWorkspace();
+    const tsPath = path.join(projectDir, "paraglide.config.ts");
+    const jsPath = path.join(projectDir, "paraglide.config.js");
+    const outdirA = path.join(workspace, "out-ts");
+    const outdirB = path.join(workspace, "out-js");
+    await writeConfig(projectDir, outdirA);
 
-		const compileMock = vi.fn().mockResolvedValue({});
-		vi.doMock("../../../compiler/compile.js", () => ({
-			compile: compileMock,
-		}));
+    const compileMock = vi.fn().mockResolvedValue({});
+    vi.doMock("../../../compiler/compile.js", () => ({
+      compile: compileMock,
+    }));
 
-		const { compileCommand } = await import("./command.js");
+    const { compileCommand } = await import("./command.js");
 
-		await compileCommand.parseAsync(
-			["--project", projectDir, "--watch", "--silent"],
-			{ from: "user" }
-		);
-		expect(compileMock.mock.calls[0]![0].outdir).toBe(outdirA);
+    await compileCommand.parseAsync(
+      ["--project", projectDir, "--watch", "--silent"],
+      { from: "user" }
+    );
+    expect(compileMock.mock.calls[0]![0].outdir).toBe(outdirA);
 
-		// Format switch: delete .ts, add .js.
-		await rm(tsPath);
-		await writeFile(
-			jsPath,
-			["export default {", `  outdir: ${JSON.stringify(outdirB)},`, "}"].join(
-				"\n"
-			)
-		);
-		notifyChange(projectDir, "paraglide.config.ts", "rename");
-		notifyChange(projectDir, "paraglide.config.js", "rename");
+    // Format switch: delete .ts, add .js.
+    await rm(tsPath);
+    await writeFile(
+      jsPath,
+      ["export default {", `  outdir: ${JSON.stringify(outdirB)},`, "}"].join(
+        "\n"
+      )
+    );
+    notifyChange(projectDir, "paraglide.config.ts", "rename");
+    notifyChange(projectDir, "paraglide.config.js", "rename");
 
-		const deadline = Date.now() + 10_000;
-		while (
-			Date.now() < deadline &&
-			!compileMock.mock.calls.some((c) => c[0].outdir === outdirB)
-		) {
-			await new Promise((r) => setTimeout(r, 50));
-		}
-		expect(compileMock.mock.calls.some((c) => c[0].outdir === outdirB)).toBe(
-			true
-		);
-	});
+    const deadline = Date.now() + 10_000;
+    while (
+      Date.now() < deadline &&
+      !compileMock.mock.calls.some((c) => c[0].outdir === outdirB)
+    ) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    expect(compileMock.mock.calls.some((c) => c[0].outdir === outdirB)).toBe(
+      true
+    );
+  });
 
-	// Non-config changes inside the project directory DO rebuild (new
-	// inputs can appear there) but must NOT reload the config.
-	test("watch recompiles without reloading config for non-config changes", async () => {
-		const { workspace, projectDir } = await createWorkspace();
-		await writeConfig(projectDir, path.join(workspace, "from-config"));
+  // Non-config changes inside the project directory DO rebuild (new
+  // inputs can appear there) but must NOT reload the config.
+  test("watch recompiles without reloading config for non-config changes", async () => {
+    const { workspace, projectDir } = await createWorkspace();
+    await writeConfig(projectDir, path.join(workspace, "from-config"));
 
-		let loadCount = 0;
-		vi.doMock("../../../compiler/compile.js", () => ({
-			compile: vi.fn().mockResolvedValue({}),
-		}));
-		vi.doMock("../../../services/config/index.js", async (importActual) => {
-			const actual =
-				await importActual<
-					typeof import("../../../services/config/index.js")
-				>();
-			return {
-				...actual,
-				loadParaglideConfig: (
-					...args: Parameters<typeof actual.loadParaglideConfig>
-				) => {
-					loadCount++;
-					return actual.loadParaglideConfig(...args);
-				},
-			};
-		});
+    let loadCount = 0;
+    vi.doMock("../../../compiler/compile.js", () => ({
+      compile: vi.fn().mockResolvedValue({}),
+    }));
+    vi.doMock("../../../services/config/index.js", async (importActual) => {
+      const actual =
+        await importActual<
+          typeof import("../../../services/config/index.js")
+        >();
+      return {
+        ...actual,
+        loadParaglideConfig: (
+          ...args: Parameters<typeof actual.loadParaglideConfig>
+        ) => {
+          loadCount++;
+          return actual.loadParaglideConfig(...args);
+        },
+      };
+    });
 
-		try {
-			const { compileCommand } = await import("./command.js");
-			const compileModule = (await import("../../../compiler/compile.js")) as {
-				compile: ReturnType<typeof vi.fn>;
-			};
+    try {
+      const { compileCommand } = await import("./command.js");
+      const compileModule = (await import("../../../compiler/compile.js")) as {
+        compile: ReturnType<typeof vi.fn>;
+      };
 
-			await compileCommand.parseAsync(
-				["--project", projectDir, "--watch", "--silent"],
-				{ from: "user" }
-			);
-			expect(compileModule.compile).toHaveBeenCalledTimes(1);
-			expect(loadCount).toBe(1);
+      await compileCommand.parseAsync(
+        ["--project", projectDir, "--watch", "--silent"],
+        { from: "user" }
+      );
+      expect(compileModule.compile).toHaveBeenCalledTimes(1);
+      expect(loadCount).toBe(1);
 
-			await writeFile(path.join(projectDir, "README.md"), "hello");
-			notifyChange(projectDir, "README.md");
-			await vi.waitFor(() =>
-				expect(compileModule.compile).toHaveBeenCalledTimes(2)
-			);
-			await writeFile(path.join(projectDir, "notes.txt"), "world");
-			notifyChange(projectDir, "notes.txt");
-			await vi.waitFor(() =>
-				expect(compileModule.compile).toHaveBeenCalledTimes(3)
-			);
+      await writeFile(path.join(projectDir, "README.md"), "hello");
+      notifyChange(projectDir, "README.md");
+      await vi.waitFor(() =>
+        expect(compileModule.compile).toHaveBeenCalledTimes(2)
+      );
+      await writeFile(path.join(projectDir, "notes.txt"), "world");
+      notifyChange(projectDir, "notes.txt");
+      await vi.waitFor(() =>
+        expect(compileModule.compile).toHaveBeenCalledTimes(3)
+      );
 
-			expect(compileModule.compile.mock.calls.length).toBeGreaterThanOrEqual(3);
-			expect(loadCount).toBe(1);
+      expect(compileModule.compile.mock.calls.length).toBeGreaterThanOrEqual(3);
+      expect(loadCount).toBe(1);
 
-			// A missing filename is ambiguous and must conservatively refresh config.
-			notifyChange(projectDir, null);
-			await vi.waitFor(() =>
-				expect(compileModule.compile).toHaveBeenCalledTimes(4)
-			);
-			expect(loadCount).toBe(2);
-		} finally {
-			vi.doUnmock("../../../services/config/index.js");
-		}
-	});
+      // A missing filename is ambiguous and must conservatively refresh config.
+      notifyChange(projectDir, null);
+      await vi.waitFor(() =>
+        expect(compileModule.compile).toHaveBeenCalledTimes(4)
+      );
+      expect(loadCount).toBe(2);
+    } finally {
+      vi.doUnmock("../../../services/config/index.js");
+    }
+  });
 });
 
 test("watch shutdown cancels queued rebuilds and ignores late events", async () => {
-	const { workspace, projectDir } = await createWorkspace();
-	await writeConfig(projectDir, path.join(workspace, "output"));
-	const compileMock = vi.fn().mockResolvedValue({ outputHashes: {} });
-	vi.doMock("../../../compiler/compile.js", () => ({ compile: compileMock }));
-	const { compileCommand } = await import("./command.js");
-	await compileCommand.parseAsync(
-		["--project", projectDir, "--watch", "--silent", "--no-clean-outdir"],
-		{ from: "user" }
-	);
-	const watcher = [...watchers.get(path.resolve(projectDir))!][0]!;
-	const lateEvent = watcher.listeners("change")[0]!;
-	vi.useFakeTimers();
-	notifyChange(projectDir, "notes.txt");
-	const exit = vi
-		.spyOn(process, "exit")
-		.mockImplementation(() => undefined as never);
-	const stop = process
-		.listeners("SIGINT")
-		.find((listener) => !initialSigintListeners.includes(listener));
-	expect(stop).toBeDefined();
-	stop!("SIGINT");
-	lateEvent("change", "notes.txt");
-	await vi.advanceTimersByTimeAsync(500);
-	expect(exit).toHaveBeenCalledWith(0);
-	expect(compileMock).toHaveBeenCalledTimes(1);
-	expect([...watchers.values()].every((current) => current.size === 0)).toBe(
-		true
-	);
+  const { workspace, projectDir } = await createWorkspace();
+  await writeConfig(projectDir, path.join(workspace, "output"));
+  const compileMock = vi.fn().mockResolvedValue({ outputHashes: {} });
+  vi.doMock("../../../compiler/compile.js", () => ({ compile: compileMock }));
+  const { compileCommand } = await import("./command.js");
+  await compileCommand.parseAsync(
+    ["--project", projectDir, "--watch", "--silent", "--no-clean-outdir"],
+    { from: "user" }
+  );
+  const watcher = [...watchers.get(path.resolve(projectDir))!][0]!;
+  const lateEvent = watcher.listeners("change")[0]!;
+  vi.useFakeTimers();
+  notifyChange(projectDir, "notes.txt");
+  const exit = vi
+    .spyOn(process, "exit")
+    .mockImplementation(() => undefined as never);
+  const stop = process
+    .listeners("SIGINT")
+    .find((listener) => !initialSigintListeners.includes(listener));
+  expect(stop).toBeDefined();
+  stop!("SIGINT");
+  lateEvent("change", "notes.txt");
+  await vi.advanceTimersByTimeAsync(500);
+  expect(exit).toHaveBeenCalledWith(0);
+  expect(compileMock).toHaveBeenCalledTimes(1);
+  expect([...watchers.values()].every((current) => current.size === 0)).toBe(
+    true
+  );
 });
 
 test("compile --watch forwards the newly exposed compiler options (#757)", async () => {
-	const testDirectory = await mkdtemp(path.join(tmpdir(), "paraglide-cli-"));
-	testDirectories.push(testDirectory);
-	const outdir = path.join(testDirectory, "output");
+  const testDirectory = await mkdtemp(path.join(tmpdir(), "paraglide-cli-"));
+  testDirectories.push(testDirectory);
+  const outdir = path.join(testDirectory, "output");
 
-	const compileMock = vi.fn().mockResolvedValue({ outputHashes: {} });
-	vi.doMock("../../../compiler/compile.js", () => ({
-		compile: compileMock,
-	}));
+  const compileMock = vi.fn().mockResolvedValue({ outputHashes: {} });
+  vi.doMock("../../../compiler/compile.js", () => ({
+    compile: compileMock,
+  }));
 
-	const { compileCommand } = await import("./command.js");
+  const { compileCommand } = await import("./command.js");
 
-	await compileCommand.parseAsync(
-		[
-			"--project",
-			path.join(testDirectory, "project.inlang"),
-			"--outdir",
-			outdir,
-			"--watch",
-			"--no-clean-outdir",
-			"--experimental-static-locale",
-			'"de"',
-			"--disable-async-local-storage",
-			"--silent",
-		],
-		{ from: "user" }
-	);
+  await compileCommand.parseAsync(
+    [
+      "--project",
+      path.join(testDirectory, "project.inlang"),
+      "--outdir",
+      outdir,
+      "--watch",
+      "--no-clean-outdir",
+      "--experimental-static-locale",
+      '"de"',
+      "--disable-async-local-storage",
+      "--silent",
+    ],
+    { from: "user" }
+  );
 
-	expect(compileMock).toHaveBeenCalledTimes(1);
-	expect(compileMock).toHaveBeenCalledWith(
-		expect.objectContaining({
-			cleanOutdir: false,
-			disableAsyncLocalStorage: true,
-			experimentalStaticLocale: '"de"',
-			previousCompilation: undefined,
-		})
-	);
+  expect(compileMock).toHaveBeenCalledTimes(1);
+  expect(compileMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      cleanOutdir: false,
+      disableAsyncLocalStorage: true,
+      experimentalStaticLocale: '"de"',
+      previousCompilation: undefined,
+    })
+  );
 });
 
 test.each([
-	{ configValue: undefined, flags: [], expected: true },
-	{ configValue: false, flags: [], expected: false },
-	{ configValue: false, flags: ["--emit-ts-declarations"], expected: true },
-	{ configValue: true, flags: ["--no-emit-ts-declarations"], expected: false },
+  { configValue: undefined, flags: [], expected: true },
+  { configValue: false, flags: [], expected: false },
+  { configValue: false, flags: ["--emit-ts-declarations"], expected: true },
+  { configValue: true, flags: ["--no-emit-ts-declarations"], expected: false },
 ])(
-	"CLI declaration default and overrides: %j",
-	async ({ configValue, flags, expected }) => {
-		const { workspace, projectDir } = await createWorkspace();
-		await writeConfig(projectDir, path.join(workspace, "output"));
-		if (configValue !== undefined) {
-			await writeFile(
-				path.join(projectDir, "paraglide.config.ts"),
-				`export default { outdir: ${JSON.stringify(path.join(workspace, "output"))}, emitTsDeclarations: ${configValue} }`
-			);
-		}
-		const compileMock = vi.fn().mockResolvedValue({ outputHashes: {} });
-		vi.doMock("../../../compiler/compile.js", () => ({ compile: compileMock }));
-		const exitError = new Error("process.exit");
-		vi.spyOn(process, "exit").mockImplementation(() => {
-			throw exitError;
-		});
-		const { compileCommand } = await import("./command.js");
-		await expect(
-			compileCommand.parseAsync(
-				["--project", projectDir, "--silent", ...flags],
-				{ from: "user" }
-			)
-		).rejects.toBe(exitError);
-		expect(compileMock).toHaveBeenCalledWith(
-			expect.objectContaining({ emitTsDeclarations: expected })
-		);
-	}
+  "CLI declaration default and overrides: %j",
+  async ({ configValue, flags, expected }) => {
+    const { workspace, projectDir } = await createWorkspace();
+    await writeConfig(projectDir, path.join(workspace, "output"));
+    if (configValue !== undefined) {
+      await writeFile(
+        path.join(projectDir, "paraglide.config.ts"),
+        `export default { outdir: ${JSON.stringify(path.join(workspace, "output"))}, emitTsDeclarations: ${configValue} }`
+      );
+    }
+    const compileMock = vi.fn().mockResolvedValue({ outputHashes: {} });
+    vi.doMock("../../../compiler/compile.js", () => ({ compile: compileMock }));
+    const exitError = new Error("process.exit");
+    vi.spyOn(process, "exit").mockImplementation(() => {
+      throw exitError;
+    });
+    const { compileCommand } = await import("./command.js");
+    await expect(
+      compileCommand.parseAsync(
+        ["--project", projectDir, "--silent", ...flags],
+        { from: "user" }
+      )
+    ).rejects.toBe(exitError);
+    expect(compileMock).toHaveBeenCalledWith(
+      expect.objectContaining({ emitTsDeclarations: expected })
+    );
+  }
 );
 
 test.each([
-	{ configured: undefined, flag: undefined, expected: "message-modules" },
-	{ configured: "locale-modules", flag: undefined, expected: "locale-modules" },
-	{
-		configured: "virtual-modules",
-		flag: undefined,
-		expected: "virtual-modules",
-	},
-	{
-		configured: "virtual-modules",
-		flag: "message-modules",
-		expected: "message-modules",
-	},
+  { configured: undefined, flag: undefined, expected: "message-modules" },
+  { configured: "locale-modules", flag: undefined, expected: "locale-modules" },
+  {
+    configured: "virtual-modules",
+    flag: undefined,
+    expected: "virtual-modules",
+  },
+  {
+    configured: "virtual-modules",
+    flag: "message-modules",
+    expected: "message-modules",
+  },
 ])(
-	"CLI output structure honors explicit config before applying its default: %j",
-	async ({ configured, flag, expected }) => {
-		const { workspace, projectDir } = await createWorkspace();
-		await writeConfig(projectDir, path.join(workspace, "output"));
-		await writeFile(
-			path.join(projectDir, "paraglide.config.ts"),
-			`export default ${JSON.stringify({ outdir: path.join(workspace, "output"), outputStructure: configured })};`
-		);
-		// Check option resolution separately from the compiler's Vite-only guard.
-		const compileMock = vi.fn().mockResolvedValue({ outputHashes: {} });
-		vi.doMock("../../../compiler/compile.js", () => ({ compile: compileMock }));
-		const exitError = new Error("process.exit");
-		vi.spyOn(process, "exit").mockImplementation(() => {
-			throw exitError;
-		});
-		const { compileCommand } = await import("./command.js");
-		await expect(
-			compileCommand.parseAsync(
-				[
-					"--project",
-					projectDir,
-					"--silent",
-					...(flag ? ["--output-structure", flag] : []),
-				],
-				{ from: "user" }
-			)
-		).rejects.toBe(exitError);
-		expect(compileMock).toHaveBeenCalledWith(
-			expect.objectContaining({ outputStructure: expected })
-		);
-	}
+  "CLI output structure honors explicit config before applying its default: %j",
+  async ({ configured, flag, expected }) => {
+    const { workspace, projectDir } = await createWorkspace();
+    await writeConfig(projectDir, path.join(workspace, "output"));
+    await writeFile(
+      path.join(projectDir, "paraglide.config.ts"),
+      `export default ${JSON.stringify({ outdir: path.join(workspace, "output"), outputStructure: configured })};`
+    );
+    // Check option resolution separately from the compiler's Vite-only guard.
+    const compileMock = vi.fn().mockResolvedValue({ outputHashes: {} });
+    vi.doMock("../../../compiler/compile.js", () => ({ compile: compileMock }));
+    const exitError = new Error("process.exit");
+    vi.spyOn(process, "exit").mockImplementation(() => {
+      throw exitError;
+    });
+    const { compileCommand } = await import("./command.js");
+    await expect(
+      compileCommand.parseAsync(
+        [
+          "--project",
+          projectDir,
+          "--silent",
+          ...(flag ? ["--output-structure", flag] : []),
+        ],
+        { from: "user" }
+      )
+    ).rejects.toBe(exitError);
+    expect(compileMock).toHaveBeenCalledWith(
+      expect.objectContaining({ outputStructure: expected })
+    );
+  }
 );
