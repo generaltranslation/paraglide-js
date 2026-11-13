@@ -1,6 +1,6 @@
 ---
 title: "Translating Messages: AI Translation, Machine Translation, and Translators"
-description: How to translate a Paraglide JS project's message files with AI translation from General Translation, free machine translation from the inlang CLI, translators in Fink, or by hand.
+description: How to translate a Paraglide JS project's message files with General Translation, machine translation, translators, or by hand.
 ---
 
 # Translating Messages
