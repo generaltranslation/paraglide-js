@@ -610,13 +610,13 @@
 
   ```json
   {
-  	"auth_password_error": [
-  		{
-  			"match": {
-  				"type=empty": "You must provide a password"
-  			}
-  		}
-  	]
+    "auth_password_error": [
+      {
+        "match": {
+          "type=empty": "You must provide a password"
+        }
+      }
+    ]
   }
   ```
 
@@ -748,13 +748,13 @@
   import { paraglideVitePlugin } from "@inlang/paraglide-js";
 
   export default defineConfig({
-  	plugins: [
-  		paraglideVitePlugin({
-  			project: "./project.inlang",
-  			outdir: "./src/paraglide",
-  			emitTsDeclarations: true,
-  		}),
-  	],
+    plugins: [
+      paraglideVitePlugin({
+        project: "./project.inlang",
+        outdir: "./src/paraglide",
+        emitTsDeclarations: true,
+      }),
+    ],
   });
   ```
 
@@ -907,9 +907,9 @@
   ```js
   // This no longer works in sync version
   defineCustomServerStrategy("custom-database", {
-  	getLocale: async (request) => {
-  		return await getUserLocaleFromDatabase(request);
-  	},
+    getLocale: async (request) => {
+      return await getUserLocaleFromDatabase(request);
+    },
   });
 
   const locale = extractLocaleFromRequest(request); // Won't call async custom strategies
@@ -920,9 +920,9 @@
   ```js
   // Use the async version for custom strategies
   defineCustomServerStrategy("custom-database", {
-  	getLocale: async (request) => {
-  		return await getUserLocaleFromDatabase(request);
-  	},
+    getLocale: async (request) => {
+      return await getUserLocaleFromDatabase(request);
+    },
   });
 
   const locale = await extractLocaleFromRequestAsync(request); // Supports async custom strategies
@@ -948,7 +948,7 @@
   ```js
   // When cookieDomain was undefined, cookies were set as:
   document.cookie =
-  	"PARAGLIDE_LOCALE=en; path=/; max-age=34560000; domain=example.com";
+    "PARAGLIDE_LOCALE=en; path=/; max-age=34560000; domain=example.com";
   // This made cookies available to subdomains
   ```
 
@@ -1005,8 +1005,8 @@
   import { defineCustomClientStrategy } from "./paraglide/runtime.js";
 
   defineCustomClientStrategy("custom-sessionStorage", {
-  	getLocale: () => sessionStorage.getItem("user-locale") ?? undefined,
-  	setLocale: (locale) => sessionStorage.setItem("user-locale", locale),
+    getLocale: () => sessionStorage.getItem("user-locale") ?? undefined,
+    setLocale: (locale) => sessionStorage.setItem("user-locale", locale),
   });
   ```
 
@@ -1014,7 +1014,7 @@
 
   ```js
   compile({
-  	strategy: ["custom-sessionStorage", "cookie", "baseLocale"],
+    strategy: ["custom-sessionStorage", "cookie", "baseLocale"],
   });
   ```
 
@@ -1195,7 +1195,7 @@ Docs are [here](https://paraglidejs.com/server-side-rendering)
 import { paraglideMiddleware } from "./paraglide/server.js";
 
 export const handle = ({ event, resolve }) => {
-	return paraglideMiddleware(event.request, () => resolve(event));
+  return paraglideMiddleware(event.request, () => resolve(event));
 };
 ```
 
@@ -1207,7 +1207,7 @@ Literally anything is now possible. URL-based, domain-based, path-based, cookie-
 
 ```js
 paraglide({
-	strategy: [
+  strategy: [
     "url",
     "cookie",
     "preferredLanguage",
@@ -1227,8 +1227,8 @@ paraglide({
 import { compile } from "@inlang/paraglide-js";
 
 await compile({
-	project: "./project.inlang",
-	outdir: "./src/paraglide",
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
 });
 ```
 
@@ -1333,13 +1333,13 @@ To align with industry standards, we renamed `LanguageTag` to `locale`.
 
 
 export default defineConfig({
-	plugins: [
+  plugins: [
 -		paraglide({
 +		paraglideVitePlugin({
-			project: "./project.inlang",
-			outdir: "./src/paraglide",
-		}),
-	],
+      project: "./project.inlang",
+      outdir: "./src/paraglide",
+    }),
+  ],
 });
 
 ````
@@ -1419,10 +1419,10 @@ Some Paraglide adapters used AST transforms to automatically transform `<a>` int
   const project = await fs.readFile("./project.inlang");
 
   const paraglide = await createParaglideModule({
-  	project,
-  	compilerOptions: {
-  		strategy: ["url"],
-  	},
+    project,
+    compilerOptions: {
+      strategy: ["url"],
+    },
   });
 
   // Use runtime functions
@@ -1484,13 +1484,13 @@ Before
 
 ```json
 {
-	"pattern": "https://:domain(.*)/:locale(de|fr)?/:path*",
-	"deLocalizedNamedGroups": { "locale": null },
-	"localizedNamedGroups": {
-		"en": { "locale": null },
-		"fr": { "locale": "fr" },
-		"de": { "locale": "de" }
-	}
+  "pattern": "https://:domain(.*)/:locale(de|fr)?/:path*",
+  "deLocalizedNamedGroups": { "locale": null },
+  "localizedNamedGroups": {
+    "en": { "locale": null },
+    "fr": { "locale": "fr" },
+    "de": { "locale": "de" }
+  }
 }
 ```
 
@@ -1804,8 +1804,8 @@ await compile({
   import { compile } from "@inlang/paraglide-js/compiler";
 
   await compile({
-  	path: "/path/to/project.inlang",
-  	outdir: "/path/to/output",
+    path: "/path/to/project.inlang",
+    outdir: "/path/to/output",
   });
   ```
 
@@ -2157,9 +2157,9 @@ type safety.
 import { isAvailableLanguageTag } from "./paraglide/runtime";
 
 if (isAvailableLanguageTag(params.lang)) {
-	return renderSite(params.lang);
+  return renderSite(params.lang);
 } else {
-	return 404;
+  return 404;
 }
 ```
 
@@ -2207,11 +2207,11 @@ FIX: type error https://github.com/opral/monorepo/pull/1610#issuecomment-1801768
 ```diff
 export const currentLanguageTag = (params) => {
 +	/** @type {Record<string, string>} */
-	const variants = {
-		en: `The current language tag is "${params.languageTag}".`,
-		de: `Der aktuelle Sprachtag ist "${params.languageTag}".`,
-	}
-	return variants[languageTag()] ?? "currentLanguageTag"
+  const variants = {
+    en: `The current language tag is "${params.languageTag}".`,
+    de: `Der aktuelle Sprachtag ist "${params.languageTag}".`,
+  }
+  return variants[languageTag()] ?? "currentLanguageTag"
 }
 ```
 
@@ -2250,8 +2250,8 @@ fix: https://github.com/opral/monorepo/issues/1478
 The bug has been fixed by moving `./*/messages` above the less specifc `./*` export.
 
 ```json
-	"exports": {
-		"./*/messages": "./dist/compiled-output/*/messages.js",
-		"./*": "./dist/compiled-output/*/runtime.js"
-	},
+  "exports": {
+    "./*/messages": "./dist/compiled-output/*/messages.js",
+    "./*": "./dist/compiled-output/*/runtime.js"
+  },
 ```

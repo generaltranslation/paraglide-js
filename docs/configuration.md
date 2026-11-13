@@ -46,21 +46,21 @@ plain-JS configs it shows up as an unknown option.
 import { defineConfig } from "@inlang/paraglide-js";
 
 export default defineConfig({
-	outdir: "./src/paraglide",
-	strategy: ["cookie", "preferredLanguage", "baseLocale"],
-	urlPatterns: [
-		{
-			pattern: "/",
-			localized: [["en", "/"]],
-		},
-		{
-			pattern: "/:path(.*)?",
-			localized: [
-				["en", "/en/:path(.*)?"],
-				["de", "/de/:path(.*)?"],
-			],
-		},
-	],
+  outdir: "./src/paraglide",
+  strategy: ["cookie", "preferredLanguage", "baseLocale"],
+  urlPatterns: [
+    {
+      pattern: "/",
+      localized: [["en", "/"]],
+    },
+    {
+      pattern: "/:path(.*)?",
+      localized: [
+        ["en", "/en/:path(.*)?"],
+        ["de", "/de/:path(.*)?"],
+      ],
+    },
+  ],
 });
 ```
 
@@ -135,10 +135,10 @@ config file:
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 
 export default {
-	plugins: [
-		// project is required; everything else comes from its config file
-		paraglideVitePlugin({ project: "./project.inlang" }),
-	],
+  plugins: [
+    // project is required; everything else comes from its config file
+    paraglideVitePlugin({ project: "./project.inlang" }),
+  ],
 };
 ```
 
@@ -146,7 +146,7 @@ Explicit options remain useful for per-plugin overrides:
 
 ```ts
 paraglideVitePlugin({
-	outdir: "./src/paraglide-custom", // wins over the config file
+  outdir: "./src/paraglide-custom", // wins over the config file
 });
 ```
 

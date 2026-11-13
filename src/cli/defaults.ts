@@ -5,21 +5,21 @@ import type { ProjectSettings } from "@inlang/sdk";
  * from paraglide-js/src/cli/commands/init/defaults.ts
  */
 const defaultProjectSettings = {
-	$schema: "https://inlang.com/schema/project-settings",
-	baseLocale: "en",
-	locales: ["en", "de"],
-	modules: [
-		"https://cdn.jsdelivr.net/npm/@inlang/plugin-message-format@4.5.0/dist/index.js",
-		"https://cdn.jsdelivr.net/npm/@inlang/plugin-m-function-matcher@2.3.0/dist/index.js",
-	],
-	"plugin.inlang.messageFormat": {
-		pathPattern: "./messages/{locale}.json",
-	},
+  $schema: "https://inlang.com/schema/project-settings",
+  baseLocale: "en",
+  locales: ["en", "de"],
+  modules: [
+    "https://cdn.jsdelivr.net/npm/@inlang/plugin-message-format@4.5.0/dist/index.js",
+    "https://cdn.jsdelivr.net/npm/@inlang/plugin-m-function-matcher@2.3.0/dist/index.js",
+  ],
+  "plugin.inlang.messageFormat": {
+    pathPattern: "./messages/{locale}.json",
+  },
 } satisfies ProjectSettings;
 
 /**
  * @returns A new copy of the default project template that is safe to mutate.
  */
 export function getNewProjectTemplate() {
-	return structuredClone(defaultProjectSettings);
+  return structuredClone(defaultProjectSettings);
 }

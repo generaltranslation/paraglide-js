@@ -37,9 +37,9 @@ Browse all plugins at [inlang.com/c/plugins](https://inlang.com/c/plugins).
 
 ```json
 {
-	"greeting": "Hello {name}!",
-	"items_count": "{count, plural, one {# item} other {# items}}",
-	"welcome_message": "Welcome to {appName}, {username}!"
+  "greeting": "Hello {name}!",
+  "items_count": "{count, plural, one {# item} other {# items}}",
+  "welcome_message": "Welcome to {appName}, {username}!"
 }
 ```
 
@@ -47,9 +47,9 @@ Browse all plugins at [inlang.com/c/plugins](https://inlang.com/c/plugins).
 
 ```json
 {
-	"greeting": "Hallo {name}!",
-	"items_count": "{count, plural, one {# Artikel} other {# Artikel}}",
-	"welcome_message": "Willkommen bei {appName}, {username}!"
+  "greeting": "Hallo {name}!",
+  "items_count": "{count, plural, one {# Artikel} other {# Artikel}}",
+  "welcome_message": "Willkommen bei {appName}, {username}!"
 }
 ```
 
@@ -59,9 +59,9 @@ Browse all plugins at [inlang.com/c/plugins](https://inlang.com/c/plugins).
 
 ```json
 {
-	"greeting": "Hello {{name}}!",
-	"items_count": "{{count}} item",
-	"items_count_plural": "{{count}} items"
+  "greeting": "Hello {{name}}!",
+  "items_count": "{{count}} item",
+  "items_count_plural": "{{count}} items"
 }
 ```
 
@@ -71,8 +71,8 @@ Browse all plugins at [inlang.com/c/plugins](https://inlang.com/c/plugins).
 
 ```json
 {
-	"greeting": "Hello!",
-	"goodbye": "Goodbye!"
+  "greeting": "Hello!",
+  "goodbye": "Goodbye!"
 }
 ```
 
@@ -100,12 +100,12 @@ You can use multiple plugins to support different file formats in the same proje
 
 ```json
 {
-	"baseLocale": "en",
-	"locales": ["en", "de"],
-	"modules": [
-		"https://cdn.jsdelivr.net/npm/@inlang/plugin-message-format@4.5.0/dist/index.js",
-		"https://cdn.jsdelivr.net/npm/@inlang/plugin-i18next@6.0.11/dist/index.js"
-	]
+  "baseLocale": "en",
+  "locales": ["en", "de"],
+  "modules": [
+    "https://cdn.jsdelivr.net/npm/@inlang/plugin-message-format@4.5.0/dist/index.js",
+    "https://cdn.jsdelivr.net/npm/@inlang/plugin-i18next@6.0.11/dist/index.js"
+  ]
 }
 ```
 
@@ -119,12 +119,12 @@ With a description-capable inlang SDK and message-format plugin, author the desc
 
 ```json
 {
-	"checkout_confirm": [
-		{
-			"description": "Final checkout button. Confirms payment immediately. Keep it short.",
-			"match": { "*": "Pay now" }
-		}
-	]
+  "checkout_confirm": [
+    {
+      "description": "Final checkout button. Confirms payment immediately. Keep it short.",
+      "match": { "*": "Pay now" }
+    }
+  ]
 }
 ```
 

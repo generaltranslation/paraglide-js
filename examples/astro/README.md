@@ -47,7 +47,7 @@ export default defineConfig({
 +				emitTsDeclarations: true,
 +			}),
 +		],
-	},
+  },
 +  output: "server",
 +  adapter: node({ mode: "standalone" }),
 });

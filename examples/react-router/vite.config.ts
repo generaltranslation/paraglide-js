@@ -3,13 +3,13 @@ import { defineConfig } from "vite";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 
 export default defineConfig({
-	plugins: [
-		reactRouter(),
-		paraglideVitePlugin({
-			project: "./project.inlang",
-			outdir: "./app/paraglide",
-			emitTsDeclarations: true,
-			strategy: ["url", "baseLocale"],
-		}),
-	],
+  plugins: [
+    reactRouter(),
+    paraglideVitePlugin({
+      project: "./project.inlang",
+      outdir: "./app/paraglide",
+      emitTsDeclarations: true,
+      strategy: ["url", "baseLocale"],
+    }),
+  ],
 });

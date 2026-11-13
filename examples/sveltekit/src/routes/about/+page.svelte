@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import { localizeHref } from '$lib/paraglide/runtime';
-	import { m } from '$lib/paraglide/messages';
+  import { resolve } from '$app/paths';
+  import { localizeHref } from '$lib/paraglide/runtime';
+  import { m } from '$lib/paraglide/messages';
 </script>
 
 <p>{m.about()}</p>

@@ -4,38 +4,38 @@ import { prompt } from "../utils.js";
 import type { CliStep } from "../utils.js";
 
 export const promptForOutdir: CliStep<
-	{
-		logger: Logger;
-		interactive?: boolean;
-		outdir?: string;
-	},
-	{
-		/** Relative path to the output directory */
-		outdir: string;
-	}
+  {
+    logger: Logger;
+    interactive?: boolean;
+    outdir?: string;
+  },
+  {
+    /** Relative path to the output directory */
+    outdir: string;
+  }
 > = async (ctx) => {
-	if (ctx.outdir !== undefined) return { ...ctx, outdir: ctx.outdir };
-	if (ctx.interactive === false) return { ...ctx, outdir: DEFAULT_OUTDIR };
-	const response = await prompt(
-		"Which outdir should Paraglide write generated files to?",
-		{
-			type: "text",
-			initial: DEFAULT_OUTDIR,
-			default: DEFAULT_OUTDIR,
-			placeholder:
-				"Relative path from the package root to the desired compiler output directory",
-		}
-	);
+  if (ctx.outdir !== undefined) return { ...ctx, outdir: ctx.outdir };
+  if (ctx.interactive === false) return { ...ctx, outdir: DEFAULT_OUTDIR };
+  const response = await prompt(
+    "Which outdir should Paraglide write generated files to?",
+    {
+      type: "text",
+      initial: DEFAULT_OUTDIR,
+      default: DEFAULT_OUTDIR,
+      placeholder:
+        "Relative path from the package root to the desired compiler output directory",
+    }
+  );
 
-	if (!response.startsWith("./")) {
-		ctx.logger.warn(
-			"You must enter a valid relative path starting from the package root."
-		);
-		return await promptForOutdir(ctx);
-	}
+  if (!response.startsWith("./")) {
+    ctx.logger.warn(
+      "You must enter a valid relative path starting from the package root."
+    );
+    return await promptForOutdir(ctx);
+  }
 
-	return {
-		...ctx,
-		outdir: response,
-	};
+  return {
+    ...ctx,
+    outdir: response,
+  };
 };

@@ -32,26 +32,26 @@ Add the plugin to `next.config.mjs` with URL patterns that prefix **every** loca
 import { paraglideWebpackPlugin } from "@inlang/paraglide-js";
 
 export default {
-	webpack(config) {
-		config.plugins.push(
-			paraglideWebpackPlugin({
-				project: "./project.inlang",
-				outdir: "./src/paraglide",
-				emitTsDeclarations: true,
-				strategy: ["url", "cookie", "baseLocale"],
-				urlPatterns: [
-					{
-						pattern: "/:path(.*)?",
-						localized: [
-							["en", "/en/:path(.*)?"],
-							["de", "/de/:path(.*)?"],
-						],
-					},
-				],
-			})
-		);
-		return config;
-	},
+  webpack(config) {
+    config.plugins.push(
+      paraglideWebpackPlugin({
+        project: "./project.inlang",
+        outdir: "./src/paraglide",
+        emitTsDeclarations: true,
+        strategy: ["url", "cookie", "baseLocale"],
+        urlPatterns: [
+          {
+            pattern: "/:path(.*)?",
+            localized: [
+              ["en", "/en/:path(.*)?"],
+              ["de", "/de/:path(.*)?"],
+            ],
+          },
+        ],
+      })
+    );
+    return config;
+  },
 };
 ```
 
@@ -75,26 +75,26 @@ import { isLocale, getTextDirection, locales } from "@/paraglide/runtime";
 import ClientSideLocaleSwitch from "./ClientSideLocaleSwitch";
 
 export function generateStaticParams() {
-	return locales.map((locale) => ({ locale }));
+  return locales.map((locale) => ({ locale }));
 }
 
 export default async function RootLayout({
-	children,
-	params,
+  children,
+  params,
 }: {
-	children: React.ReactNode;
-	params: Promise<{ locale: string }>;
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
-	const { locale } = await params;
-	if (!isLocale(locale)) notFound();
-	return (
-		<html lang={locale} dir={getTextDirection(locale)}>
-			<body>
-				<ClientSideLocaleSwitch locale={locale} />
-				{children}
-			</body>
-		</html>
-	);
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  return (
+    <html lang={locale} dir={getTextDirection(locale)}>
+      <body>
+        <ClientSideLocaleSwitch locale={locale} />
+        {children}
+      </body>
+    </html>
+  );
 }
 ```
 
@@ -107,19 +107,19 @@ import { m } from "@/paraglide/messages";
 import { isLocale, localizeHref } from "@/paraglide/runtime";
 
 export default async function Page({
-	params,
+  params,
 }: {
-	params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string }>;
 }) {
-	const { locale } = await params;
-	if (!isLocale(locale)) notFound();
-	return (
-		<>
-			<p>{m.example_message({ username: "Samuel" }, { locale })}</p>
-			<Link href={localizeHref("/", { locale: "en" })}>English</Link>
-			<Link href={localizeHref("/", { locale: "de" })}>German</Link>
-		</>
-	);
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  return (
+    <>
+      <p>{m.example_message({ username: "Samuel" }, { locale })}</p>
+      <Link href={localizeHref("/", { locale: "en" })}>English</Link>
+      <Link href={localizeHref("/", { locale: "de" })}>German</Link>
+    </>
+  );
 }
 ```
 
@@ -134,12 +134,12 @@ import { m } from "@/paraglide/messages";
 import { setLocale, type Locale } from "@/paraglide/runtime";
 
 export default function ClientSideLocaleSwitch({ locale }: { locale: Locale }) {
-	return (
-		<>
-			<p>{m.example_message({ username: "Client" }, { locale })}</p>
-			<button onClick={() => setLocale("de")}>Switch to German</button>
-		</>
-	);
+  return (
+    <>
+      <p>{m.example_message({ username: "Client" }, { locale })}</p>
+      <button onClick={() => setLocale("de")}>Switch to German</button>
+    </>
+  );
 }
 ```
 

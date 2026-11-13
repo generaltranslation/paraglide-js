@@ -10,15 +10,15 @@ import { trailingSlash } from "./variables.js";
  * @returns {URL}
  */
 export function normalizeTrailingSlash(url) {
-	if (trailingSlash === undefined || url.pathname === "/") {
-		return url;
-	}
+  if (trailingSlash === undefined || url.pathname === "/") {
+    return url;
+  }
 
-	if (trailingSlash === "never") {
-		url.pathname = url.pathname.replace(/\/+$/, "") || "/";
-	} else if (trailingSlash === "always") {
-		url.pathname = url.pathname.replace(/\/+$/, "") + "/";
-	}
+  if (trailingSlash === "never") {
+    url.pathname = url.pathname.replace(/\/+$/, "") || "/";
+  } else if (trailingSlash === "always") {
+    url.pathname = url.pathname.replace(/\/+$/, "") + "/";
+  }
 
-	return url;
+  return url;
 }

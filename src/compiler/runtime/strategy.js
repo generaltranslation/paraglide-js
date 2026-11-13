@@ -35,9 +35,9 @@ export const customClientStrategies = new Map();
  * @returns {boolean} Returns true if it is a custom strategy, false otherwise.
  */
 export function isCustomStrategy(strategy) {
-	return (
-		typeof strategy === "string" && /^custom-[A-Za-z0-9_-]+$/.test(strategy)
-	);
+  return (
+    typeof strategy === "string" && /^custom-[A-Za-z0-9_-]+$/.test(strategy)
+  );
 }
 
 /**
@@ -51,13 +51,13 @@ export function isCustomStrategy(strategy) {
  * @returns {void}
  */
 export function defineCustomServerStrategy(strategy, handler) {
-	if (!isCustomStrategy(strategy)) {
-		throw new Error(
-			`Invalid custom strategy: "${strategy}". Must be a custom strategy following the pattern custom-name.`
-		);
-	}
+  if (!isCustomStrategy(strategy)) {
+    throw new Error(
+      `Invalid custom strategy: "${strategy}". Must be a custom strategy following the pattern custom-name.`
+    );
+  }
 
-	customServerStrategies.set(strategy, handler);
+  customServerStrategies.set(strategy, handler);
 }
 
 /**
@@ -71,11 +71,11 @@ export function defineCustomServerStrategy(strategy, handler) {
  * @returns {void}
  */
 export function defineCustomClientStrategy(strategy, handler) {
-	if (!isCustomStrategy(strategy)) {
-		throw new Error(
-			`Invalid custom strategy: "${strategy}". Must be a custom strategy following the pattern custom-name.`
-		);
-	}
+  if (!isCustomStrategy(strategy)) {
+    throw new Error(
+      `Invalid custom strategy: "${strategy}". Must be a custom strategy following the pattern custom-name.`
+    );
+  }
 
-	customClientStrategies.set(strategy, handler);
+  customClientStrategies.set(strategy, handler);
 }

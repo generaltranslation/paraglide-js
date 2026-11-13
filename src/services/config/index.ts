@@ -1,15 +1,15 @@
 import type { ParaglideConfig } from "./config-schema.js";
 
 export {
-	CONFIG_FILE_NAMES,
-	isConfigFileName,
-	resolveConfigCandidate,
+  CONFIG_FILE_NAMES,
+  isConfigFileName,
+  resolveConfigCandidate,
 } from "./discover-config-file.js";
 export { strategyNameSchema } from "./config-schema.js";
 export {
-	loadParaglideConfig,
-	clearParaglideConfigCache,
-	type LoadedParaglideConfig,
+  loadParaglideConfig,
+  clearParaglideConfigCache,
+  type LoadedParaglideConfig,
 } from "./load-paraglide-config.js";
 export { resolveCompilerOptions } from "./resolve-compiler-options.js";
 export { DEFAULT_OUTDIR, DEFAULT_PROJECT_PATH } from "./defaults.js";
@@ -32,5 +32,5 @@ export type { ParaglideConfig } from "./config-schema.js";
  * ```
  */
 export function defineConfig(config: ParaglideConfig): ParaglideConfig {
-	return config;
+  return config;
 }

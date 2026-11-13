@@ -2,16 +2,16 @@ import { defineConfig } from "vite";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 
 export default defineConfig({
-	plugins: [
-		paraglideVitePlugin({
-			project: "./project.inlang",
-			outdir: "./src/paraglide",
-			emitTsDeclarations: true,
-		}),
-	],
-	build: {
-		target: "esnext",
-		// eases debugging
-		minify: false,
-	},
+  plugins: [
+    paraglideVitePlugin({
+      project: "./project.inlang",
+      outdir: "./src/paraglide",
+      emitTsDeclarations: true,
+    }),
+  ],
+  build: {
+    target: "esnext",
+    // eases debugging
+    minify: false,
+  },
 });

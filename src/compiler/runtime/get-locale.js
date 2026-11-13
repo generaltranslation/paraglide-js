@@ -6,18 +6,18 @@ import { getStrategyForUrl } from "./route-strategy.js";
 import { setLocale } from "./set-locale.js";
 import { customClientStrategies, isCustomStrategy } from "./strategy.js";
 import {
-	baseLocale,
-	isServer,
-	localStorageKey,
-	serverAsyncLocalStorage,
-	experimentalStaticLocale,
-	routeStrategies,
-	strategy,
-	TREE_SHAKE_COOKIE_STRATEGY_USED,
-	TREE_SHAKE_GLOBAL_VARIABLE_STRATEGY_USED,
-	TREE_SHAKE_LOCAL_STORAGE_STRATEGY_USED,
-	TREE_SHAKE_PREFERRED_LANGUAGE_STRATEGY_USED,
-	TREE_SHAKE_URL_STRATEGY_USED,
+  baseLocale,
+  isServer,
+  localStorageKey,
+  serverAsyncLocalStorage,
+  experimentalStaticLocale,
+  routeStrategies,
+  strategy,
+  TREE_SHAKE_COOKIE_STRATEGY_USED,
+  TREE_SHAKE_GLOBAL_VARIABLE_STRATEGY_USED,
+  TREE_SHAKE_LOCAL_STORAGE_STRATEGY_USED,
+  TREE_SHAKE_PREFERRED_LANGUAGE_STRATEGY_USED,
+  TREE_SHAKE_URL_STRATEGY_USED,
 } from "./variables.js";
 
 /**
@@ -52,46 +52,46 @@ let localeInitiallySet = false;
  * @returns {Locale} The current locale.
  */
 export let getLocale = () => {
-	if (experimentalStaticLocale !== undefined) {
-		return experimentalStaticLocale;
-	}
+  if (experimentalStaticLocale !== undefined) {
+    return experimentalStaticLocale;
+  }
 
-	// if running in a server-side rendering context
-	// retrieve the locale from the async local storage
-	if (serverAsyncLocalStorage) {
-		const locale = serverAsyncLocalStorage?.getStore()?.locale;
-		if (locale) {
-			return locale;
-		}
-	}
+  // if running in a server-side rendering context
+  // retrieve the locale from the async local storage
+  if (serverAsyncLocalStorage) {
+    const locale = serverAsyncLocalStorage?.getStore()?.locale;
+    if (locale) {
+      return locale;
+    }
+  }
 
-	// Message calls resolve the locale on every call, and each read of
-	// `window.location.href` serializes the URL. Only route strategies and the
-	// url strategy use it.
-	const url =
-		!isServer &&
-		(routeStrategies.length > 0 || TREE_SHAKE_URL_STRATEGY_USED) &&
-		typeof window !== "undefined"
-			? window.location?.href
-			: undefined;
+  // Message calls resolve the locale on every call, and each read of
+  // `window.location.href` serializes the URL. Only route strategies and the
+  // url strategy use it.
+  const url =
+    !isServer &&
+    (routeStrategies.length > 0 || TREE_SHAKE_URL_STRATEGY_USED) &&
+    typeof window !== "undefined"
+      ? window.location?.href
+      : undefined;
 
-	const resolved = resolveLocaleWithStrategies(
-		url ? getStrategyForUrl(url) : strategy,
-		url
-	);
-	if (resolved) {
-		if (!localeInitiallySet) {
-			_locale = resolved;
-			// https://github.com/opral/inlang-paraglide-js/issues/455
-			localeInitiallySet = true;
-			setLocale(resolved, { reload: false });
-		}
-		return resolved;
-	}
+  const resolved = resolveLocaleWithStrategies(
+    url ? getStrategyForUrl(url) : strategy,
+    url
+  );
+  if (resolved) {
+    if (!localeInitiallySet) {
+      _locale = resolved;
+      // https://github.com/opral/inlang-paraglide-js/issues/455
+      localeInitiallySet = true;
+      setLocale(resolved, { reload: false });
+    }
+    return resolved;
+  }
 
-	throw new Error(
-		"No locale found. Read the docs https://paraglidejs.com/errors#no-locale-found"
-	);
+  throw new Error(
+    "No locale found. Read the docs https://paraglidejs.com/errors#no-locale-found"
+  );
 };
 
 /**
@@ -101,22 +101,22 @@ export let getLocale = () => {
  * @returns {Locale}
  */
 export function getLocaleForUrl(url) {
-	if (experimentalStaticLocale !== undefined) {
-		return experimentalStaticLocale;
-	}
+  if (experimentalStaticLocale !== undefined) {
+    return experimentalStaticLocale;
+  }
 
-	const strategyToUse = getStrategyForUrl(url);
-	const resolved = resolveLocaleWithStrategies(
-		strategyToUse,
-		typeof url === "string" ? url : url.href
-	);
-	if (resolved) {
-		return resolved;
-	}
+  const strategyToUse = getStrategyForUrl(url);
+  const resolved = resolveLocaleWithStrategies(
+    strategyToUse,
+    typeof url === "string" ? url : url.href
+  );
+  if (resolved) {
+    return resolved;
+  }
 
-	throw new Error(
-		"No locale found. Read the docs https://paraglidejs.com/errors#no-locale-found"
-	);
+  throw new Error(
+    "No locale found. Read the docs https://paraglidejs.com/errors#no-locale-found"
+  );
 }
 
 /**
@@ -125,66 +125,66 @@ export function getLocaleForUrl(url) {
  * @returns {Locale | undefined}
  */
 function resolveLocaleWithStrategies(strategyToUse, urlForUrlStrategy) {
-	/** @type {string | undefined} */
-	let locale;
+  /** @type {string | undefined} */
+  let locale;
 
-	for (const strat of strategyToUse) {
-		if (TREE_SHAKE_COOKIE_STRATEGY_USED && strat === "cookie") {
-			locale = extractLocaleFromCookie();
-		} else if (strat === "baseLocale") {
-			locale = baseLocale;
-		} else if (
-			TREE_SHAKE_URL_STRATEGY_USED &&
-			strat === "url" &&
-			!isServer &&
-			typeof urlForUrlStrategy === "string"
-		) {
-			locale = extractLocaleFromUrl(urlForUrlStrategy);
-		} else if (
-			TREE_SHAKE_GLOBAL_VARIABLE_STRATEGY_USED &&
-			strat === "globalVariable" &&
-			_locale !== undefined
-		) {
-			locale = _locale;
-		} else if (
-			TREE_SHAKE_PREFERRED_LANGUAGE_STRATEGY_USED &&
-			strat === "preferredLanguage" &&
-			!isServer
-		) {
-			locale = extractLocaleFromNavigator();
-		} else if (
-			TREE_SHAKE_LOCAL_STORAGE_STRATEGY_USED &&
-			strat === "localStorage" &&
-			!isServer
-		) {
-			try {
-				locale = localStorage.getItem(localStorageKey) ?? undefined;
-			} catch {
-				// localStorage throws when storage access is denied
-				locale = undefined;
-			}
-		} else if (isCustomStrategy(strat) && customClientStrategies.has(strat)) {
-			const handler = customClientStrategies.get(strat);
-			if (handler) {
-				const result = handler.getLocale();
-				// Handle both sync and async results - skip async in sync getLocale
-				if (result instanceof Promise) {
-					// Can't await in sync function, skip async strategies
-					continue;
-				}
-				if (result !== undefined) {
-					return assertIsLocale(result);
-				}
-			}
-		}
+  for (const strat of strategyToUse) {
+    if (TREE_SHAKE_COOKIE_STRATEGY_USED && strat === "cookie") {
+      locale = extractLocaleFromCookie();
+    } else if (strat === "baseLocale") {
+      locale = baseLocale;
+    } else if (
+      TREE_SHAKE_URL_STRATEGY_USED &&
+      strat === "url" &&
+      !isServer &&
+      typeof urlForUrlStrategy === "string"
+    ) {
+      locale = extractLocaleFromUrl(urlForUrlStrategy);
+    } else if (
+      TREE_SHAKE_GLOBAL_VARIABLE_STRATEGY_USED &&
+      strat === "globalVariable" &&
+      _locale !== undefined
+    ) {
+      locale = _locale;
+    } else if (
+      TREE_SHAKE_PREFERRED_LANGUAGE_STRATEGY_USED &&
+      strat === "preferredLanguage" &&
+      !isServer
+    ) {
+      locale = extractLocaleFromNavigator();
+    } else if (
+      TREE_SHAKE_LOCAL_STORAGE_STRATEGY_USED &&
+      strat === "localStorage" &&
+      !isServer
+    ) {
+      try {
+        locale = localStorage.getItem(localStorageKey) ?? undefined;
+      } catch {
+        // localStorage throws when storage access is denied
+        locale = undefined;
+      }
+    } else if (isCustomStrategy(strat) && customClientStrategies.has(strat)) {
+      const handler = customClientStrategies.get(strat);
+      if (handler) {
+        const result = handler.getLocale();
+        // Handle both sync and async results - skip async in sync getLocale
+        if (result instanceof Promise) {
+          // Can't await in sync function, skip async strategies
+          continue;
+        }
+        if (result !== undefined) {
+          return assertIsLocale(result);
+        }
+      }
+    }
 
-		const matchedLocale = toLocale(locale);
-		if (matchedLocale) {
-			return matchedLocale;
-		}
-	}
+    const matchedLocale = toLocale(locale);
+    if (matchedLocale) {
+      return matchedLocale;
+    }
+  }
 
-	return undefined;
+  return undefined;
 }
 
 /**
@@ -203,5 +203,5 @@ function resolveLocaleWithStrategies(strategyToUse, urlForUrlStrategy) {
  * @param {() => Locale} fn - The new implementation for `getLocale()`.
  */
 export const overwriteGetLocale = (fn) => {
-	getLocale = fn;
+  getLocale = fn;
 };

@@ -3,26 +3,26 @@ import fs from "node:fs";
 import { resolve, relative } from "node:path";
 import { Logger } from "../../../services/logger/index.js";
 import {
-	DEFAULT_OUTDIR,
-	DEFAULT_PROJECT_PATH,
+  DEFAULT_OUTDIR,
+  DEFAULT_PROJECT_PATH,
 } from "../../../services/config/defaults.js";
 import { compile, type CompilationResult } from "../../../compiler/compile.js";
 import { defaultCompilerOptions } from "../../../compiler/compiler-options.js";
 import { seedPreviousCompilationFromOutdir } from "../../../compiler/seed-previous-compilation.js";
 import {
-	createTrackedFs,
-	getWatchTargets,
+  createTrackedFs,
+  getWatchTargets,
 } from "../../../services/file-watching/tracked-fs.js";
 import * as v from "valibot";
 import {
-	clearParaglideConfigCache,
-	isConfigFileName,
-	loadParaglideConfig,
-	resolveCompilerOptions,
-	resolveConfigCandidate,
-	strategyNameSchema,
-	type LoadedParaglideConfig,
-	type ParaglideConfig,
+  clearParaglideConfigCache,
+  isConfigFileName,
+  loadParaglideConfig,
+  resolveCompilerOptions,
+  resolveConfigCandidate,
+  strategyNameSchema,
+  type LoadedParaglideConfig,
+  type ParaglideConfig,
 } from "../../../services/config/index.js";
 import { nodeNormalizePath } from "../../../utilities/node-normalize-path.js";
 import type { CompilerOptions } from "../../../compiler/compiler-options.js";
@@ -30,502 +30,502 @@ import type { CompilerOptions } from "../../../compiler/compiler-options.js";
 type OutputStructure = NonNullable<CompilerOptions["outputStructure"]>;
 
 const errorMessage = (error: unknown): string =>
-	error instanceof Error ? error.message : String(error);
+  error instanceof Error ? error.message : String(error);
 
 const parseOutputStructure = (value: string): OutputStructure => {
-	if (value === "virtual-modules") {
-		throw new InvalidArgumentError(
-			'"virtual-modules" requires the Paraglide Vite plugin. Use "message-modules" or "locale-modules" with the CLI.'
-		);
-	}
-	if (value === "message-modules" || value === "locale-modules") {
-		return value;
-	}
-	throw new InvalidArgumentError(
-		`Invalid output structure "${value}". Expected "message-modules" or "locale-modules".`
-	);
+  if (value === "virtual-modules") {
+    throw new InvalidArgumentError(
+      '"virtual-modules" requires the Paraglide Vite plugin. Use "message-modules" or "locale-modules" with the CLI.'
+    );
+  }
+  if (value === "message-modules" || value === "locale-modules") {
+    return value;
+  }
+  throw new InvalidArgumentError(
+    `Invalid output structure "${value}". Expected "message-modules" or "locale-modules".`
+  );
 };
 
 const parseMessageModuleSize = (value: string): number => {
-	const size = Number(value);
-	if (!Number.isSafeInteger(size) || size < 1)
-		throw new InvalidArgumentError(
-			"Message module size must be a positive safe integer."
-		);
-	return size;
+  const size = Number(value);
+  if (!Number.isSafeInteger(size) || size < 1)
+    throw new InvalidArgumentError(
+      "Message module size must be a positive safe integer."
+    );
+  return size;
 };
 
 export const compileCommand = new Command()
-	.name("compile")
-	.summary("Compiles inlang Paraglide-JS")
-	.option(
-		"--project <path>",
-		`The path to the inlang project. Example: "./project.inlang". Defaults to "${DEFAULT_PROJECT_PATH}".`
-	)
-	.option(
-		"--outdir <path>",
-		`The path to the output directory. Example: "./src/paraglide". Defaults to "${DEFAULT_OUTDIR}".`
-	)
-	.option(
-		"--strategy <items...>",
-		[
-			"The strategy to be used.",
-			"",
-			"Example: --strategy cookie globalVariable baseLocale",
-			"Read more on https://paraglidejs.com/strategy",
-		].join("\n")
-	)
-	.requiredOption("--silent", "Only log errors to the console", false)
-	.option(
-		"--emit-ts-declarations",
-		"Emit .d.ts files directly for the generated output (default: true)"
-	)
-	.option(
-		"--no-emit-ts-declarations",
-		"Do not emit .d.ts files for the generated output"
-	)
-	.option(
-		"--emit-git-ignore",
-		`Emit a .gitignore in the output directory (default: ${defaultCompilerOptions.emitGitIgnore})`
-	)
-	.option(
-		"--no-emit-git-ignore",
-		"Do not emit a .gitignore in the output directory"
-	)
-	.option(
-		"--emit-prettier-ignore",
-		`Emit a .prettierignore in the output directory (default: ${defaultCompilerOptions.emitPrettierIgnore})`
-	)
-	.option(
-		"--no-emit-prettier-ignore",
-		"Do not emit a .prettierignore in the output directory"
-	)
-	.option(
-		"--emit-readme",
-		`Emit a README.md in the output directory (helps LLMs understand the generated code) (default: ${defaultCompilerOptions.emitReadme})`
-	)
-	.option("--no-emit-readme", "Do not emit README.md in the output directory")
-	.option(
-		"--is-server <expression>",
-		[
-			"JavaScript expression for runtime `isServer` (enables server/client tree-shaking).",
-			"Quote if the expression contains spaces, e.g. --is-server 'typeof window === \"undefined\"'.",
-			"Vite SSR example: --is-server 'import.meta.env.SSR'",
-		].join(" ")
-	)
-	.option(
-		"--is-development <expression>",
-		"JavaScript expression for runtime development diagnostics (default: true). Use false for production output."
-	)
-	.option(
-		"--clean-outdir",
-		"Remove files in the output directory that are not generated by this compile",
-		defaultCompilerOptions.cleanOutdir
-	)
-	.option(
-		"--no-clean-outdir",
-		"Preserve files in the output directory that are not generated by this compile"
-	)
-	.option(
-		"--experimental-static-locale <expression>",
-		[
-			"JavaScript expression for a compile-time locale constant (experimental).",
-			"For a literal locale, include the JavaScript quotes, e.g. --experimental-static-locale '\"de\"'.",
-		].join(" ")
-	)
-	.option(
-		"--disable-async-local-storage",
-		"Use the synchronous request-locale fallback instead of AsyncLocalStorage",
-		defaultCompilerOptions.disableAsyncLocalStorage
-	)
-	.option(
-		"--output-structure <structure>",
-		[
-			`The output structure for compiled messages. Either "message-modules" or "locale-modules" (default: "${defaultCompilerOptions.outputStructure}").`,
-			"",
-			'"message-modules" gives each message its own module (better tree-shaking).',
-			'"locale-modules" bundles messages per locale (fewer files, better for large projects in dev).',
-		].join("\n"),
-		parseOutputStructure
-	)
-	.option(
-		"--message-module-size <number>",
-		"Messages per module with message-modules output (default: 1)",
-		parseMessageModuleSize
-	)
-	.option("--watch", "Watch project files and recompile on change", false)
-	.action(
-		async (options: {
-			silent: boolean;
-			project?: string;
-			outdir?: string;
-			strategy?: string[];
-			emitTsDeclarations?: boolean;
-			emitGitIgnore?: boolean;
-			emitPrettierIgnore?: boolean;
-			emitReadme?: boolean;
-			isServer?: string;
-			isDevelopment?: string;
-			cleanOutdir?: CompilerOptions["cleanOutdir"];
-			experimentalStaticLocale?: CompilerOptions["experimentalStaticLocale"];
-			disableAsyncLocalStorage?: CompilerOptions["disableAsyncLocalStorage"];
-			outputStructure?: OutputStructure;
-			messageModuleSize?: number;
-			watch?: boolean;
-		}) => {
-			const logger = new Logger({ silent: options.silent, prefix: true });
+  .name("compile")
+  .summary("Compiles inlang Paraglide-JS")
+  .option(
+    "--project <path>",
+    `The path to the inlang project. Example: "./project.inlang". Defaults to "${DEFAULT_PROJECT_PATH}".`
+  )
+  .option(
+    "--outdir <path>",
+    `The path to the output directory. Example: "./src/paraglide". Defaults to "${DEFAULT_OUTDIR}".`
+  )
+  .option(
+    "--strategy <items...>",
+    [
+      "The strategy to be used.",
+      "",
+      "Example: --strategy cookie globalVariable baseLocale",
+      "Read more on https://paraglidejs.com/strategy",
+    ].join("\n")
+  )
+  .requiredOption("--silent", "Only log errors to the console", false)
+  .option(
+    "--emit-ts-declarations",
+    "Emit .d.ts files directly for the generated output (default: true)"
+  )
+  .option(
+    "--no-emit-ts-declarations",
+    "Do not emit .d.ts files for the generated output"
+  )
+  .option(
+    "--emit-git-ignore",
+    `Emit a .gitignore in the output directory (default: ${defaultCompilerOptions.emitGitIgnore})`
+  )
+  .option(
+    "--no-emit-git-ignore",
+    "Do not emit a .gitignore in the output directory"
+  )
+  .option(
+    "--emit-prettier-ignore",
+    `Emit a .prettierignore in the output directory (default: ${defaultCompilerOptions.emitPrettierIgnore})`
+  )
+  .option(
+    "--no-emit-prettier-ignore",
+    "Do not emit a .prettierignore in the output directory"
+  )
+  .option(
+    "--emit-readme",
+    `Emit a README.md in the output directory (helps LLMs understand the generated code) (default: ${defaultCompilerOptions.emitReadme})`
+  )
+  .option("--no-emit-readme", "Do not emit README.md in the output directory")
+  .option(
+    "--is-server <expression>",
+    [
+      "JavaScript expression for runtime `isServer` (enables server/client tree-shaking).",
+      "Quote if the expression contains spaces, e.g. --is-server 'typeof window === \"undefined\"'.",
+      "Vite SSR example: --is-server 'import.meta.env.SSR'",
+    ].join(" ")
+  )
+  .option(
+    "--is-development <expression>",
+    "JavaScript expression for runtime development diagnostics (default: true). Use false for production output."
+  )
+  .option(
+    "--clean-outdir",
+    "Remove files in the output directory that are not generated by this compile",
+    defaultCompilerOptions.cleanOutdir
+  )
+  .option(
+    "--no-clean-outdir",
+    "Preserve files in the output directory that are not generated by this compile"
+  )
+  .option(
+    "--experimental-static-locale <expression>",
+    [
+      "JavaScript expression for a compile-time locale constant (experimental).",
+      "For a literal locale, include the JavaScript quotes, e.g. --experimental-static-locale '\"de\"'.",
+    ].join(" ")
+  )
+  .option(
+    "--disable-async-local-storage",
+    "Use the synchronous request-locale fallback instead of AsyncLocalStorage",
+    defaultCompilerOptions.disableAsyncLocalStorage
+  )
+  .option(
+    "--output-structure <structure>",
+    [
+      `The output structure for compiled messages. Either "message-modules" or "locale-modules" (default: "${defaultCompilerOptions.outputStructure}").`,
+      "",
+      '"message-modules" gives each message its own module (better tree-shaking).',
+      '"locale-modules" bundles messages per locale (fewer files, better for large projects in dev).',
+    ].join("\n"),
+    parseOutputStructure
+  )
+  .option(
+    "--message-module-size <number>",
+    "Messages per module with message-modules output (default: 1)",
+    parseMessageModuleSize
+  )
+  .option("--watch", "Watch project files and recompile on change", false)
+  .action(
+    async (options: {
+      silent: boolean;
+      project?: string;
+      outdir?: string;
+      strategy?: string[];
+      emitTsDeclarations?: boolean;
+      emitGitIgnore?: boolean;
+      emitPrettierIgnore?: boolean;
+      emitReadme?: boolean;
+      isServer?: string;
+      isDevelopment?: string;
+      cleanOutdir?: CompilerOptions["cleanOutdir"];
+      experimentalStaticLocale?: CompilerOptions["experimentalStaticLocale"];
+      disableAsyncLocalStorage?: CompilerOptions["disableAsyncLocalStorage"];
+      outputStructure?: OutputStructure;
+      messageModuleSize?: number;
+      watch?: boolean;
+    }) => {
+      const logger = new Logger({ silent: options.silent, prefix: true });
 
-			const projectDir = nodeNormalizePath(
-				resolve(process.cwd(), options.project ?? DEFAULT_PROJECT_PATH)
-			);
+      const projectDir = nodeNormalizePath(
+        resolve(process.cwd(), options.project ?? DEFAULT_PROJECT_PATH)
+      );
 
-			const loadConfig = () => loadParaglideConfig({ projectDir, logger });
+      const loadConfig = () => loadParaglideConfig({ projectDir, logger });
 
-			let projectOverride = options.project;
-			if (projectOverride === undefined) {
-				projectOverride = DEFAULT_PROJECT_PATH;
-				logger.info(
-					`--project was not provided, using "${DEFAULT_PROJECT_PATH}".`
-				);
-			}
+      let projectOverride = options.project;
+      if (projectOverride === undefined) {
+        projectOverride = DEFAULT_PROJECT_PATH;
+        logger.info(
+          `--project was not provided, using "${DEFAULT_PROJECT_PATH}".`
+        );
+      }
 
-			const buildCompileOptions = () => {
-				let validatedStrategy: ParaglideConfig["strategy"] | undefined;
-				if (options.strategy !== undefined) {
-					const parsed = v.safeParse(
-						v.array(strategyNameSchema),
-						options.strategy
-					);
-					if (!parsed.success) {
-						const details = parsed.issues
-							.map((i) => `"${v.getDotPath(i) ?? "(root)"}": ${i.message}`)
-							.join(", ");
-						throw new Error(`Invalid --strategy: ${details}`);
-					}
-					validatedStrategy = parsed.output;
-				}
-				let outdirOverride: string | undefined = options.outdir;
-				if (
-					outdirOverride === undefined &&
-					loadedConfig?.config.outdir === undefined
-				) {
-					outdirOverride = DEFAULT_OUTDIR;
-				}
-				return resolveCompilerOptions({
-					config: loadedConfig?.config,
-					overrides: {
-						project: projectOverride,
-						outdir: outdirOverride,
-						strategy: validatedStrategy,
-						emitTsDeclarations:
-							options.emitTsDeclarations ??
-							loadedConfig?.config.emitTsDeclarations ??
-							true,
-						emitGitIgnore: options.emitGitIgnore,
-						emitPrettierIgnore: options.emitPrettierIgnore,
-						emitReadme: options.emitReadme,
-						isServer: options.isServer,
-						isDevelopment: options.isDevelopment,
-						cleanOutdir: options.cleanOutdir,
-						experimentalStaticLocale: options.experimentalStaticLocale,
-						disableAsyncLocalStorage: options.disableAsyncLocalStorage,
-						messageModuleSize: options.messageModuleSize,
-						// Explicit project configuration wins over the CLI default.
-						outputStructure:
-							options.outputStructure ??
-							loadedConfig?.config.outputStructure ??
-							defaultCompilerOptions.outputStructure,
-					},
-					root: process.cwd(),
-				});
-			};
+      const buildCompileOptions = () => {
+        let validatedStrategy: ParaglideConfig["strategy"] | undefined;
+        if (options.strategy !== undefined) {
+          const parsed = v.safeParse(
+            v.array(strategyNameSchema),
+            options.strategy
+          );
+          if (!parsed.success) {
+            const details = parsed.issues
+              .map((i) => `"${v.getDotPath(i) ?? "(root)"}": ${i.message}`)
+              .join(", ");
+            throw new Error(`Invalid --strategy: ${details}`);
+          }
+          validatedStrategy = parsed.output;
+        }
+        let outdirOverride: string | undefined = options.outdir;
+        if (
+          outdirOverride === undefined &&
+          loadedConfig?.config.outdir === undefined
+        ) {
+          outdirOverride = DEFAULT_OUTDIR;
+        }
+        return resolveCompilerOptions({
+          config: loadedConfig?.config,
+          overrides: {
+            project: projectOverride,
+            outdir: outdirOverride,
+            strategy: validatedStrategy,
+            emitTsDeclarations:
+              options.emitTsDeclarations ??
+              loadedConfig?.config.emitTsDeclarations ??
+              true,
+            emitGitIgnore: options.emitGitIgnore,
+            emitPrettierIgnore: options.emitPrettierIgnore,
+            emitReadme: options.emitReadme,
+            isServer: options.isServer,
+            isDevelopment: options.isDevelopment,
+            cleanOutdir: options.cleanOutdir,
+            experimentalStaticLocale: options.experimentalStaticLocale,
+            disableAsyncLocalStorage: options.disableAsyncLocalStorage,
+            messageModuleSize: options.messageModuleSize,
+            // Explicit project configuration wins over the CLI default.
+            outputStructure:
+              options.outputStructure ??
+              loadedConfig?.config.outputStructure ??
+              defaultCompilerOptions.outputStructure,
+          },
+          root: process.cwd(),
+        });
+      };
 
-			let loadedConfig: LoadedParaglideConfig | undefined;
-			let compileOptions: CompilerOptions;
+      let loadedConfig: LoadedParaglideConfig | undefined;
+      let compileOptions: CompilerOptions;
 
-			try {
-				loadedConfig = await loadConfig();
-				compileOptions = buildCompileOptions();
-			} catch (error) {
-				logger.error(errorMessage(error));
-				process.exit(1);
-			}
+      try {
+        loadedConfig = await loadConfig();
+        compileOptions = buildCompileOptions();
+      } catch (error) {
+        logger.error(errorMessage(error));
+        process.exit(1);
+      }
 
-			if (!options.watch) {
-				logger.info(`Compiling inlang project ...`);
+      if (!options.watch) {
+        logger.info(`Compiling inlang project ...`);
 
-				try {
-					const previousCompilation = compileOptions.cleanOutdir
-						? await seedPreviousCompilationFromOutdir({
-								outdir: compileOptions.outdir,
-							})
-						: undefined;
+        try {
+          const previousCompilation = compileOptions.cleanOutdir
+            ? await seedPreviousCompilationFromOutdir({
+                outdir: compileOptions.outdir,
+              })
+            : undefined;
 
-					await compile({
-						...compileOptions,
-						previousCompilation,
-						cleanOutdir: false,
-					});
-				} catch (e) {
-					logger.error("Error while compiling inlang project.");
-					logger.error(e);
-					process.exit(1);
-				}
+          await compile({
+            ...compileOptions,
+            previousCompilation,
+            cleanOutdir: false,
+          });
+        } catch (e) {
+          logger.error("Error while compiling inlang project.");
+          logger.error(e);
+          process.exit(1);
+        }
 
-				logger.success(`Successfully compiled inlang project.`);
+        logger.success(`Successfully compiled inlang project.`);
 
-				process.exit(0);
-			}
+        process.exit(0);
+      }
 
-			const { fs: trackedFs, readFiles, clearReadFiles } = createTrackedFs();
-			const fileWatchers = new Map<string, fs.FSWatcher>();
-			const directoryWatchers = new Map<string, fs.FSWatcher>();
-			let previousCompilation: CompilationResult | undefined;
-			let compileTimer: NodeJS.Timeout | undefined;
-			let compileInProgress = false;
-			let compileRequested = false;
-			let watching = true;
-			// Set by the project-directory watcher when a config-named file
-			// changes — survives debounced coalescing with unrelated events.
-			let configChangedSinceLastBuild = false;
+      const { fs: trackedFs, readFiles, clearReadFiles } = createTrackedFs();
+      const fileWatchers = new Map<string, fs.FSWatcher>();
+      const directoryWatchers = new Map<string, fs.FSWatcher>();
+      let previousCompilation: CompilationResult | undefined;
+      let compileTimer: NodeJS.Timeout | undefined;
+      let compileInProgress = false;
+      let compileRequested = false;
+      let watching = true;
+      // Set by the project-directory watcher when a config-named file
+      // changes — survives debounced coalescing with unrelated events.
+      let configChangedSinceLastBuild = false;
 
-			/**
-			 * Reacts to a config-named event in the project directory:
-			 * rescans the candidate winner and reloads. A missing config
-			 * falls back to the built-in defaults; an invalid one fails the
-			 * reload (caller skips the compilation).
-			 */
-			const refreshConfig = async (): Promise<boolean> => {
-				const winner = await resolveConfigCandidate(projectDir);
-				if (winner === undefined) {
-					if (loadedConfig !== undefined) {
-						logger.warn(
-							"Paraglide config file was removed, compiling with default options."
-						);
-					}
-					loadedConfig = undefined;
-					compileOptions = buildCompileOptions();
-					return true;
-				}
-				try {
-					clearParaglideConfigCache({ projectDir });
-					const nextLoadedConfig = await loadConfig();
-					if (nextLoadedConfig === undefined) return true; // raced deletion
-					loadedConfig = nextLoadedConfig;
-					compileOptions = buildCompileOptions();
-					return true;
-				} catch (error) {
-					logger.error(errorMessage(error));
-					logger.error(
-						"Skipping compilation because of the invalid paraglide config."
-					);
-					return false;
-				}
-			};
+      /**
+       * Reacts to a config-named event in the project directory:
+       * rescans the candidate winner and reloads. A missing config
+       * falls back to the built-in defaults; an invalid one fails the
+       * reload (caller skips the compilation).
+       */
+      const refreshConfig = async (): Promise<boolean> => {
+        const winner = await resolveConfigCandidate(projectDir);
+        if (winner === undefined) {
+          if (loadedConfig !== undefined) {
+            logger.warn(
+              "Paraglide config file was removed, compiling with default options."
+            );
+          }
+          loadedConfig = undefined;
+          compileOptions = buildCompileOptions();
+          return true;
+        }
+        try {
+          clearParaglideConfigCache({ projectDir });
+          const nextLoadedConfig = await loadConfig();
+          if (nextLoadedConfig === undefined) return true; // raced deletion
+          loadedConfig = nextLoadedConfig;
+          compileOptions = buildCompileOptions();
+          return true;
+        } catch (error) {
+          logger.error(errorMessage(error));
+          logger.error(
+            "Skipping compilation because of the invalid paraglide config."
+          );
+          return false;
+        }
+      };
 
-			const updateWatchers = (files: Set<string>) => {
-				if (!watching) return;
-				const {
-					files: nextFiles,
-					directories: nextDirectories,
-					isIgnoredPath,
-				} = getWatchTargets(files, { outdir: compileOptions.outdir });
+      const updateWatchers = (files: Set<string>) => {
+        if (!watching) return;
+        const {
+          files: nextFiles,
+          directories: nextDirectories,
+          isIgnoredPath,
+        } = getWatchTargets(files, { outdir: compileOptions.outdir });
 
-				for (const [filePath, watcher] of fileWatchers) {
-					if (!nextFiles.has(filePath)) {
-						watcher.close();
-						fileWatchers.delete(filePath);
-					}
-				}
+        for (const [filePath, watcher] of fileWatchers) {
+          if (!nextFiles.has(filePath)) {
+            watcher.close();
+            fileWatchers.delete(filePath);
+          }
+        }
 
-				// The project directory is always watched: it hosts the config
-				// file, and its other contents (settings.json, messages/) are
-				// compile inputs anyway.
-				nextDirectories.add(projectDir);
+        // The project directory is always watched: it hosts the config
+        // file, and its other contents (settings.json, messages/) are
+        // compile inputs anyway.
+        nextDirectories.add(projectDir);
 
-				for (const [directoryPath, watcher] of directoryWatchers) {
-					if (!nextDirectories.has(directoryPath)) {
-						watcher.close();
-						directoryWatchers.delete(directoryPath);
-					}
-				}
+        for (const [directoryPath, watcher] of directoryWatchers) {
+          if (!nextDirectories.has(directoryPath)) {
+            watcher.close();
+            directoryWatchers.delete(directoryPath);
+          }
+        }
 
-				const attachWatcherErrorHandler = (
-					watcher: fs.FSWatcher,
-					targetPath: string,
-					targetType: "file" | "directory"
-				) => {
-					watcher.on("error", (error) => {
-						logger.warn(
-							`Watch ${targetType} error for ${targetPath}: ${errorMessage(error)}`
-						);
-					});
-				};
+        const attachWatcherErrorHandler = (
+          watcher: fs.FSWatcher,
+          targetPath: string,
+          targetType: "file" | "directory"
+        ) => {
+          watcher.on("error", (error) => {
+            logger.warn(
+              `Watch ${targetType} error for ${targetPath}: ${errorMessage(error)}`
+            );
+          });
+        };
 
-				for (const filePath of nextFiles) {
-					if (fileWatchers.has(filePath)) {
-						continue;
-					}
+        for (const filePath of nextFiles) {
+          if (fileWatchers.has(filePath)) {
+            continue;
+          }
 
-					try {
-						const watcher = fs.watch(filePath, () => {
-							scheduleCompile(filePath);
-						});
-						attachWatcherErrorHandler(watcher, filePath, "file");
-						fileWatchers.set(filePath, watcher);
-					} catch {
-						logger.warn(`Failed to watch file: ${filePath}`);
-					}
-				}
+          try {
+            const watcher = fs.watch(filePath, () => {
+              scheduleCompile(filePath);
+            });
+            attachWatcherErrorHandler(watcher, filePath, "file");
+            fileWatchers.set(filePath, watcher);
+          } catch {
+            logger.warn(`Failed to watch file: ${filePath}`);
+          }
+        }
 
-				for (const directoryPath of nextDirectories) {
-					if (directoryWatchers.has(directoryPath)) {
-						continue;
-					}
+        for (const directoryPath of nextDirectories) {
+          if (directoryWatchers.has(directoryPath)) {
+            continue;
+          }
 
-					try {
-						const watcher = fs.watch(directoryPath, (eventType, filename) => {
-							const isProjectDir = directoryPath === projectDir;
+          try {
+            const watcher = fs.watch(directoryPath, (eventType, filename) => {
+              const isProjectDir = directoryPath === projectDir;
 
-							if (!filename) {
-								if (isProjectDir) {
-									configChangedSinceLastBuild = true;
-								}
-								scheduleCompile(directoryPath);
-								return;
-							}
+              if (!filename) {
+                if (isProjectDir) {
+                  configChangedSinceLastBuild = true;
+                }
+                scheduleCompile(directoryPath);
+                return;
+              }
 
-							const changedPath = resolve(directoryPath, filename.toString());
-							if (isIgnoredPath(changedPath)) {
-								return;
-							}
-							// Config-named events must not be lost to debounce
-							// coalescing with unrelated files. Ordinary files are
-							// still scheduled: new inputs can appear directly in
-							// the project directory (e.g. a locale file matching
-							// ./messages/{locale}.json patterns rooted there).
-							if (isProjectDir && isConfigFileName(changedPath)) {
-								configChangedSinceLastBuild = true;
-							}
-							scheduleCompile(changedPath);
-						});
-						attachWatcherErrorHandler(watcher, directoryPath, "directory");
-						directoryWatchers.set(directoryPath, watcher);
-					} catch {
-						logger.warn(`Failed to watch directory: ${directoryPath}`);
-					}
-				}
-			};
+              const changedPath = resolve(directoryPath, filename.toString());
+              if (isIgnoredPath(changedPath)) {
+                return;
+              }
+              // Config-named events must not be lost to debounce
+              // coalescing with unrelated files. Ordinary files are
+              // still scheduled: new inputs can appear directly in
+              // the project directory (e.g. a locale file matching
+              // ./messages/{locale}.json patterns rooted there).
+              if (isProjectDir && isConfigFileName(changedPath)) {
+                configChangedSinceLastBuild = true;
+              }
+              scheduleCompile(changedPath);
+            });
+            attachWatcherErrorHandler(watcher, directoryPath, "directory");
+            directoryWatchers.set(directoryPath, watcher);
+          } catch {
+            logger.warn(`Failed to watch directory: ${directoryPath}`);
+          }
+        }
+      };
 
-			const runCompile = async (changedPath?: string) => {
-				if (!watching) return;
-				if (compileInProgress) {
-					compileRequested = true;
-					return;
-				}
+      const runCompile = async (changedPath?: string) => {
+        if (!watching) return;
+        if (compileInProgress) {
+          compileRequested = true;
+          return;
+        }
 
-				compileInProgress = true;
-				const previouslyReadFiles = new Set(readFiles);
-				clearReadFiles();
+        compileInProgress = true;
+        const previouslyReadFiles = new Set(readFiles);
+        clearReadFiles();
 
-				if (configChangedSinceLastBuild) {
-					configChangedSinceLastBuild = false;
-					const succeeded = await refreshConfig();
-					if (!succeeded) {
-						// Invalid config: skip this compilation entirely — the
-						// previously compiled output stays on disk untouched.
-						compileInProgress = false;
-						updateWatchers(new Set(readFiles));
-						if (compileRequested) {
-							compileRequested = false;
-							runCompile();
-						}
-						return;
-					}
-				}
+        if (configChangedSinceLastBuild) {
+          configChangedSinceLastBuild = false;
+          const succeeded = await refreshConfig();
+          if (!succeeded) {
+            // Invalid config: skip this compilation entirely — the
+            // previously compiled output stays on disk untouched.
+            compileInProgress = false;
+            updateWatchers(new Set(readFiles));
+            if (compileRequested) {
+              compileRequested = false;
+              runCompile();
+            }
+            return;
+          }
+        }
 
-				if (changedPath) {
-					logger.info(
-						`Re-compiling inlang project... File "${relative(process.cwd(), changedPath)}" has changed.`
-					);
-				} else {
-					logger.info("Compiling inlang project ...");
-				}
+        if (changedPath) {
+          logger.info(
+            `Re-compiling inlang project... File "${relative(process.cwd(), changedPath)}" has changed.`
+          );
+        } else {
+          logger.info("Compiling inlang project ...");
+        }
 
-				try {
-					const seededPrevious =
-						previousCompilation ??
-						(compileOptions.cleanOutdir
-							? await seedPreviousCompilationFromOutdir({
-									outdir: compileOptions.outdir,
-								})
-							: undefined);
+        try {
+          const seededPrevious =
+            previousCompilation ??
+            (compileOptions.cleanOutdir
+              ? await seedPreviousCompilationFromOutdir({
+                  outdir: compileOptions.outdir,
+                })
+              : undefined);
 
-					previousCompilation = await compile({
-						...compileOptions,
-						fs: trackedFs,
-						previousCompilation: seededPrevious,
-						cleanOutdir: false,
-					});
+          previousCompilation = await compile({
+            ...compileOptions,
+            fs: trackedFs,
+            previousCompilation: seededPrevious,
+            cleanOutdir: false,
+          });
 
-					if (changedPath) {
-						logger.success("Re-compilation complete.");
-					} else {
-						logger.success("Successfully compiled inlang project.");
-					}
-				} catch (e) {
-					if (previouslyReadFiles.size > 0) {
-						clearReadFiles();
-						for (const filePath of previouslyReadFiles) {
-							readFiles.add(filePath);
-						}
-					}
-					previousCompilation = undefined;
-					logger.error("Error while compiling inlang project.");
-					logger.error(e);
-				} finally {
-					updateWatchers(new Set(readFiles));
-					compileInProgress = false;
-					if (compileRequested) {
-						compileRequested = false;
-						runCompile();
-					}
-				}
-			};
+          if (changedPath) {
+            logger.success("Re-compilation complete.");
+          } else {
+            logger.success("Successfully compiled inlang project.");
+          }
+        } catch (e) {
+          if (previouslyReadFiles.size > 0) {
+            clearReadFiles();
+            for (const filePath of previouslyReadFiles) {
+              readFiles.add(filePath);
+            }
+          }
+          previousCompilation = undefined;
+          logger.error("Error while compiling inlang project.");
+          logger.error(e);
+        } finally {
+          updateWatchers(new Set(readFiles));
+          compileInProgress = false;
+          if (compileRequested) {
+            compileRequested = false;
+            runCompile();
+          }
+        }
+      };
 
-			const scheduleCompile = (changedPath?: string) => {
-				if (!watching) return;
-				if (compileTimer) {
-					clearTimeout(compileTimer);
-				}
-				compileTimer = setTimeout(() => {
-					runCompile(changedPath);
-				}, 100);
-			};
+      const scheduleCompile = (changedPath?: string) => {
+        if (!watching) return;
+        if (compileTimer) {
+          clearTimeout(compileTimer);
+        }
+        compileTimer = setTimeout(() => {
+          runCompile(changedPath);
+        }, 100);
+      };
 
-			const closeWatchers = () => {
-				watching = false;
-				compileRequested = false;
-				if (compileTimer) {
-					clearTimeout(compileTimer);
-					compileTimer = undefined;
-				}
-				for (const watcher of fileWatchers.values()) {
-					watcher.close();
-				}
-				for (const watcher of directoryWatchers.values()) {
-					watcher.close();
-				}
-				fileWatchers.clear();
-				directoryWatchers.clear();
-			};
+      const closeWatchers = () => {
+        watching = false;
+        compileRequested = false;
+        if (compileTimer) {
+          clearTimeout(compileTimer);
+          compileTimer = undefined;
+        }
+        for (const watcher of fileWatchers.values()) {
+          watcher.close();
+        }
+        for (const watcher of directoryWatchers.values()) {
+          watcher.close();
+        }
+        fileWatchers.clear();
+        directoryWatchers.clear();
+      };
 
-			process.on("SIGINT", () => {
-				closeWatchers();
-				process.exit(0);
-			});
+      process.on("SIGINT", () => {
+        closeWatchers();
+        process.exit(0);
+      });
 
-			await runCompile();
-			logger.info("Watching for changes...");
-		}
-	);
+      await runCompile();
+      logger.info("Watching for changes...");
+    }
+  );

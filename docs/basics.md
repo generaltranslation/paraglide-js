@@ -92,7 +92,7 @@ Messages are stored in `messages/{locale}.json`:
 
 ```json
 {
-	"greeting": "Hello {name}!"
+  "greeting": "Hello {name}!"
 }
 ```
 
@@ -100,7 +100,7 @@ Messages are stored in `messages/{locale}.json`:
 
 ```json
 {
-	"greeting": "Hallo {name}!"
+  "greeting": "Hallo {name}!"
 }
 ```
 
@@ -113,8 +113,8 @@ Add locales in `project.inlang/settings.json`:
 
 ```json
 {
-	"baseLocale": "en",
-	"locales": ["en", "de", "fr"]
+  "baseLocale": "en",
+  "locales": ["en", "de", "fr"]
 }
 ```
 
@@ -130,7 +130,7 @@ Flat random key (recommended):
 
 ```json
 {
-	"calm_green_otter": "User Profile"
+  "calm_green_otter": "User Profile"
 }
 ```
 
@@ -142,7 +142,7 @@ Existing nested keys are also supported:
 
 ```json
 {
-	"user": { "profile": { "title": "User Profile" } }
+  "user": { "profile": { "title": "User Profile" } }
 }
 ```
 
@@ -160,9 +160,9 @@ A runtime string from an API or JSON does not change which messages your UI supp
 import { m } from "./paraglide/messages.js";
 
 const statusMessages = new Map([
-	["pending", m.order_pending],
-	["paid", m.order_paid],
-	["failed", m.order_failed],
+  ["pending", m.order_pending],
+  ["paid", m.order_paid],
+  ["failed", m.order_failed],
 ]);
 
 const message = statusMessages.get(status) ?? m.order_unknown;
@@ -193,10 +193,10 @@ With ESLint 9 or 10, add it to your existing flat config:
 import paraglide from "@inlang/paraglide-js/eslint";
 
 export default [
-	{
-		plugins: { paraglide },
-		rules: { "paraglide/no-dynamic-message-access": "error" },
-	},
+  {
+    plugins: { paraglide },
+    rules: { "paraglide/no-dynamic-message-access": "error" },
+  },
 ];
 ```
 
@@ -206,10 +206,10 @@ Oxlint can run the same plugin through its JavaScript plugin API (tested with Ox
 
 ```json
 {
-	"jsPlugins": [
-		{ "name": "paraglide", "specifier": "@inlang/paraglide-js/eslint" }
-	],
-	"rules": { "paraglide/no-dynamic-message-access": "error" }
+  "jsPlugins": [
+    { "name": "paraglide", "specifier": "@inlang/paraglide-js/eslint" }
+  ],
+  "rules": { "paraglide/no-dynamic-message-access": "error" }
 }
 ```
 

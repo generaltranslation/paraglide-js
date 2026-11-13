@@ -5,18 +5,18 @@ import { ParaglideMessage } from "@inlang/paraglide-js-react";
 import { m } from "./paraglide/messages.js";
 
 export function ContactCta() {
-	return (
-		<ParaglideMessage
-			message={m.contact}
-			inputs={{ email: "hello@example.com" }}
-			markup={{
-				link: ({ children, inputs }) => (
-					<a href={`mailto:${inputs?.email}`}>{children}</a>
-				),
-				b: ({ children }) => <strong>{children}</strong>,
-			}}
-		/>
-	);
+  return (
+    <ParaglideMessage
+      message={m.contact}
+      inputs={{ email: "hello@example.com" }}
+      markup={{
+        link: ({ children, inputs }) => (
+          <a href={`mailto:${inputs?.email}`}>{children}</a>
+        ),
+        b: ({ children }) => <strong>{children}</strong>,
+      }}
+    />
+  );
 }
 ```
 
