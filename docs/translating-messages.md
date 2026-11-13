@@ -31,7 +31,7 @@ The steps below use the default inlang message format, with files at `messages/{
 
 - **Supported:** messages with placeholders and [markup](/markup), nested message objects, and [variants](/variants) such as plurals.
 - **Plurals:** end each plural variant in your source messages with a `*` branch, such as `countPlural=*`, instead of `countPlural=other`. If a language uses a plural form your source messages do not have, such as the form French and Spanish use for large round numbers, Paraglide falls back to the `*` branch.
-- **Not yet supported:** languages that need more plural forms than your source language for everyday numbers, such as Russian, Ukrainian, Polish, Czech and Arabic. General Translation does not create those forms yet, and does not keep ones you add by hand, so their plural messages use the wrong grammar for some numbers and fail `inlang check`. Leave these languages out of `locales` in `gt.config.json` and translate them another way.
+- **Not yet supported:** plural messages requiring additional target-language forms for everyday numbers, for example when translating English plurals into Russian, Ukrainian, Polish, Czech or Arabic. General Translation does not create those forms yet, and does not keep ones you add by hand, so affected plural messages use the wrong grammar for some numbers and fail `inlang check`. If your message files contain these plurals, leave the affected languages out of `locales` in `gt.config.json` and translate them another way. Messages without plurals can still be translated into these languages.
 
 ### 1. Set up the CLI
 
