@@ -6,18 +6,18 @@ description: "Translate Paraglide JS message files with General Translation, and
 
 # Translating Messages
 
-We recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) to translate flat Paraglide JS message files and keep them updated as your app changes.
+We recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) to translate your Paraglide JS message files and keep them updated as your app changes.
 
 General Translation writes translations to files such as `messages/de.json`. Paraglide compiles those files into the same type-safe message functions you already use. You keep your Paraglide setup, and your translations stay in your repository.
 
 Short UI messages can have more than one meaning: General Translation translates "Book" on a booking button as "Buchen" in German, where the inlang CLI's default service returns "Buch", a book you read.
 
-| Workflow                                                                     | When to use it                                                                          |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| **[General Translation](#translate-with-general-translation) (recommended)** | Automatically translate flat UI message files and keep them updated as your app changes |
-| [inlang CLI](#translate-with-the-inlang-cli)                                 | Fill missing translations using the community service or your own provider credentials  |
-| [Fink](#review-with-translators)                                             | Have translators or reviewers edit messages through a browser                           |
-| [By hand](#translate-by-hand)                                                | Translate or adjust a small number of messages directly                                 |
+| Workflow                                                                     | When to use it                                                                         |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| **[General Translation](#translate-with-general-translation) (recommended)** | Automatically translate UI messages and keep them updated as your app changes          |
+| [inlang CLI](#translate-with-the-inlang-cli)                                 | Fill missing translations using the community service or your own provider credentials |
+| [Fink](#review-with-translators)                                             | Have translators or reviewers edit messages through a browser                          |
+| [By hand](#translate-by-hand)                                                | Translate or adjust a small number of messages directly                                |
 
 These workflows can be combined. For example, translate with General Translation, then review the results in Fink.
 
@@ -25,10 +25,17 @@ These workflows can be combined. For example, translate with General Translation
 
 You need a General Translation account. You can [get started for free](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages); see [pricing](https://generaltranslation.com/pricing) for usage charges.
 
-The steps below use flat, string-valued messages in the default inlang message format, with files at `messages/{locale}.json`.
+The steps below use the default inlang message format, with files at `messages/{locale}.json`.
 
 > [!WARNING]
-> This recipe does not support nested message objects or [variants](/variants). The current GT CLI can leave nested messages untranslated and remove plural forms that are absent from the source language, even with `saveLocal` enabled. If your files contain either, use another translation workflow until this integration supports them.
+> Two cases are not supported yet:
+>
+> - **Nested message objects.** The GT CLI writes them into each target file in the source language, replacing existing translations. If your message files contain nested objects, use another workflow.
+> - **Plural forms your source language does not have.** The GT CLI translates only the plural forms in your source messages, and removes any others from target files on every run, even with `saveLocal` enabled. When a form is missing, Paraglide shows the message key, such as `cart_items`, instead of text.
+>   - Russian, Ukrainian, Polish, Czech, Arabic and Hebrew need extra forms for everyday counts, such as 2 to 4 in Russian. Leave them out of `locales` in `gt.config.json` and translate them another way.
+>   - French, Spanish, Italian and Portuguese need an extra form only for large round numbers, such as 1,000,000. End each plural [variant](/variants) with a `*` branch, such as `countPlural=*`, instead of `countPlural=other`, so a missing form falls back to it.
+>
+> With an English source, plural variants in German, Dutch, Japanese, Chinese and Korean are fully supported.
 
 ### 1. Set up the CLI
 
@@ -64,17 +71,20 @@ In `gt.config.json`, add the `jsonSchema` and `saveLocal` options shown below. K
     "saveLocal": true,
     "jsonSchema": {
       "messages/*.json": {
-        "include": ["$[?(@property !== '$schema' && typeof @ === 'string')]"]
+        "include": [
+          "$[?(@property !== '$schema' && typeof @ === 'string')]",
+          "$.*[*].match.*"
+        ]
       }
     }
   }
 }
 ```
 
-The `jsonSchema` rule selects top-level message strings for translation and leaves the `$schema` URL unchanged.
+The `jsonSchema` rules select message text, including the text of each variant, for translation and leave message structure unchanged.
 
 > [!IMPORTANT]
-> Keep this rule when using the inlang message format. It is intended for flat message files; it does not make nested messages or variants safe to translate.
+> Keep these rules when using the inlang message format. Without them, declarations and selectors in [variants](/variants), such as `"input count"`, can be translated and prevent your project from compiling.
 
 For the selected message strings, the `saveLocal` option preserves manual edits on subsequent translation runs. It does not preserve pre-existing translations on the first run.
 
@@ -129,7 +139,7 @@ Translators and reviewers can use [Fink](https://fink.inlang.com/docs/paraglide-
 
 Use General Translation to produce the initial translations, then review and refine them with your team. You can also edit the JSON files directly.
 
-Use [markup](/markup) for links and emphasis inside messages. If you need [variants](/variants) for plurals or gender, use a workflow that supports them instead of the GT recipe above.
+Use [markup](/markup) for links and emphasis inside messages, and [variants](/variants) for plurals and gender.
 
 ## Other translation options
 
