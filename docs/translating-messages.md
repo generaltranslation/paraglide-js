@@ -49,7 +49,7 @@ The flags configure GT to translate your existing message files:
 - `--file-patterns` specifies where your message files live.
 - `--dev-credentials` creates the translation project and saves its ID to `.env.local`.
 
-For coding agents: `gt init` needs a signed-in user. Run `npx gt login --no-browser` and ask the user to open the sign-in link it prints. In a non-interactive shell, also pass `--default-locale`, `--locales`, and either `--create-project --org-id <id>` or `--project-id <id>`; `gt init` lists any options it still needs.
+For coding agents: `gt init` needs a signed-in user. Run `npx gt login --no-browser` and ask the user to open the sign-in link it prints. Add `--json` to `gt init` for structured output and non-interactive behavior, and pass `--default-locale` and `--locales`. Reuse the project's existing GT project with `--project-id <id>` when one is already configured; otherwise, use `--create-project --org-id <id>` to create one. `gt init` lists any options it still needs.
 
 ### 2. Configure your message files
 
@@ -82,7 +82,7 @@ The `jsonSchema` rule selects the text of every message, including nested messag
 > [!IMPORTANT]
 > Keep this rule when using the inlang message format. Without it, declarations and selectors in [variants](/variants), such as `"input count"`, can be translated and prevent your project from compiling.
 
-With `saveLocal`, edits you make to translated files are kept on later runs.
+With `saveLocal`, edits to supported message strings are kept on later runs; see [Limits](#limits) for target-language plural forms.
 
 ### 3. Translate and review
 
