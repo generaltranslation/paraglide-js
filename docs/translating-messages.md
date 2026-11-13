@@ -25,17 +25,14 @@ These workflows can be combined. For example, translate with General Translation
 
 You need a General Translation account. You can [get started for free](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages); see [pricing](https://generaltranslation.com/pricing) for usage charges.
 
+### Supported message files
+
 The steps below use the default inlang message format, with files at `messages/{locale}.json`.
 
-> [!WARNING]
-> Two cases are not supported yet:
->
-> - **Nested message objects.** The GT CLI writes them into each target file in the source language, replacing existing translations. If your message files contain nested objects, use another workflow.
-> - **Plural forms your source language does not have.** The GT CLI translates only the plural forms in your source messages, and removes any others from target files on every run, even with `saveLocal` enabled. When a form is missing, Paraglide shows the message key, such as `cart_items`, instead of text.
->   - Russian, Ukrainian, Polish, Czech, Arabic and Hebrew need extra forms for everyday counts, such as 2 to 4 in Russian. Leave them out of `locales` in `gt.config.json` and translate them another way.
->   - French, Spanish, Italian and Portuguese need an extra form only for large round numbers, such as 1,000,000. End each plural [variant](/variants) with a `*` branch, such as `countPlural=*`, instead of `countPlural=other`, so a missing form falls back to it.
->
-> With an English source, plural variants in German, Dutch, Japanese, Chinese and Korean are fully supported.
+- **Supported:** messages with placeholders and [markup](/markup), and [variants](/variants) such as plurals.
+- **Plurals:** with an English source, German, Dutch, Japanese, Chinese and Korean need no extra steps. French, Spanish, Italian and Portuguese use one more plural form, for large round numbers such as 1,000,000. End each plural variant with a `*` branch, such as `countPlural=*`, instead of `countPlural=other`, so those numbers use it.
+- **Not yet supported:** nested message objects. General Translation writes them in your source language, so if your message files have them, use another workflow for now.
+- **Not yet supported:** languages that need more plural forms for everyday numbers, such as Russian, Ukrainian, Polish, Czech, Arabic and Hebrew. General Translation does not add those forms yet, and does not keep ones you add by hand. Leave these languages out of `locales` in `gt.config.json` and translate them another way for now.
 
 ### 1. Set up the CLI
 
