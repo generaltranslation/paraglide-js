@@ -29,12 +29,11 @@ You need a General Translation account. You can [get started for free](https://d
 
 The steps below use the default inlang message format, with files at `messages/{locale}.json`.
 
-- **Supported:** messages with placeholders and [markup](/markup), and [variants](/variants) such as plurals.
+- **Supported:** messages with placeholders and [markup](/markup), nested message objects, and [variants](/variants) such as plurals.
 - **Plurals:** end each plural variant in your source messages with a `*` branch, such as `countPlural=*`, instead of `countPlural=other`. General Translation translates the plural forms your source messages have, and the `*` branch covers any extra forms a language uses:
   - With an English source, German, Dutch, Japanese, Chinese and Korean use no extra forms.
   - French, Spanish, Italian and Portuguese use one extra form, only for large round numbers such as 1,000,000.
   - Russian, Ukrainian, Polish, Czech, Romanian, Arabic, Hebrew, and other Slavic and Baltic languages use extra forms for everyday numbers, so some numbers read slightly off, such as 2 to 4 in Russian. General Translation does not add these forms yet, and does not keep ones you add by hand. If exact plural grammar matters, leave these languages out of `locales` in `gt.config.json` and translate them another way.
-- **Not yet supported:** nested message objects. General Translation writes them in your source language, so if your message files have them, use another workflow for now.
 
 ### 1. Set up the CLI
 
@@ -71,8 +70,7 @@ In `gt.config.json`, add the `jsonSchema` and `saveLocal` options shown below. K
     "jsonSchema": {
       "messages/*.json": {
         "include": [
-          "$[?(@property !== '$schema' && typeof @ === 'string')]",
-          "$.*[*].match.*"
+          "$..[?(typeof @ === 'string' && @property !== '$schema' && @parentProperty !== 'declarations' && @parentProperty !== 'selectors')]"
         ]
       }
     }
@@ -80,10 +78,10 @@ In `gt.config.json`, add the `jsonSchema` and `saveLocal` options shown below. K
 }
 ```
 
-The `jsonSchema` rules select message text, including the text of each variant, for translation and leave message structure unchanged.
+The `jsonSchema` rule selects the text of every message, including nested messages and each variant, for translation, and leaves message structure unchanged.
 
 > [!IMPORTANT]
-> Keep these rules when using the inlang message format. Without them, declarations and selectors in [variants](/variants), such as `"input count"`, can be translated and prevent your project from compiling.
+> Keep this rule when using the inlang message format. Without it, declarations and selectors in [variants](/variants), such as `"input count"`, can be translated and prevent your project from compiling.
 
 For the selected message strings, the `saveLocal` option preserves manual edits on subsequent translation runs. It does not preserve pre-existing translations on the first run.
 
