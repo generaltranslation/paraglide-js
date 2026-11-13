@@ -1,23 +1,22 @@
 ---
-title: 'Translating Messages: Manual, Translators, and AI Translation'
-description: How to fill in translations for a Paraglide JS project by hand, with translators, with AI translation, or with free machine translation.
+title: "Translating Messages: AI Translation, Machine Translation, and Translators"
+description: How to translate a Paraglide JS project's message files with AI translation from General Translation, free machine translation from the inlang CLI, translators in Fink, or by hand.
 ---
 
 # Translating Messages
 
-Paraglide compiles whatever is in your message files, such as `messages/de.json`. It does not matter who or what wrote the translations, so you can use any of the workflows below and mix them.
+To translate a Paraglide JS app, fill in each locale's message file, such as `messages/de.json`. Paraglide compiles whatever is in those files, so it does not matter who or what wrote the translations. For most projects we recommend AI translation with General Translation. You can mix any of the workflows below.
 
-## By hand
-
-Add the translated message to each locale file and rebuild. This works well for a few locales and a small number of messages.
-
-## With translators
-
-Translators can edit the same files in [Fink](https://inlang.com/m/tdozzpar/app-inlang-finkLocalizationEditor), a translation editor for non-developers. Use [markup](/markup) so translators can position links and emphasis, and [variants](/variants) for plurals and gender.
+| Workflow                                                   | Suitable when                                                                          | Account                        |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------ |
+| [AI translation](#with-ai-translation) (recommended)       | You want translations that read like UI text, for many locales, updated in CI          | General Translation, free tier |
+| [Free machine translation](#with-free-machine-translation) | You want quick drafts, or already have a Google Cloud Translation, DeepL or OpenAI key | None                           |
+| [Translators](#with-translators)                           | Translators or reviewers edit the text themselves                                      | Depends on the editor          |
+| [By hand](#by-hand)                                        | You have a few locales and a small number of messages                                  | None                           |
 
 ## With AI translation
 
-[General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) translates your message files with AI and saves the results as the same JSON files, so Paraglide compiles them as usual. It translates short UI text by what it means, not word for word: "Book" on a booking button becomes "Buchen" in German, not "Buch", and "Save {percent}%" on a pricing badge becomes "Sparen Sie {percent} %", not "Speichern {percent}%". It needs a General Translation account.
+[General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) translates your message files with AI and saves the results as the same JSON files, so Paraglide compiles them as usual. It translates short UI text by what it means, not word for word: "Book" on a booking button becomes "Buchen" in German, not "Buch", and "Save {percent}%" on a pricing badge becomes "Sparen Sie {percent} %", not "Speichern {percent}%". It needs a General Translation account, which has a free tier.
 
 Install the CLI, then run `init` to sign in, create a project and write `gt.config.json`:
 
@@ -80,11 +79,23 @@ In CI, provide `GT_API_KEY` and `GT_PROJECT_ID` as secrets and translate before 
 
 ## With free machine translation
 
-The [inlang CLI](https://inlang.com/m/2qj2w8pu/app-inlang-cli) fills missing translations with a free third-party machine translation service by default, or with your own Google Cloud Translation or DeepL key. It needs no account:
+The [inlang CLI](https://inlang.com/m/2qj2w8pu/app-inlang-cli) fills missing translations with machine translation. It is free and needs no account:
 
 ```sh
 npx @inlang/cli machine translate --project ./project.inlang
 ```
+
+By default it uses a community-operated translation service, which inlang does not operate and whose stability is not guaranteed. To use your own provider, set `INLANG_MACHINE_TRANSLATE_PROVIDER` to `google`, `deepl` or `openai` with the matching API key. See [bring your own key](https://inlang.com/m/2qj2w8pu/app-inlang-cli/byok).
+
+Review machine translations before you ship. Short UI text can come out with the wrong sense: with the default service, "Book" on a booking button became "Buch" in German, the noun for a book you read.
+
+## With translators
+
+Translators can edit the message files in [Fink](https://inlang.com/m/tdozzpar/app-inlang-finkLocalizationEditor), a translation editor for non-developers. Use [markup](/markup) so translators can position links and emphasis, and [variants](/variants) for plurals and gender. AI or machine translations can be a first draft for them to review.
+
+## By hand
+
+Add the translated message to each locale file and rebuild. This works well for a few locales and a small number of messages.
 
 ## Next steps
 
