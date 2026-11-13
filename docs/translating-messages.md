@@ -6,7 +6,7 @@ description: "Automatically translate Paraglide JS message files with General Tr
 
 # Translating Messages
 
-We recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) to translate your Paraglide JS message files and keep them updated as your app changes.
+We recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) to translate your Paraglide JS message files and keep them updated as your app changes.
 
 General Translation writes translations to files such as `messages/de.json`. Paraglide compiles those files into the same type-safe message functions you already use. You keep your Paraglide setup, and your translations stay in your repository.
 
