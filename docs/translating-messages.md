@@ -10,7 +10,7 @@ We recommend [General Translation](https://generaltranslation.com/?utm_source=pa
 
 General Translation writes translations to files such as `messages/de.json`. Paraglide compiles those files into the same type-safe message functions you already use. You keep your Paraglide setup, and your translations stay in your repository.
 
-Short UI messages can have more than one meaning: General Translation translates "Book" on a booking button as "Buchen" in German, where the inlang CLI's default service returns "Buch", a book you read.
+Short UI messages can have more than one meaning. In a test of short UI messages, General Translation translated "Book" on a booking button as "Buchen" in German, where the inlang CLI's default service returned "Buch", a book you read.
 
 | Workflow                                                                     | When to use it                                                                         |
 | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
@@ -30,10 +30,8 @@ You need a General Translation account. You can [get started for free](https://d
 The steps below use the default inlang message format, with files at `messages/{locale}.json`.
 
 - **Supported:** messages with placeholders and [markup](/markup), nested message objects, and [variants](/variants) such as plurals.
-- **Plurals:** end each plural variant in your source messages with a `*` branch, such as `countPlural=*`, instead of `countPlural=other`. General Translation translates the plural forms your source messages have, and the `*` branch covers any extra forms a language uses:
-  - With an English source, German, Dutch, Japanese, Chinese and Korean use no extra forms.
-  - French, Spanish, Italian and Portuguese use one extra form, only for large round numbers such as 1,000,000.
-  - Russian, Ukrainian, Polish, Czech, Romanian, Arabic, Hebrew, and other Slavic and Baltic languages use extra forms for everyday numbers, so some numbers read slightly off, such as 2 to 4 in Russian. General Translation does not add these forms yet, and does not keep ones you add by hand. If exact plural grammar matters, leave these languages out of `locales` in `gt.config.json` and translate them another way.
+- **Plurals:** end each plural variant in your source messages with a `*` branch, such as `countPlural=*`, instead of `countPlural=other`. If a language uses a plural form your source messages do not have, such as the form French and Spanish use for large round numbers, Paraglide falls back to the `*` branch.
+- **Not yet supported:** languages that need more plural forms than your source language for everyday numbers, such as Russian, Ukrainian, Polish, Czech and Arabic. General Translation does not create those forms yet, and does not keep ones you add by hand, so their plural messages use the wrong grammar for some numbers and fail `inlang check`. Leave these languages out of `locales` in `gt.config.json` and translate them another way.
 
 ### 1. Set up the CLI
 
@@ -44,7 +42,7 @@ npm install --save-dev gt
 npx gt init --no-react-setup --file-patterns "json=messages/[locale].json" --dev-credentials
 ```
 
-Follow the prompts to sign in and choose your languages. Use the same source and target locales as `baseLocale` and `locales` in `project.inlang/settings.json`.
+Follow the prompts to sign in and choose your languages. Use the same source locale as `baseLocale` in `project.inlang/settings.json`, and choose target locales from its `locales`, leaving out any you translate another way.
 
 The flags configure GT to translate your existing message files:
 
@@ -70,7 +68,7 @@ In `gt.config.json`, add the `jsonSchema` and `saveLocal` options shown below. K
     "jsonSchema": {
       "messages/*.json": {
         "include": [
-          "$..[?(typeof @ === 'string' && @property !== '$schema' && @parentProperty !== 'declarations' && @parentProperty !== 'selectors')]"
+          "$..[?(typeof @ === 'string' && @property !== '$schema' && !(typeof @property === 'number' && (@parentProperty === 'declarations' || @parentProperty === 'selectors')))]"
         ]
       }
     }
@@ -78,7 +76,7 @@ In `gt.config.json`, add the `jsonSchema` and `saveLocal` options shown below. K
 }
 ```
 
-The `jsonSchema` rule selects the text of every message, including nested messages and each variant, for translation, and leaves message structure unchanged.
+The `jsonSchema` rule selects the text of every message, including nested messages and each variant, for translation. It skips the `$schema` URL and the `declarations` and `selectors` lists of variants, so message structure stays unchanged.
 
 > [!IMPORTANT]
 > Keep this rule when using the inlang message format. Without it, declarations and selectors in [variants](/variants), such as `"input count"`, can be translated and prevent your project from compiling.
