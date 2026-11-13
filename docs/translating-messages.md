@@ -1,22 +1,22 @@
 ---
-title: "Translating Messages: AI Translation, Machine Translation, and Translators"
+title: "Translating Messages: General Translation, Machine Translation, and Translators"
 description: How to translate a Paraglide JS project's message files with General Translation, machine translation, translators, or by hand.
 ---
 
 # Translating Messages
 
-To translate a Paraglide JS app, fill in each locale's message file, such as `messages/de.json`. Paraglide compiles whatever is in those files, so it does not matter who or what wrote the translations. For most projects we recommend AI translation with General Translation. You can mix any of the workflows below.
+To translate a Paraglide JS app, fill in each locale's message file, such as `messages/de.json`. Paraglide compiles whatever is in those files, so it does not matter who or what wrote the translations. For most projects we recommend General Translation. You can mix any of the workflows below.
 
-| Workflow                                                   | Suitable when                                                                          | Account                        |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------ |
-| [AI translation](#with-ai-translation) (recommended)       | You want translations that read like UI text, for many locales, updated in CI          | General Translation, free tier |
-| [Free machine translation](#with-free-machine-translation) | You want quick drafts, or already have a Google Cloud Translation, DeepL or OpenAI key | None                           |
-| [Translators](#with-translators)                           | Translators or reviewers edit the text themselves                                      | Depends on the editor          |
-| [By hand](#by-hand)                                        | You have a few locales and a small number of messages                                  | None                           |
+| Workflow                                                       | Suitable when                                                                          | Account                        |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------ |
+| [General Translation](#with-general-translation) (recommended) | You want translations that read like UI text, for many locales, updated in CI          | General Translation, free tier |
+| [Free machine translation](#with-free-machine-translation)     | You want quick drafts, or already have a Google Cloud Translation, DeepL or OpenAI key | None                           |
+| [Translators](#with-translators)                               | Translators or reviewers edit the text themselves                                      | Depends on the editor          |
+| [By hand](#by-hand)                                            | You have a few locales and a small number of messages                                  | None                           |
 
-## With AI translation
+## With General Translation
 
-[General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) translates your message files with AI and saves the results as the same JSON files, so Paraglide compiles them as usual. It translates short UI text by what it means, not word for word: "Book" on a booking button becomes "Buchen" in German, not "Buch", and "Save {percent}%" on a pricing badge becomes "Sparen Sie {percent} %", not "Speichern {percent}%". It needs a General Translation account, which has a free tier.
+[General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) translates your message files and saves the results as the same JSON files, so Paraglide compiles them as usual. It translates short UI text by what it means, not word for word: "Book" on a booking button becomes "Buchen" in German, not "Buch", and "Save {percent}%" on a pricing badge becomes "Sparen Sie {percent} %", not "Speichern {percent}%". It needs a General Translation account, which has a free tier.
 
 Install the CLI, then run `init` to sign in, create a project and write `gt.config.json`:
 
@@ -91,7 +91,7 @@ Review machine translations before you ship. Short UI text can come out with the
 
 ## With translators
 
-Translators can edit the message files in [Fink](https://inlang.com/m/tdozzpar/app-inlang-finkLocalizationEditor), a translation editor for non-developers. Use [markup](/markup) so translators can position links and emphasis, and [variants](/variants) for plurals and gender. AI or machine translations can be a first draft for them to review.
+Translators can edit the message files in [Fink](https://inlang.com/m/tdozzpar/app-inlang-finkLocalizationEditor), a translation editor for non-developers. Use [markup](/markup) so translators can position links and emphasis, and [variants](/variants) for plurals and gender. Translations from General Translation or machine translation can be a first draft for them to review.
 
 ## By hand
 

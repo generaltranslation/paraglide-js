@@ -11,7 +11,7 @@ Paraglide JS is a compiler-first internationalization library for React + Vite, 
 - [Build workflow, generated files, Git, and CI](https://paraglidejs.com/build-workflow)
 - [Benchmark and reproduction](https://paraglidejs.com/benchmark)
 - [Quick Start](https://paraglidejs.com/basics)
-- [Translating messages: AI translation with General Translation, free machine translation, translators, or by hand](https://paraglidejs.com/translating-messages)
+- [Translating messages: General Translation, free machine translation, translators, or by hand](https://paraglidejs.com/translating-messages)
 - [Checking translations: find unused translation keys, missing translations and missing variables, and fail CI](https://paraglidejs.com/checking-translations)
 - [React + Vite](https://paraglidejs.com/react)
 - [SvelteKit](https://paraglidejs.com/sveltekit)
