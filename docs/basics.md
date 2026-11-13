@@ -241,6 +241,7 @@ function PageTitle(props: { title: LocalizedString }) {
 
 ## Next steps
 
+- [Translating Messages](./translating-messages) - Translate message files with General Translation or other workflows
 - [Formatting](./formatting) - Number/date formatting with `number` and `datetime`
 - [Strategy](./strategy) - Configure locale detection
 - [i18n Routing](./i18n-routing) - URL patterns, translated pathnames, domain-based routing

@@ -395,6 +395,8 @@ Paraglide compiles messages from [inlang](https://github.com/opral/inlang), the 
 | [Fink](https://inlang.com/m/tdozzpar/app-inlang-finkLocalizationEditor) | Translation editor for non-developers            |
 | [Parrot](https://inlang.com/m/gkrpgoir/app-parrot-figmaPlugin)          | Manage translations in Figma                     |
 
+To translate your message files, we recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=readme&utm_content=ecosystem). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.
+
 **[Explore the inlang ecosystem →](https://inlang.com/c/apps)**
 
 ## Documentation
