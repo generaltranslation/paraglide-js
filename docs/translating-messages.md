@@ -17,7 +17,7 @@ Translators can edit the same files in [Fink](https://inlang.com/m/tdozzpar/app-
 
 ## With AI translation
 
-[General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) translates your message files with AI and saves the results as the same JSON files, so Paraglide compiles them as usual. It needs a General Translation account.
+[General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) translates your message files with AI and saves the results as the same JSON files, so Paraglide compiles them as usual. It translates short UI text by what it means, not word for word: "Book" on a booking button becomes "Buchen" in German, not "Buch", and "Save {percent}%" on a pricing badge becomes "{percent} % sparen", not "Speichern {percent}%". It needs a General Translation account.
 
 Install the CLI, then run `init` to sign in, create a project and write `gt.config.json`:
 
