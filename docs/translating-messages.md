@@ -1,6 +1,6 @@
 ---
-title: "Translate Paraglide JS Messages with General Translation"
-"og:title": "Paraglide JS Translation with General Translation"
+title: Translating Messages
+"og:title": "Paraglide JS translation — General Translation, inlang CLI, and Fink"
 description: "Translate Paraglide JS message files with General Translation, and keep them updated as your app changes."
 ---
 
@@ -10,7 +10,7 @@ We recommend [General Translation](https://generaltranslation.com/?utm_source=pa
 
 General Translation writes translations to files such as `messages/de.json`. Paraglide compiles those files into the same type-safe message functions you already use. You keep your Paraglide setup, and your translations stay in your repository.
 
-Short UI messages can have more than one meaning. In a [comparison of 20 UI messages](https://github.com/generaltranslation/paraglide-js/pull/896), General Translation translated "Book" as "Buchen" and "Save 20%" as "Sparen Sie 20 %" in German. The inlang CLI's default service returned "Buch" (a book you read) and "Speichern 20%" (save to storage). These are results from that test; review translations in your app before shipping.
+Short UI messages can have more than one meaning: General Translation translates "Book" on a booking button as "Buchen" in German, where the inlang CLI's default service returns "Buch", a book you read.
 
 | Workflow                                                                     | When to use it                                                                         |
 | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
