@@ -3,10 +3,11 @@ import {
   Scripts,
   createRootRoute,
 } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
+import { initAnalytics } from "../analytics";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -33,6 +34,12 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    initAnalytics().catch((error) =>
+      console.error("Analytics failed to load", error)
+    );
+  }, []);
+
   return (
     <html lang="en">
       <head>

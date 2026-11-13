@@ -2,9 +2,12 @@
   "$schema": "https://unpkg.com/wrangler@4/config-schema.json",
   "name": "paraglide-js",
   "compatibility_date": "2026-06-03",
+  "main": "./worker/index.ts",
   "assets": {
     "directory": "./dist/client",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
-    "not_found_handling": "none"
+    "not_found_handling": "none",
+    "run_worker_first": ["/ingest/*"]
   }
 }
