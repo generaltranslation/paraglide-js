@@ -8,4 +8,5 @@ export type InitOptions = {
   check?: boolean;
   sherlock?: boolean;
   machineTranslation?: boolean;
+  translation?: "gt" | "inlang" | "none";
 };

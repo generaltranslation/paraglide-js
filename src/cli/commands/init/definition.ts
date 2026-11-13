@@ -29,8 +29,14 @@ export function createInitCommand() {
     .option("--no-check", "Skip adding inlang check")
     .option("--sherlock", "Add the editor recommendation")
     .option("--no-sherlock", "Skip the editor recommendation")
-    .option("--machine-translation", "Add a machine-translate script")
-    .option("--no-machine-translation", "Skip the machine-translate script")
+    .addOption(
+      new Option(
+        "--translation <service>",
+        "Translation setup: gt (General Translation), inlang (inlang CLI machine translation) or none"
+      ).choices(["gt", "inlang", "none"])
+    )
+    .option("--machine-translation", "Same as --translation inlang")
+    .option("--no-machine-translation", "Same as --translation none")
     .option(
       "--no-compile",
       "Skip the initial compilation; compile after installing dependencies"

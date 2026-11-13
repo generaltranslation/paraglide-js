@@ -82,6 +82,44 @@ test("headless setup and rerun preserve project/messages/comments and skip optio
   expect(utils.promptSelection).not.toHaveBeenCalled();
 });
 
+test("headless General Translation setup writes gt.config.json and a translate script, and keeps an existing config", async () => {
+  await runInit({ yes: true, compile: false, translation: "gt" });
+  const config = JSON.parse(
+    await readFile(join(root, "gt.config.json"), "utf8")
+  );
+  expect(config).toMatchObject({
+    defaultLocale: "en",
+    locales: ["de"],
+    files: { json: { include: ["messages/[locale].json"] } },
+    options: { saveLocal: true },
+  });
+  expect(Object.keys(config.options.jsonSchema)).toEqual(["messages/*.json"]);
+  const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+  expect(pkg.devDependencies.gt).toBeDefined();
+  expect(pkg.scripts.translate).toBe("gt translate");
+  expect(pkg.scripts["machine-translate"]).toBeUndefined();
+  expect(utils.promptSelection).not.toHaveBeenCalled();
+
+  await writeFile(join(root, "gt.config.json"), '{ "locales": ["fr"] }\n');
+  await runInit({ yes: true, compile: false, translation: "gt" });
+  expect(await readFile(join(root, "gt.config.json"), "utf8")).toBe(
+    '{ "locales": ["fr"] }\n'
+  );
+});
+
+test("--translation conflicting with --machine-translation fails before changing files", async () => {
+  const before = await readFile(join(root, "package.json"), "utf8");
+  await expect(
+    runInit({
+      yes: true,
+      compile: false,
+      translation: "gt",
+      machineTranslation: true,
+    })
+  ).rejects.toThrow("--translation gt conflicts with --machine-translation");
+  expect(await readFile(join(root, "package.json"), "utf8")).toBe(before);
+});
+
 test("explicit paths and ESLint setup work without prompts", async () => {
   await writeFile(
     join(root, "eslint.config.mjs"),
