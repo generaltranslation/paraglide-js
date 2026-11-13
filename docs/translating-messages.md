@@ -30,9 +30,11 @@ You need a General Translation account. You can [get started for free](https://d
 The steps below use the default inlang message format, with files at `messages/{locale}.json`.
 
 - **Supported:** messages with placeholders and [markup](/markup), and [variants](/variants) such as plurals.
-- **Plurals:** with an English source, German, Dutch, Japanese, Chinese and Korean need no extra steps. French, Spanish, Italian and Portuguese use one more plural form, for large round numbers such as 1,000,000. End each plural variant with a `*` branch, such as `countPlural=*`, instead of `countPlural=other`, so those numbers use it.
+- **Plurals:** end each plural variant in your source messages with a `*` branch, such as `countPlural=*`, instead of `countPlural=other`. General Translation translates the plural forms your source messages have, and the `*` branch covers any extra forms a language uses:
+  - With an English source, German, Dutch, Japanese, Chinese and Korean use no extra forms.
+  - French, Spanish, Italian and Portuguese use one extra form, only for large round numbers such as 1,000,000.
+  - Russian, Ukrainian, Polish, Czech, Romanian, Arabic, Hebrew, and other Slavic and Baltic languages use extra forms for everyday numbers, so some numbers read slightly off, such as 2 to 4 in Russian. General Translation does not add these forms yet, and does not keep ones you add by hand. If exact plural grammar matters, leave these languages out of `locales` in `gt.config.json` and translate them another way.
 - **Not yet supported:** nested message objects. General Translation writes them in your source language, so if your message files have them, use another workflow for now.
-- **Not yet supported:** languages that need more plural forms for everyday numbers, such as Russian, Ukrainian, Polish, Czech, Arabic and Hebrew. General Translation does not add those forms yet, and does not keep ones you add by hand. Leave these languages out of `locales` in `gt.config.json` and translate them another way for now.
 
 ### 1. Set up the CLI
 
