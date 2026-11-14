@@ -151,6 +151,8 @@ npx @inlang/cli machine translate --project ./project.inlang
 
 The default service is operated independently of inlang, and its availability is not guaranteed.
 
+To use your own translation provider, see [bring your own key](https://inlang.com/m/2qj2w8pu/app-inlang-cli/byok).
+
 Review the results before shipping.
 
 ### Translate by hand
