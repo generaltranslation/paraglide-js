@@ -71,33 +71,49 @@ export const maybeAddTranslation: CliStep<
 
 /**
  * In interactive runs, offers to sign in and run the first translation with
- * the `gt` CLI. Otherwise, or if a command fails, prints the commands to run.
+ * the `gt` CLI. Otherwise, or if a step is declined or fails, prints the
+ * commands to run.
  */
 export async function maybeRunGeneralTranslation(ctx: {
   logger: Logger;
   root: string;
   interactive?: boolean;
 }): Promise<void> {
-  const commands = [GT_SIGN_IN_ARGS, GT_TRANSLATE_ARGS];
-  const [signIn, translate] = commands.map(
+  const [signIn, translate] = [GT_SIGN_IN_ARGS, GT_TRANSLATE_ARGS].map(
     (args) => `\`npx ${GT_CLI_PACKAGE} ${args.join(" ")}\``
   );
-  const manual = `To translate with General Translation, run ${signIn} to sign in and create a translation project, then ${translate}. The first translation replaces the translations in your target-locale files, so commit them first. See ${TRANSLATING_MESSAGES_URL}.`;
-  const runNow =
-    ctx.interactive !== false &&
-    (await prompt(
-      "Sign in to General Translation and translate your messages now? This replaces the translations in your target-locale files.",
-      { type: "confirm", initial: true }
-    ));
-  if (!runNow) {
+  const translateLater = `run ${translate}. The first translation replaces the translations in your target-locale files, so commit them first. See ${TRANSLATING_MESSAGES_URL}.`;
+  const manual = `To translate with General Translation, run ${signIn} to sign in and create a translation project, then ${translateLater}`;
+  if (ctx.interactive === false) {
     ctx.logger.info(manual);
     return;
   }
-  for (const args of commands) {
-    if ((await runGtCli({ args, cwd: ctx.root })) !== 0) {
-      ctx.logger.warn(`General Translation setup did not finish. ${manual}`);
-      return;
-    }
+  const signInNow = await prompt(
+    "Sign in to General Translation and create a translation project now?",
+    { type: "confirm", initial: true }
+  );
+  if (!signInNow) {
+    ctx.logger.info(manual);
+    return;
+  }
+  if ((await runGtCli({ args: GT_SIGN_IN_ARGS, cwd: ctx.root })) !== 0) {
+    ctx.logger.warn(`General Translation setup did not finish. ${manual}`);
+    return;
+  }
+  // `gt init` also exits with 0 when cancelled, so translating needs its own confirmation.
+  const translateNow = await prompt(
+    "Translate your messages now? This replaces the translations in your target-locale files.",
+    { type: "confirm", initial: true }
+  );
+  if (!translateNow) {
+    ctx.logger.info(`To translate later, ${translateLater}`);
+    return;
+  }
+  if ((await runGtCli({ args: GT_TRANSLATE_ARGS, cwd: ctx.root })) !== 0) {
+    ctx.logger.warn(
+      `General Translation did not translate your messages. To try again, ${translateLater}`
+    );
+    return;
   }
   ctx.logger.success(
     "Translated your messages with General Translation. Run your build to use them."
