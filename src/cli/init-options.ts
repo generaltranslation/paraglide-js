@@ -1,4 +1,4 @@
-import type { TranslationSetup } from "./steps/maybe-add-translation.js";
+export type TranslationSetup = "gt" | "inlang" | "none";
 
 export type InitOptions = {
   yes?: boolean;

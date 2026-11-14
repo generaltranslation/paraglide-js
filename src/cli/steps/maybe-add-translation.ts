@@ -10,10 +10,8 @@ import {
 import { updatePackageJson } from "./update-package-json.js";
 import { INLANG_CLI_VERSION_RANGE } from "./add-inlang-check.js";
 
-export type TranslationSetup = "gt" | "inlang" | "none";
-
-export const TRANSLATING_MESSAGES_URL =
-  "https://paraglidejs.com/translating-messages";
+import type { TranslationSetup } from "../init-options.js";
+import { TRANSLATING_MESSAGES_URL } from "../defaults.js";
 
 /**
  * The `gt` range `init` adds. 2.28.2 is the first version tested with the
@@ -119,17 +117,34 @@ async function addGeneralTranslation(
     const targetLocales = settings.locales.filter(
       (locale) => locale !== settings.baseLocale
     );
-    const unsupportedLocales = await localesMissingPluralForms({
+    const missingPluralForms = await localesMissingPluralForms({
       project: ctx.project,
       baseLocale: settings.baseLocale,
       locales: targetLocales,
     });
+    const unsupportedLocales = missingPluralForms ?? targetLocales;
+    if (unsupportedLocales.length > 0) {
+      const reason =
+        missingPluralForms === undefined
+          ? "init cannot safely check your complex plural selectors"
+          : "your source plurals lack forms these languages need, and General Translation does not add missing forms yet";
+      ctx.logger.warn(
+        `Left ${unsupportedLocales.join(", ")} out of General Translation setup: ${reason}. See ${TRANSLATING_MESSAGES_URL}#limits.`
+      );
+    }
+    const locales = targetLocales.filter(
+      (locale) => !unsupportedLocales.includes(locale)
+    );
+    if (locales.length === 0) {
+      ctx.logger.warn(
+        "Skipped General Translation setup: no supported target locales remain."
+      );
+      return false;
+    }
     const config = {
       $schema: GT_CONFIG_SCHEMA_URL,
       defaultLocale: settings.baseLocale,
-      locales: targetLocales.filter(
-        (locale) => !unsupportedLocales.includes(locale)
-      ),
+      locales,
       files: {
         json: {
           include: messagePaths.map((path) =>
@@ -151,17 +166,17 @@ async function addGeneralTranslation(
     ctx.logger.success(
       `Added ${GT_CONFIG_FILE} to translate your message files with General Translation.`
     );
-    if (unsupportedLocales.length > 0) {
-      ctx.logger.warn(
-        `Left ${unsupportedLocales.join(", ")} out of ${GT_CONFIG_FILE}: your source plurals don't cover every form these languages need, and General Translation does not add missing forms yet. See ${TRANSLATING_MESSAGES_URL}#limits.`
-      );
-    }
   }
 
   const pkg = JSON.parse(await ctx.fs.readFile(ctx.packageJsonPath, "utf8"));
-  const hasCli =
-    pkg.dependencies?.[GT_CLI_PACKAGE] !== undefined ||
-    pkg.devDependencies?.[GT_CLI_PACKAGE] !== undefined;
+  const existingCli =
+    pkg.dependencies?.[GT_CLI_PACKAGE] ?? pkg.devDependencies?.[GT_CLI_PACKAGE];
+  const hasCli = existingCli !== undefined;
+  if (hasCli && mayBeOlderThanTestedGt(existingCli)) {
+    ctx.logger.warn(
+      `General Translation setup is tested with gt 2.28.2 or later. Your package.json has "${existingCli}". Update it to "${GT_CLI_VERSION_RANGE}" before running the setup commands.`
+    );
+  }
   let addedScript = false;
   await updatePackageJson({
     devDependencies: async (devDeps) =>
@@ -191,17 +206,17 @@ async function addGeneralTranslation(
  * `type` is checked branch by branch: a `*` branch stands in for `other`, and
  * for the cardinal `many` that languages such as French use only for large
  * round numbers. Any other plural message, such as one that also selects on
- * a number or gender, can't be checked, so every locale is returned.
+ * a number or gender, can't be checked, so undefined is returned.
  */
 async function localesMissingPluralForms(args: {
   project: InlangProject;
   baseLocale: string;
   locales: string[];
-}): Promise<string[]> {
+}): Promise<string[] | undefined> {
+  if (args.locales.length === 0) return [];
   const { selectBundleNested } = await import("@inlang/sdk");
   const bundles = await selectBundleNested(args.project.db).execute();
-  const categories = (locale: string, type: Intl.PluralRuleType) =>
-    new Intl.PluralRules(locale, { type }).resolvedOptions().pluralCategories;
+  const categories = new Map<string, Intl.LDMLPluralRule[]>();
   const unsupported = new Set<string>();
   for (const bundle of bundles) {
     const source = bundle.messages.find(
@@ -217,7 +232,7 @@ async function localesMissingPluralForms(args: {
       source.selectors.length !== 1 ||
       source.selectors[0]?.name !== plural.name
     )
-      return args.locales;
+      return undefined;
     const branches = new Set(
       source.variants
         .flatMap((variant) => variant.matches)
@@ -228,7 +243,15 @@ async function localesMissingPluralForms(args: {
       (branches.has("*") &&
         (category === "other" || (type === "cardinal" && category === "many")));
     for (const locale of args.locales) {
-      if (!categories(locale, type).every(covered)) unsupported.add(locale);
+      if (unsupported.has(locale)) continue;
+      const key = `${locale}:${type}`;
+      let forms = categories.get(key);
+      if (!forms) {
+        forms = new Intl.PluralRules(locale, { type }).resolvedOptions()
+          .pluralCategories;
+        categories.set(key, forms);
+      }
+      if (!forms.every(covered)) unsupported.add(locale);
     }
   }
   return args.locales.filter((locale) => unsupported.has(locale));
@@ -255,6 +278,18 @@ function pluralType(plural: LocalVariable): Intl.PluralRuleType | undefined {
   )
     return option.value.value;
   return undefined;
+}
+
+/** Like the inlang CLI check, inspect the first version named by the range. */
+function mayBeOlderThanTestedGt(range: string): boolean {
+  const match = range.match(/(\d+)\.(\d+)(?:\.(\d+))?/);
+  if (!match) return false;
+  const [, major, minor, patch = "0"] = match;
+  return (
+    Number(major) < 2 ||
+    (Number(major) === 2 &&
+      (Number(minor) < 28 || (Number(minor) === 28 && Number(patch) < 2)))
+  );
 }
 
 async function addMachineTranslation(ctx: TranslationContext) {

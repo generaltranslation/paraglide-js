@@ -16,13 +16,13 @@ import { ENV_VARIABLES } from "../../../services/env-variables/index.js";
 import { detectBundler } from "../../steps/detect-bundler.js";
 import { addVitePlugin } from "../../steps/add-vite-plugin.js";
 import { compile } from "../../../compiler/compile.js";
-import {
-  maybeAddTranslation,
-  TRANSLATING_MESSAGES_URL,
-} from "../../steps/maybe-add-translation.js";
+import { maybeAddTranslation } from "../../steps/maybe-add-translation.js";
 import { addInlangCheck } from "../../steps/add-inlang-check.js";
 import { agentsMdSuggestion } from "../../steps/agents-md-suggestion.js";
-import { getNewProjectTemplate } from "../../defaults.js";
+import {
+  getNewProjectTemplate,
+  TRANSLATING_MESSAGES_URL,
+} from "../../defaults.js";
 
 import type { InitOptions } from "../../init-options.js";
 import {

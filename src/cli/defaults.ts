@@ -1,5 +1,8 @@
 import type { ProjectSettings } from "@inlang/sdk";
 
+export const TRANSLATING_MESSAGES_URL =
+  "https://paraglidejs.com/translating-messages";
+
 /**
  * Default project settings for createNewProject
  * from paraglide-js/src/cli/commands/init/defaults.ts

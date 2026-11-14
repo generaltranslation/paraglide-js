@@ -1,8 +1,6 @@
 import { toRelativeDisplayPath } from "../utils.js";
-import {
-  TRANSLATING_MESSAGES_URL,
-  type TranslationSetup,
-} from "./maybe-add-translation.js";
+import { TRANSLATING_MESSAGES_URL } from "../defaults.js";
+import type { TranslationSetup } from "../init-options.js";
 
 /**
  * The localization section `init` suggests adding to AGENTS.md. `init` only
