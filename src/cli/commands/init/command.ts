@@ -6,7 +6,11 @@ import { initializeInlangProject } from "../../steps/initialize-inlang-project.j
 import { maybeAddSherlock } from "../../steps/maybe-add-sherlock.js";
 import { promptForOutdir } from "../../steps/prompt-for-outdir.js";
 import { updatePackageJson } from "../../steps/update-package-json.js";
-import { shellArgument, type CliStep } from "../../utils.js";
+import {
+  messagePathFromRoot,
+  shellArgument,
+  type CliStep,
+} from "../../utils.js";
 import nodeFs from "node:fs";
 import { ENV_VARIABLES } from "../../../services/env-variables/index.js";
 import { detectBundler } from "../../steps/detect-bundler.js";
@@ -215,16 +219,11 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
         outdir: ctx9.outdir,
         pathPattern:
           typeof pattern === "string"
-            ? nodePath
-                .relative(
-                  root,
-                  nodePath.resolve(
-                    nodePath.dirname(nodePath.resolve(root, ctx9.projectPath)),
-                    pattern
-                  )
-                )
-                .split(nodePath.sep)
-                .join("/")
+            ? messagePathFromRoot({
+                root,
+                projectPath: ctx9.projectPath,
+                pathPattern: pattern,
+              })
             : getNewProjectTemplate()["plugin.inlang.messageFormat"]
                 .pathPattern,
         translation: ctx9.translation,
@@ -320,15 +319,7 @@ const addCompileStepToPackageJSON: CliStep<
 };
 
 function resolveTranslation(options: InitOptions) {
-  const legacy =
-    options.machineTranslation === undefined
-      ? undefined
-      : options.machineTranslation
-        ? "inlang"
-        : "none";
-  if (options.translation && legacy && options.translation !== legacy)
-    throw new Error(
-      `--translation ${options.translation} conflicts with --${options.machineTranslation ? "" : "no-"}machine-translation. Pass only --translation.`
-    );
-  return options.translation ?? legacy;
+  if (options.translation) return options.translation;
+  if (options.machineTranslation === undefined) return undefined;
+  return options.machineTranslation ? "inlang" : "none";
 }

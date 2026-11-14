@@ -14,7 +14,6 @@ export function agentsMdSuggestion(args: {
   /** The message files, e.g. `./messages/{locale}.json`. */
   pathPattern: string;
   outdir: string;
-  /** The translation setup `init` added, if any. */
   translation?: TranslationSetup;
 }): string {
   const projectPath = toRelativeDisplayPath(args.root, args.projectPath);

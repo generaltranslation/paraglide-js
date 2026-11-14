@@ -107,19 +107,6 @@ test("headless General Translation setup writes gt.config.json and a translate s
   );
 });
 
-test("--translation conflicting with --machine-translation fails before changing files", async () => {
-  const before = await readFile(join(root, "package.json"), "utf8");
-  await expect(
-    runInit({
-      yes: true,
-      compile: false,
-      translation: "gt",
-      machineTranslation: true,
-    })
-  ).rejects.toThrow("--translation gt conflicts with --machine-translation");
-  expect(await readFile(join(root, "package.json"), "utf8")).toBe(before);
-});
-
 test("explicit paths and ESLint setup work without prompts", async () => {
   await writeFile(
     join(root, "eslint.config.mjs"),

@@ -66,6 +66,24 @@ export function toRelativeDisplayPath(root: string, path: string): string {
     .join("/");
 }
 
+/**
+ * A message `pathPattern`, which is relative to the inlang project's parent
+ * folder, as a path relative to `root`.
+ */
+export function messagePathFromRoot(args: {
+  root: string;
+  projectPath: string;
+  pathPattern: string;
+}): string {
+  return toRelativeDisplayPath(
+    args.root,
+    nodePath.resolve(
+      nodePath.dirname(nodePath.resolve(args.root, args.projectPath)),
+      args.pathPattern
+    )
+  );
+}
+
 /** Quote package-script arguments containing shell metacharacters. */
 export function shellArgument(value: string): string {
   return /^[A-Za-z0-9_./-]+$/.test(value)
