@@ -135,7 +135,7 @@ async function addGeneralTranslation(
     const locales = targetLocales.filter(
       (locale) => !unsupportedLocales.includes(locale)
     );
-    if (locales.length === 0) {
+    if (targetLocales.length > 0 && locales.length === 0) {
       ctx.logger.warn(
         "Skipped General Translation setup: no supported target locales remain."
       );
@@ -144,7 +144,8 @@ async function addGeneralTranslation(
     const config = {
       $schema: GT_CONFIG_SCHEMA_URL,
       defaultLocale: settings.baseLocale,
-      locales,
+      // Left out when empty so `gt init` asks which languages to add.
+      locales: locales.length > 0 ? locales : undefined,
       files: {
         json: {
           include: messagePaths.map((path) =>

@@ -142,6 +142,29 @@ test.each([
   }
 );
 
+test("General Translation setup leaves locales for gt init to ask when the project has no target locales", async () => {
+  await mkdir(join(root, "project.inlang"));
+  await writeFile(
+    join(root, "project.inlang/settings.json"),
+    JSON.stringify({
+      baseLocale: "en",
+      locales: ["en"],
+      modules: defaults.getNewProjectTemplate().modules,
+      "plugin.inlang.messageFormat": {
+        pathPattern: "./messages/{locale}.json",
+      },
+    })
+  );
+  await runInit({ yes: true, compile: false, translation: "gt" });
+  const config = JSON.parse(
+    await readFile(join(root, "gt.config.json"), "utf8")
+  );
+  expect(config.defaultLocale).toBe("en");
+  expect(config).not.toHaveProperty("locales");
+  const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+  expect(pkg.scripts.translate).toBe("gt translate");
+});
+
 test("General Translation setup reads every message path and leaves out locales whose plurals it can't translate", async () => {
   await mkdir(join(root, "project.inlang"));
   await mkdir(join(root, "messages/extra"), { recursive: true });
@@ -212,14 +235,6 @@ test.each([
     },
     expected: [],
     warning: "source plurals lack forms",
-  },
-  {
-    name: "projects without target locales",
-    baseLocale: "en",
-    locales: ["en"],
-    declarations: ["local placePlural = place: plural"],
-    match: { "placePlural=*": "{place} items" },
-    expected: [],
   },
   {
     name: "ordinal plurals",
