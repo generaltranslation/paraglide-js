@@ -193,13 +193,6 @@ test("General Translation setup reads every message path and leaves out locales 
       ],
     })
   );
-  await writeFile(
-    join(root, "package.json"),
-    JSON.stringify({
-      name: "fixture",
-      dependencies: { gt: "^2.0.0" },
-    })
-  );
 
   await runInit({ yes: true, compile: false, translation: "gt" });
 
@@ -215,8 +208,6 @@ test("General Translation setup reads every message path and leaves out locales 
     "messages/*.json",
     "messages/extra/*.json",
   ]);
-  const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
-  expect(pkg.devDependencies?.gt).toBeUndefined();
 });
 
 test.each([

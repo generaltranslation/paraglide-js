@@ -205,12 +205,8 @@ async function addGeneralTranslation(
 }
 
 /**
- * Target locales that may lose plural forms when General Translation rewrites
- * their files. A message whose only selector is a single plural with a fixed
- * `type` is checked branch by branch: a `*` branch stands in for `other`, and
- * for the cardinal `many` that languages such as French use only for large
- * round numbers. Any other plural message, such as one that also selects on
- * a number or gender, can't be checked, so undefined is returned.
+ * Target locales whose plural forms the source branches don't cover, or
+ * undefined when a plural is too complex to check.
  */
 async function localesMissingPluralForms(args: {
   project: InlangProject;
@@ -242,6 +238,7 @@ async function localesMissingPluralForms(args: {
         .flatMap((variant) => variant.matches)
         .map((match) => (match.type === "literal-match" ? match.value : "*"))
     );
+    // French and Spanish use the cardinal `many` only for large round numbers.
     const covered = (category: Intl.LDMLPluralRule) =>
       branches.has(category) ||
       (branches.has("*") &&
