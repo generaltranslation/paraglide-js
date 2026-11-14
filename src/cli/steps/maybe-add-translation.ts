@@ -7,6 +7,7 @@ import {
   messagePathFromRoot,
   promptSelection,
   shellArgument,
+  toRelativeDisplayPath,
 } from "../utils.js";
 import { updatePackageJson } from "./update-package-json.js";
 import { INLANG_CLI_VERSION_RANGE } from "./add-inlang-check.js";
@@ -117,6 +118,16 @@ async function addGeneralTranslation(
     const targetLocales = settings.locales.filter(
       (locale) => locale !== settings.baseLocale
     );
+    if (targetLocales.length === 0) {
+      const settingsPath = toRelativeDisplayPath(
+        ctx.root,
+        nodePath.join(ctx.projectPath, "settings.json")
+      );
+      ctx.logger.warn(
+        `Skipped General Translation setup: ${settingsPath} has no target locales. Add them to its \`locales\`, then run init again with \`--translation gt\`.`
+      );
+      return false;
+    }
     const missingPluralForms = await localesMissingPluralForms({
       project: ctx.project,
       baseLocale: settings.baseLocale,
@@ -135,7 +146,7 @@ async function addGeneralTranslation(
     const locales = targetLocales.filter(
       (locale) => !unsupportedLocales.includes(locale)
     );
-    if (targetLocales.length > 0 && locales.length === 0) {
+    if (locales.length === 0) {
       ctx.logger.warn(
         "Skipped General Translation setup: no supported target locales remain."
       );
@@ -144,8 +155,7 @@ async function addGeneralTranslation(
     const config = {
       $schema: GT_CONFIG_SCHEMA_URL,
       defaultLocale: settings.baseLocale,
-      // Left out when empty so `gt init` asks which languages to add.
-      locales: locales.length > 0 ? locales : undefined,
+      locales,
       files: {
         json: {
           include: messagePaths.map((path) =>
@@ -213,7 +223,6 @@ async function localesMissingPluralForms(args: {
   baseLocale: string;
   locales: string[];
 }): Promise<string[] | undefined> {
-  if (args.locales.length === 0) return [];
   const { selectBundleNested } = await import("@inlang/sdk");
   const bundles = await selectBundleNested(args.project.db).execute();
   const categories = new Map<string, Intl.LDMLPluralRule[]>();

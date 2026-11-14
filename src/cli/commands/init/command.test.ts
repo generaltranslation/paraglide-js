@@ -138,7 +138,7 @@ test.each([
   }
 );
 
-test("General Translation setup leaves locales for gt init to ask when the project has no target locales", async () => {
+test("General Translation setup is skipped until the inlang project has target locales", async () => {
   await mkdir(join(root, "project.inlang"));
   await writeFile(
     join(root, "project.inlang/settings.json"),
@@ -151,14 +151,16 @@ test("General Translation setup leaves locales for gt init to ask when the proje
       },
     })
   );
+  const warn = vi.spyOn(Logger.prototype, "warn");
   await runInit({ yes: true, compile: false, translation: "gt" });
-  const config = JSON.parse(
-    await readFile(join(root, "gt.config.json"), "utf8")
-  );
-  expect(config.defaultLocale).toBe("en");
-  expect(config).not.toHaveProperty("locales");
+  expect(await readdir(root)).not.toContain("gt.config.json");
   const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
-  expect(pkg.scripts.translate).toBe("gt translate");
+  expect(pkg.devDependencies?.gt).toBeUndefined();
+  expect(warn).toHaveBeenCalledWith(
+    expect.stringContaining(
+      "project.inlang/settings.json has no target locales"
+    )
+  );
 });
 
 test("General Translation setup reads every message path and leaves out locales whose plurals it can't translate", async () => {
