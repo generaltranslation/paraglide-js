@@ -12,12 +12,12 @@ General Translation writes translations to files such as `messages/de.json`. Par
 
 Short UI messages can have more than one meaning. In a test of short UI messages, General Translation translated "Book" on a booking button as "Buchen" in German, where the inlang CLI's default service returned "Buch", a book you read.
 
-| Workflow                                                                     | When to use it                                                                         |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| **[General Translation](#translate-with-general-translation) (recommended)** | Automatically translate UI messages and keep them updated as your app changes          |
-| [inlang CLI](#translate-with-the-inlang-cli)                                 | Fill missing translations using the community service or your own provider credentials |
-| [Fink](#review-with-translators)                                             | Have translators or reviewers edit messages through a browser                          |
-| [By hand](#translate-by-hand)                                                | Translate or adjust a small number of messages directly                                |
+| Workflow                                                                     | When to use it                                                                |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **[General Translation](#translate-with-general-translation) (recommended)** | Automatically translate UI messages and keep them updated as your app changes |
+| [inlang CLI](#translate-with-the-inlang-cli)                                 | Fill missing translations using a free community service                      |
+| [Fink](#review-with-translators)                                             | Have translators or reviewers edit messages through a browser                 |
+| [By hand](#translate-by-hand)                                                | Translate or adjust a small number of messages directly                       |
 
 These workflows can be combined. For example, translate with General Translation, then review the results in Fink.
 
@@ -150,8 +150,6 @@ npx @inlang/cli machine translate --project ./project.inlang
 ```
 
 The default service is operated independently of inlang, and its availability is not guaranteed.
-
-You can also use your own Google Cloud Translation, DeepL, or OpenAI credentials. See [bring your own key](https://inlang.com/m/2qj2w8pu/app-inlang-cli/byok) for configuration and provider requirements.
 
 Review the results before shipping.
 
