@@ -1,5 +1,13 @@
 # @inlang/paraglide-js
 
+## 3.2.3
+
+### Patch Changes
+
+- edc2576: Don't reload Vite environments when the first virtual message output is published in `buildStart`. Vite buffered that `full-reload` and replayed it to the first browser that connected, so the first page opened after `vite dev` started reloaded itself. Replacing the virtual output and editing messages still reload.
+- 05a3df3: Use locale modules by default in Vite dev servers and Vitest to avoid one HTTP request per message in large catalogs. Keep virtual modules for Vite builds, preserve explicit layout overrides, and retain generated TypeScript declarations for the default layouts.
+- 6e69650: Fix Vitest reusing stale cached transforms of rewritten message imports after `outputStructure` changes outside the Vite config file. The plugin now registers a Vitest cache key (`defineCacheKeyGenerator`) derived from the effective virtual output and its message ids.
+
 ## 3.2.2
 
 ### Patch Changes
