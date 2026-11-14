@@ -1,10 +1,12 @@
 import type { Declaration, InlangProject, LocalVariable } from "@inlang/sdk";
+import { spawn } from "node:child_process";
 import nodePath from "node:path";
 import type { Logger } from "../../services/logger/index.js";
 import type { CliStep } from "../utils.js";
 import {
   mayBeOlderThan,
   messagePathFromRoot,
+  prompt,
   promptSelection,
   shellArgument,
   toRelativeDisplayPath,
@@ -27,6 +29,10 @@ const GT_CONFIG_FILE = "gt.config.json";
 const GT_CONFIG_SCHEMA_URL = "https://assets.gtx.dev/config-schema.json";
 
 const TRANSLATE_SCRIPT_NAME = "translate";
+
+const GT_SIGN_IN_ARGS = ["init", "--no-react-setup", "--dev-credentials"];
+
+const GT_TRANSLATE_ARGS = ["translate"];
 
 /** Paraglide accepts the legacy `{languageTag}` placeholder as well. */
 const LOCALE_PLACEHOLDER = /\{(?:locale|languageTag)\}/g;
@@ -62,6 +68,59 @@ export const maybeAddTranslation: CliStep<
   if (translation === "inlang") await addMachineTranslation(ctx);
   return { ...ctx, translation };
 };
+
+/**
+ * In interactive runs, offers to sign in and run the first translation with
+ * the `gt` CLI. Otherwise, or if a command fails, prints the commands to run.
+ */
+export async function maybeRunGeneralTranslation(ctx: {
+  logger: Logger;
+  root: string;
+  interactive?: boolean;
+}): Promise<void> {
+  const commands = [GT_SIGN_IN_ARGS, GT_TRANSLATE_ARGS];
+  const [signIn, translate] = commands.map(
+    (args) => `\`npx ${GT_CLI_PACKAGE} ${args.join(" ")}\``
+  );
+  const manual = `To translate with General Translation, run ${signIn} to sign in and create a translation project, then ${translate}. The first translation replaces the translations in your target-locale files, so commit them first. See ${TRANSLATING_MESSAGES_URL}.`;
+  const runNow =
+    ctx.interactive !== false &&
+    (await prompt(
+      "Sign in to General Translation and translate your messages now? This replaces the translations in your target-locale files.",
+      { type: "confirm", initial: true }
+    ));
+  if (!runNow) {
+    ctx.logger.info(manual);
+    return;
+  }
+  for (const args of commands) {
+    if ((await runGtCli({ args, cwd: ctx.root })) !== 0) {
+      ctx.logger.warn(`General Translation setup did not finish. ${manual}`);
+      return;
+    }
+  }
+  ctx.logger.success(
+    "Translated your messages with General Translation. Run your build to use them."
+  );
+}
+
+function runGtCli(args: {
+  args: string[];
+  cwd: string;
+}): Promise<number | null> {
+  const isWindows = process.platform === "win32";
+  const pkg = `${GT_CLI_PACKAGE}@${GT_CLI_VERSION_RANGE}`;
+  return new Promise((resolve) => {
+    const child = spawn(
+      "npx",
+      // Windows needs a shell to run npx, and cmd.exe drops an unquoted `^`.
+      ["--yes", isWindows ? `"${pkg}"` : pkg, ...args.args],
+      { cwd: args.cwd, stdio: "inherit", shell: isWindows }
+    );
+    child.on("error", () => resolve(null));
+    child.on("close", resolve);
+  });
+}
 
 async function chooseTranslation(
   ctx: TranslationContext
