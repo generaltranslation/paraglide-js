@@ -21,6 +21,8 @@ export const TRANSLATING_MESSAGES_URL =
  */
 const GT_CLI_VERSION_RANGE = "^2.28.2";
 
+const GT_CLI_PACKAGE = "gt";
+
 const GT_CONFIG_FILE = "gt.config.json";
 
 const GT_CONFIG_SCHEMA_URL = "https://assets.gtx.dev/config-schema.json";
@@ -159,11 +161,12 @@ async function addGeneralTranslation(
 
   const pkg = JSON.parse(await ctx.fs.readFile(ctx.packageJsonPath, "utf8"));
   const hasCli =
-    pkg.dependencies?.gt !== undefined || pkg.devDependencies?.gt !== undefined;
+    pkg.dependencies?.[GT_CLI_PACKAGE] !== undefined ||
+    pkg.devDependencies?.[GT_CLI_PACKAGE] !== undefined;
   let addedScript = false;
   await updatePackageJson({
     devDependencies: async (devDeps) =>
-      hasCli ? devDeps : { ...devDeps, gt: GT_CLI_VERSION_RANGE },
+      hasCli ? devDeps : { ...devDeps, [GT_CLI_PACKAGE]: GT_CLI_VERSION_RANGE },
     scripts: async (scripts) => {
       if (scripts[TRANSLATE_SCRIPT_NAME] !== undefined) return scripts;
       addedScript = true;
@@ -171,7 +174,9 @@ async function addGeneralTranslation(
     },
   })(ctx);
   if (!hasCli) {
-    ctx.logger.success("Added gt to the devDependencies in package.json.");
+    ctx.logger.success(
+      `Added ${GT_CLI_PACKAGE} to the devDependencies in package.json.`
+    );
   }
   if (addedScript) {
     ctx.logger.success(

@@ -1,3 +1,5 @@
+import type { TranslationSetup } from "./steps/maybe-add-translation.js";
+
 export type InitOptions = {
   yes?: boolean;
   nonInteractive?: boolean;
@@ -8,5 +10,5 @@ export type InitOptions = {
   check?: boolean;
   sherlock?: boolean;
   machineTranslation?: boolean;
-  translation?: "gt" | "inlang" | "none";
+  translation?: TranslationSetup;
 };
