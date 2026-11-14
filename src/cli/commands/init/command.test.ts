@@ -195,14 +195,14 @@ test.each([
   {
     name: "plurals selected together with another variable",
     baseLocale: "en",
-    locales: ["en", "fr", "ja"],
+    locales: ["en", "de", "is"],
     declarations: ["input gender", "local placePlural = place: plural"],
     selectors: ["gender", "placePlural"],
     match: {
       "gender=female, placePlural=one": "{place} item",
       "gender=*, placePlural=*": "{place} items",
     },
-    expected: ["ja"],
+    expected: [],
   },
   {
     name: "aliased plurals",
@@ -216,7 +216,7 @@ test.each([
       "placePlural=one": "{place} item",
       "placePlural=*": "{place} items",
     },
-    expected: ["ja"],
+    expected: [],
   },
   {
     name: "plurals whose type is a variable",
@@ -227,10 +227,10 @@ test.each([
       "local placePlural = place: plural type=$mode",
     ],
     match: { "placePlural=one": "{place}st", "placePlural=*": "{place}th" },
-    expected: ["ja"],
+    expected: [],
   },
 ])(
-  "General Translation setup leaves out locales whose $name need forms the source lacks",
+  "General Translation setup leaves out locales that may lose forms of $name",
   async ({ baseLocale, locales, declarations, selectors, match, expected }) => {
     await mkdir(join(root, "project.inlang"));
     await mkdir(join(root, "messages"));

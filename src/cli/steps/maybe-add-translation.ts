@@ -153,7 +153,7 @@ async function addGeneralTranslation(
     );
     if (unsupportedLocales.length > 0) {
       ctx.logger.warn(
-        `Left ${unsupportedLocales.join(", ")} out of ${GT_CONFIG_FILE}: these languages need plural forms your source messages don't have, and General Translation does not add them yet. See ${TRANSLATING_MESSAGES_URL}#limits.`
+        `Left ${unsupportedLocales.join(", ")} out of ${GT_CONFIG_FILE}: your source plurals don't cover every form these languages need, and General Translation does not add missing forms yet. See ${TRANSLATING_MESSAGES_URL}#limits.`
       );
     }
   }
@@ -190,8 +190,8 @@ async function addGeneralTranslation(
  * their files. A message whose only selector is a single plural with a fixed
  * `type` is checked branch by branch: a `*` branch stands in for `other`, and
  * for the cardinal `many` that languages such as French use only for large
- * round numbers. For any other plural message, a locale passes only if it
- * needs no cardinal or ordinal form the base locale lacks.
+ * round numbers. Any other plural message, such as one that also selects on
+ * a number or gender, can't be checked, so every locale is returned.
  */
 async function localesMissingPluralForms(args: {
   project: InlangProject;
@@ -212,32 +212,23 @@ async function localesMissingPluralForms(args: {
     if (!source || !plural) continue;
     const type = pluralType(plural);
     if (
-      plurals.length === 1 &&
-      type !== undefined &&
-      source.selectors.length === 1 &&
-      source.selectors[0]?.name === plural.name
-    ) {
-      const branches = new Set(
-        source.variants
-          .flatMap((variant) => variant.matches)
-          .map((match) => (match.type === "literal-match" ? match.value : "*"))
-      );
-      const covered = (category: Intl.LDMLPluralRule) =>
-        branches.has(category) ||
-        (branches.has("*") &&
-          (category === "other" ||
-            (type === "cardinal" && category === "many")));
-      for (const locale of args.locales) {
-        if (!categories(locale, type).every(covered)) unsupported.add(locale);
-      }
-      continue;
-    }
+      plurals.length !== 1 ||
+      type === undefined ||
+      source.selectors.length !== 1 ||
+      source.selectors[0]?.name !== plural.name
+    )
+      return args.locales;
+    const branches = new Set(
+      source.variants
+        .flatMap((variant) => variant.matches)
+        .map((match) => (match.type === "literal-match" ? match.value : "*"))
+    );
+    const covered = (category: Intl.LDMLPluralRule) =>
+      branches.has(category) ||
+      (branches.has("*") &&
+        (category === "other" || (type === "cardinal" && category === "many")));
     for (const locale of args.locales) {
-      for (const mode of ["cardinal", "ordinal"] as const) {
-        const base = new Set(categories(args.baseLocale, mode));
-        if (!categories(locale, mode).every((category) => base.has(category)))
-          unsupported.add(locale);
-      }
+      if (!categories(locale, type).every(covered)) unsupported.add(locale);
     }
   }
   return args.locales.filter((locale) => unsupported.has(locale));
