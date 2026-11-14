@@ -1,3 +1,5 @@
+export type TranslationSetup = "gt" | "inlang" | "none";
+
 export type InitOptions = {
   yes?: boolean;
   nonInteractive?: boolean;
@@ -8,4 +10,5 @@ export type InitOptions = {
   check?: boolean;
   sherlock?: boolean;
   machineTranslation?: boolean;
+  translation?: TranslationSetup;
 };

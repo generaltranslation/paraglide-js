@@ -53,6 +53,15 @@ test("help stays independent of init implementation and action preserves explici
       machineTranslation: true,
     })
   );
+  await createInitCommand().parseAsync(["--yes", "--translation", "gt"], {
+    from: "user",
+  });
+  expect(implementation.runInit).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      translation: "gt",
+      machineTranslation: undefined,
+    })
+  );
   await createInitCommand().parseAsync(["--non-interactive"], { from: "user" });
   expect(implementation.runInit).toHaveBeenLastCalledWith(
     expect.objectContaining({
