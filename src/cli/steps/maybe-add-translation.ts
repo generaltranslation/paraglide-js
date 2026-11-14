@@ -3,6 +3,7 @@ import nodePath from "node:path";
 import type { Logger } from "../../services/logger/index.js";
 import type { CliStep } from "../utils.js";
 import {
+  mayBeOlderThan,
   messagePathFromRoot,
   promptSelection,
   shellArgument,
@@ -13,11 +14,10 @@ import { INLANG_CLI_VERSION_RANGE } from "./add-inlang-check.js";
 import type { TranslationSetup } from "../init-options.js";
 import { TRANSLATING_MESSAGES_URL } from "../defaults.js";
 
-/**
- * The `gt` range `init` adds. 2.28.2 is the first version tested with the
- * config `init` writes.
- */
-const GT_CLI_VERSION_RANGE = "^2.28.2";
+/** The first `gt` version tested with the config `init` writes. */
+const GT_CLI_MIN_VERSION = "2.28.2";
+
+const GT_CLI_VERSION_RANGE = `^${GT_CLI_MIN_VERSION}`;
 
 const GT_CLI_PACKAGE = "gt";
 
@@ -173,9 +173,12 @@ async function addGeneralTranslation(
   const existingCli =
     pkg.dependencies?.[GT_CLI_PACKAGE] ?? pkg.devDependencies?.[GT_CLI_PACKAGE];
   const hasCli = existingCli !== undefined;
-  if (hasCli && mayBeOlderThanTestedGt(existingCli)) {
+  if (
+    hasCli &&
+    mayBeOlderThan({ range: existingCli, version: GT_CLI_MIN_VERSION })
+  ) {
     ctx.logger.warn(
-      `General Translation setup is tested with gt 2.28.2 or later. Your package.json has "${existingCli}". Update it to "${GT_CLI_VERSION_RANGE}" before running the setup commands.`
+      `General Translation setup is tested with gt ${GT_CLI_MIN_VERSION} or later. Your package.json has "${existingCli}". Update it to "${GT_CLI_VERSION_RANGE}" before running the setup commands.`
     );
   }
   let addedScript = false;
@@ -279,18 +282,6 @@ function pluralType(plural: LocalVariable): Intl.PluralRuleType | undefined {
   )
     return option.value.value;
   return undefined;
-}
-
-/** Like the inlang CLI check, inspect the first version named by the range. */
-function mayBeOlderThanTestedGt(range: string): boolean {
-  const match = range.match(/(\d+)\.(\d+)(?:\.(\d+))?/);
-  if (!match) return false;
-  const [, major, minor, patch = "0"] = match;
-  return (
-    Number(major) < 2 ||
-    (Number(major) === 2 &&
-      (Number(minor) < 28 || (Number(minor) === 28 && Number(patch) < 2)))
-  );
 }
 
 async function addMachineTranslation(ctx: TranslationContext) {

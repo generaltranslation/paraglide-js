@@ -131,9 +131,9 @@ Run this in a trusted workflow. Save updated message files and `gt-lock.json` to
 
 ### Limits
 
-Paraglide `init --translation gt` checks plurals only when creating `gt.config.json`; existing configurations and plurals added later are not rechecked. Automatic setup skips all target locales if any plural uses multiple selectors, an alias, or a variable `type`. If no supported targets remain, it skips GT setup entirely. Review these limits whenever you change plurals or target languages.
-
 Plural messages that need more forms in the target language than in your source language are not supported yet, for example English plurals translated into Russian, Ukrainian, Polish, Czech or Arabic, which use extra forms for everyday numbers. General Translation does not create those forms yet, and does not keep ones you add by hand, so affected plural messages use the wrong grammar for some numbers and fail `inlang check`. If your message files contain these plurals, leave the affected languages out of `locales` in `gt.config.json` and translate them another way. If your message files have no plurals, these languages work like any other.
+
+Paraglide `init --translation gt` checks for these plurals only when it creates `gt.config.json`. If you add plural messages or languages later, check them against this limit yourself.
 
 ## Review with translators
 

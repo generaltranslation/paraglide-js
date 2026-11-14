@@ -90,3 +90,28 @@ export function shellArgument(value: string): string {
     ? value
     : "'" + value.replaceAll("'", `'"'"'`) + "'";
 }
+
+/**
+ * Whether a version range may resolve to a version before `version`, judged
+ * by the first version it names (`^3.0.0`, `3.2.0`, `~2.1.0`). Ranges without
+ * a version (`latest`, `*`, `workspace:*`) are trusted.
+ */
+export function mayBeOlderThan(args: {
+  range: string;
+  version: string;
+}): boolean {
+  const [named, minimum] = [args.range, args.version].map(versionNumbers);
+  if (!named || !minimum) return false;
+  for (const part of [0, 1, 2] as const) {
+    if (named[part] !== minimum[part]) return named[part] < minimum[part];
+  }
+  return false;
+}
+
+function versionNumbers(
+  text: string
+): [major: number, minor: number, patch: number] | undefined {
+  const match = text.match(/(\d+)\.(\d+)(?:\.(\d+))?/);
+  if (!match) return undefined;
+  return [Number(match[1]), Number(match[2]), Number(match[3] ?? 0)];
+}

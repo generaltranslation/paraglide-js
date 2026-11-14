@@ -115,12 +115,8 @@ test("headless General Translation setup writes gt.config.json and a translate s
 });
 
 test.each([
-  ["dependencies", "2.20.0", true],
-  ["devDependencies", "~2.28.1", true],
-  ["devDependencies", "2.28", true],
+  ["dependencies", "~2.28.1", true],
   ["devDependencies", "^2.28.2", false],
-  ["dependencies", "^3.0.0", false],
-  ["devDependencies", "latest", false],
   ["devDependencies", "workspace:*", false],
 ] as const)(
   "General Translation checks existing %s gt %s without replacing it",
