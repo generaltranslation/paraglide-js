@@ -177,7 +177,7 @@ test.each([
     name: "ordinal plurals",
     baseLocale: "de",
     locales: ["de", "en", "ja"],
-    declaration: "local placePlural = place: plural type=ordinal",
+    declarations: ["local placePlural = place: plural type=ordinal"],
     match: { "placePlural=*": "{place}." },
     expected: ["ja"],
   },
@@ -185,16 +185,53 @@ test.each([
     name: "cardinal plurals without a * branch",
     baseLocale: "en",
     locales: ["en", "fr", "ja"],
-    declaration: "local placePlural = place: plural",
+    declarations: ["local placePlural = place: plural"],
     match: {
       "placePlural=one": "{place} item",
       "placePlural=other": "{place} items",
     },
     expected: ["ja"],
   },
+  {
+    name: "plurals selected together with another variable",
+    baseLocale: "en",
+    locales: ["en", "fr", "ja"],
+    declarations: ["input gender", "local placePlural = place: plural"],
+    selectors: ["gender", "placePlural"],
+    match: {
+      "gender=female, placePlural=one": "{place} item",
+      "gender=*, placePlural=*": "{place} items",
+    },
+    expected: ["ja"],
+  },
+  {
+    name: "aliased plurals",
+    baseLocale: "en",
+    locales: ["en", "ru", "ja"],
+    declarations: [
+      "local rawPlural = place: plural",
+      "local placePlural = rawPlural",
+    ],
+    match: {
+      "placePlural=one": "{place} item",
+      "placePlural=*": "{place} items",
+    },
+    expected: ["ja"],
+  },
+  {
+    name: "plurals whose type is a variable",
+    baseLocale: "de",
+    locales: ["de", "en", "ja"],
+    declarations: [
+      "input mode",
+      "local placePlural = place: plural type=$mode",
+    ],
+    match: { "placePlural=one": "{place}st", "placePlural=*": "{place}th" },
+    expected: ["ja"],
+  },
 ])(
   "General Translation setup leaves out locales whose $name need forms the source lacks",
-  async ({ baseLocale, locales, declaration, match, expected }) => {
+  async ({ baseLocale, locales, declarations, selectors, match, expected }) => {
     await mkdir(join(root, "project.inlang"));
     await mkdir(join(root, "messages"));
     await writeFile(
@@ -213,8 +250,8 @@ test.each([
       JSON.stringify({
         place: [
           {
-            declarations: ["input place", declaration],
-            selectors: ["placePlural"],
+            declarations: ["input place", ...declarations],
+            selectors: selectors ?? ["placePlural"],
             match,
           },
         ],

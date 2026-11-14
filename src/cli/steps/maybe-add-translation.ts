@@ -1,4 +1,4 @@
-import type { InlangProject } from "@inlang/sdk";
+import type { Declaration, InlangProject, LocalVariable } from "@inlang/sdk";
 import nodePath from "node:path";
 import type { Logger } from "../../services/logger/index.js";
 import type { CliStep } from "../utils.js";
@@ -186,10 +186,12 @@ async function addGeneralTranslation(
 }
 
 /**
- * Target locales that need a plural form, cardinal or ordinal, that a source
- * message neither has nor can fall back from. A `*` branch stands in for
- * `other`, and for the cardinal `many` that languages such as French use only
- * for large round numbers.
+ * Target locales that may lose plural forms when General Translation rewrites
+ * their files. A message whose only selector is a single plural with a fixed
+ * `type` is checked branch by branch: a `*` branch stands in for `other`, and
+ * for the cardinal `many` that languages such as French use only for large
+ * round numbers. For any other plural message, a locale passes only if it
+ * needs no cardinal or ordinal form the base locale lacks.
  */
 async function localesMissingPluralForms(args: {
   project: InlangProject;
@@ -198,47 +200,70 @@ async function localesMissingPluralForms(args: {
 }): Promise<string[]> {
   const { selectBundleNested } = await import("@inlang/sdk");
   const bundles = await selectBundleNested(args.project.db).execute();
+  const categories = (locale: string, type: Intl.PluralRuleType) =>
+    new Intl.PluralRules(locale, { type }).resolvedOptions().pluralCategories;
   const unsupported = new Set<string>();
   for (const bundle of bundles) {
     const source = bundle.messages.find(
       (message) => message.locale === args.baseLocale
     );
-    if (!source) continue;
-    for (const declaration of bundle.declarations) {
-      if (
-        declaration.type !== "local-variable" ||
-        declaration.value.annotation?.name !== "plural"
-      )
-        continue;
-      const type = declaration.value.annotation.options.some(
-        (option) =>
-          option.name === "type" &&
-          option.value.type === "literal" &&
-          option.value.value === "ordinal"
-      )
-        ? "ordinal"
-        : "cardinal";
+    const plurals = bundle.declarations.filter(isPluralDeclaration);
+    const [plural] = plurals;
+    if (!source || !plural) continue;
+    const type = pluralType(plural);
+    if (
+      plurals.length === 1 &&
+      type !== undefined &&
+      source.selectors.length === 1 &&
+      source.selectors[0]?.name === plural.name
+    ) {
       const branches = new Set(
         source.variants
           .flatMap((variant) => variant.matches)
-          .filter((match) => match.key === declaration.name)
           .map((match) => (match.type === "literal-match" ? match.value : "*"))
       );
-      if (branches.size === 0) continue;
       const covered = (category: Intl.LDMLPluralRule) =>
         branches.has(category) ||
         (branches.has("*") &&
           (category === "other" ||
             (type === "cardinal" && category === "many")));
       for (const locale of args.locales) {
-        const categories = new Intl.PluralRules(locale, {
-          type,
-        }).resolvedOptions().pluralCategories;
-        if (!categories.every(covered)) unsupported.add(locale);
+        if (!categories(locale, type).every(covered)) unsupported.add(locale);
+      }
+      continue;
+    }
+    for (const locale of args.locales) {
+      for (const mode of ["cardinal", "ordinal"] as const) {
+        const base = new Set(categories(args.baseLocale, mode));
+        if (!categories(locale, mode).every((category) => base.has(category)))
+          unsupported.add(locale);
       }
     }
   }
   return args.locales.filter((locale) => unsupported.has(locale));
+}
+
+function isPluralDeclaration(
+  declaration: Declaration
+): declaration is LocalVariable {
+  return (
+    declaration.type === "local-variable" &&
+    declaration.value.annotation?.name === "plural"
+  );
+}
+
+/** The plural's `type`, or undefined when it comes from a variable. */
+function pluralType(plural: LocalVariable): Intl.PluralRuleType | undefined {
+  const option = plural.value.annotation?.options.find(
+    (option) => option.name === "type"
+  );
+  if (!option) return "cardinal";
+  if (
+    option.value.type === "literal" &&
+    (option.value.value === "cardinal" || option.value.value === "ordinal")
+  )
+    return option.value.value;
+  return undefined;
 }
 
 async function addMachineTranslation(ctx: TranslationContext) {
