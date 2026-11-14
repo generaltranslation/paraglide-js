@@ -121,7 +121,7 @@ test("General Translation setup reads every message path and leaves out locales 
     join(root, "project.inlang/settings.json"),
     JSON.stringify({
       baseLocale: "en",
-      locales: ["en", "de", "ru"],
+      locales: ["en", "de", "fr", "ru"],
       modules: defaults.getNewProjectTemplate().modules,
       "plugin.inlang.messageFormat": {
         pathPattern: [
@@ -159,7 +159,7 @@ test("General Translation setup reads every message path and leaves out locales 
   const config = JSON.parse(
     await readFile(join(root, "gt.config.json"), "utf8")
   );
-  expect(config.locales).toEqual(["de"]);
+  expect(config.locales).toEqual(["de", "fr"]);
   expect(config.files.json.include).toEqual([
     "messages/[locale].json",
     "messages/extra/[locale].json",
@@ -171,6 +171,64 @@ test("General Translation setup reads every message path and leaves out locales 
   const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
   expect(pkg.devDependencies?.gt).toBeUndefined();
 });
+
+test.each([
+  {
+    name: "ordinal plurals",
+    baseLocale: "de",
+    locales: ["de", "en", "ja"],
+    declaration: "local placePlural = place: plural type=ordinal",
+    match: { "placePlural=*": "{place}." },
+    expected: ["ja"],
+  },
+  {
+    name: "cardinal plurals without a * branch",
+    baseLocale: "en",
+    locales: ["en", "fr", "ja"],
+    declaration: "local placePlural = place: plural",
+    match: {
+      "placePlural=one": "{place} item",
+      "placePlural=other": "{place} items",
+    },
+    expected: ["ja"],
+  },
+])(
+  "General Translation setup leaves out locales whose $name need forms the source lacks",
+  async ({ baseLocale, locales, declaration, match, expected }) => {
+    await mkdir(join(root, "project.inlang"));
+    await mkdir(join(root, "messages"));
+    await writeFile(
+      join(root, "project.inlang/settings.json"),
+      JSON.stringify({
+        baseLocale,
+        locales,
+        modules: defaults.getNewProjectTemplate().modules,
+        "plugin.inlang.messageFormat": {
+          pathPattern: "./messages/{locale}.json",
+        },
+      })
+    );
+    await writeFile(
+      join(root, `messages/${baseLocale}.json`),
+      JSON.stringify({
+        place: [
+          {
+            declarations: ["input place", declaration],
+            selectors: ["placePlural"],
+            match,
+          },
+        ],
+      })
+    );
+
+    await runInit({ yes: true, compile: false, translation: "gt" });
+
+    const config = JSON.parse(
+      await readFile(join(root, "gt.config.json"), "utf8")
+    );
+    expect(config.locales).toEqual(expected);
+  }
+);
 
 test("explicit paths and ESLint setup work without prompts", async () => {
   await writeFile(

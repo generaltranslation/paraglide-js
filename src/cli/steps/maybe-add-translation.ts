@@ -119,12 +119,11 @@ async function addGeneralTranslation(
     const targetLocales = settings.locales.filter(
       (locale) => locale !== settings.baseLocale
     );
-    const unsupportedLocales = (await hasPluralMessages(ctx.project))
-      ? localesNeedingExtraPluralForms({
-          baseLocale: settings.baseLocale,
-          locales: targetLocales,
-        })
-      : [];
+    const unsupportedLocales = await localesMissingPluralForms({
+      project: ctx.project,
+      baseLocale: settings.baseLocale,
+      locales: targetLocales,
+    });
     const config = {
       $schema: GT_CONFIG_SCHEMA_URL,
       defaultLocale: settings.baseLocale,
@@ -154,7 +153,7 @@ async function addGeneralTranslation(
     );
     if (unsupportedLocales.length > 0) {
       ctx.logger.warn(
-        `Left ${unsupportedLocales.join(", ")} out of ${GT_CONFIG_FILE}: your messages have plurals, and General Translation does not yet add the extra plural forms these languages need. See ${TRANSLATING_MESSAGES_URL}#limits.`
+        `Left ${unsupportedLocales.join(", ")} out of ${GT_CONFIG_FILE}: these languages need plural forms your source messages don't have, and General Translation does not add them yet. See ${TRANSLATING_MESSAGES_URL}#limits.`
       );
     }
   }
@@ -186,34 +185,60 @@ async function addGeneralTranslation(
   return true;
 }
 
-async function hasPluralMessages(project: InlangProject): Promise<boolean> {
-  const { selectBundleNested } = await import("@inlang/sdk");
-  const bundles = await selectBundleNested(project.db).execute();
-  return bundles.some((bundle) =>
-    bundle.declarations.some(
-      (declaration) =>
-        declaration.type === "local-variable" &&
-        declaration.value.annotation?.name === "plural"
-    )
-  );
-}
-
 /**
- * Target locales whose plurals need forms the base locale lacks, other than
- * the `many` form that a variant's `*` branch covers (French, Spanish).
+ * Target locales that need a plural form, cardinal or ordinal, that a source
+ * message neither has nor can fall back from. A `*` branch stands in for
+ * `other`, and for the cardinal `many` that languages such as French use only
+ * for large round numbers.
  */
-function localesNeedingExtraPluralForms(args: {
+async function localesMissingPluralForms(args: {
+  project: InlangProject;
   baseLocale: string;
   locales: string[];
-}): string[] {
-  const categories = (locale: string) =>
-    new Intl.PluralRules(locale).resolvedOptions().pluralCategories;
-  const base = new Set(categories(args.baseLocale));
-  return args.locales.filter((locale) =>
-    categories(locale).some(
-      (category) => category !== "many" && !base.has(category)
-    )
-  );
+}): Promise<string[]> {
+  const { selectBundleNested } = await import("@inlang/sdk");
+  const bundles = await selectBundleNested(args.project.db).execute();
+  const unsupported = new Set<string>();
+  for (const bundle of bundles) {
+    const source = bundle.messages.find(
+      (message) => message.locale === args.baseLocale
+    );
+    if (!source) continue;
+    for (const declaration of bundle.declarations) {
+      if (
+        declaration.type !== "local-variable" ||
+        declaration.value.annotation?.name !== "plural"
+      )
+        continue;
+      const type = declaration.value.annotation.options.some(
+        (option) =>
+          option.name === "type" &&
+          option.value.type === "literal" &&
+          option.value.value === "ordinal"
+      )
+        ? "ordinal"
+        : "cardinal";
+      const branches = new Set(
+        source.variants
+          .flatMap((variant) => variant.matches)
+          .filter((match) => match.key === declaration.name)
+          .map((match) => (match.type === "literal-match" ? match.value : "*"))
+      );
+      if (branches.size === 0) continue;
+      const covered = (category: Intl.LDMLPluralRule) =>
+        branches.has(category) ||
+        (branches.has("*") &&
+          (category === "other" ||
+            (type === "cardinal" && category === "many")));
+      for (const locale of args.locales) {
+        const categories = new Intl.PluralRules(locale, {
+          type,
+        }).resolvedOptions().pluralCategories;
+        if (!categories.every(covered)) unsupported.add(locale);
+      }
+    }
+  }
+  return args.locales.filter((locale) => unsupported.has(locale));
 }
 
 async function addMachineTranslation(ctx: TranslationContext) {
