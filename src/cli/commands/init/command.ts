@@ -204,7 +204,7 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
     );
     if (ctx9.translation === "gt")
       logger.info(
-        `To translate with General Translation, run \`npx gt init --no-react-setup --dev-credentials\` to sign in and create a translation project, then \`npx gt translate\`. See ${TRANSLATING_MESSAGES_URL}.`
+        `To translate with General Translation, commit your message files, then run \`npx gt init --no-react-setup --dev-credentials\` to sign in and create a translation project, and \`npx gt translate\`. The first translation replaces existing translations in your target-locale files. See ${TRANSLATING_MESSAGES_URL}.`
       );
     else if (ctx9.translation === "none")
       logger.info(

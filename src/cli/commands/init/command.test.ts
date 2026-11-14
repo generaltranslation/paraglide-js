@@ -1,5 +1,12 @@
 import { test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtemp, writeFile, readFile, readdir, rm } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  writeFile,
+  readFile,
+  readdir,
+  rm,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
@@ -105,6 +112,64 @@ test("headless General Translation setup writes gt.config.json and a translate s
   expect(await readFile(join(root, "gt.config.json"), "utf8")).toBe(
     '{ "locales": ["fr"] }\n'
   );
+});
+
+test("General Translation setup reads every message path and leaves out locales whose plurals it can't translate", async () => {
+  await mkdir(join(root, "project.inlang"));
+  await mkdir(join(root, "messages/extra"), { recursive: true });
+  await writeFile(
+    join(root, "project.inlang/settings.json"),
+    JSON.stringify({
+      baseLocale: "en",
+      locales: ["en", "de", "ru"],
+      modules: defaults.getNewProjectTemplate().modules,
+      "plugin.inlang.messageFormat": {
+        pathPattern: [
+          "./messages/{languageTag}.json",
+          "./messages/extra/{locale}.json",
+        ],
+      },
+    })
+  );
+  await writeFile(
+    join(root, "messages/en.json"),
+    JSON.stringify({
+      cart_items: [
+        {
+          declarations: ["input count", "local countPlural = count: plural"],
+          selectors: ["countPlural"],
+          match: {
+            "countPlural=one": "{count} item",
+            "countPlural=*": "{count} items",
+          },
+        },
+      ],
+    })
+  );
+  await writeFile(
+    join(root, "package.json"),
+    JSON.stringify({
+      name: "fixture",
+      dependencies: { gt: "^2.0.0" },
+    })
+  );
+
+  await runInit({ yes: true, compile: false, translation: "gt" });
+
+  const config = JSON.parse(
+    await readFile(join(root, "gt.config.json"), "utf8")
+  );
+  expect(config.locales).toEqual(["de"]);
+  expect(config.files.json.include).toEqual([
+    "messages/[locale].json",
+    "messages/extra/[locale].json",
+  ]);
+  expect(Object.keys(config.options.jsonSchema)).toEqual([
+    "messages/*.json",
+    "messages/extra/*.json",
+  ]);
+  const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+  expect(pkg.devDependencies?.gt).toBeUndefined();
 });
 
 test("explicit paths and ESLint setup work without prompts", async () => {

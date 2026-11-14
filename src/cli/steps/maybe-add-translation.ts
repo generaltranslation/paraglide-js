@@ -27,6 +27,9 @@ const GT_CONFIG_SCHEMA_URL = "https://assets.gtx.dev/config-schema.json";
 
 const TRANSLATE_SCRIPT_NAME = "translate";
 
+/** Paraglide accepts the legacy `{languageTag}` placeholder as well. */
+const LOCALE_PLACEHOLDER = /\{(?:locale|languageTag)\}/g;
+
 /**
  * Selects the text of every message, including nested messages and variant
  * branches, but not `$schema` or a variant's `declarations` and `selectors`,
@@ -85,18 +88,21 @@ async function addGeneralTranslation(
   ctx: TranslationContext
 ): Promise<boolean> {
   const settings = await ctx.project.settings.get();
-  const pathPattern = settings["plugin.inlang.messageFormat"]?.pathPattern;
-  if (typeof pathPattern !== "string") {
+  const pathPattern: string | string[] | undefined =
+    settings["plugin.inlang.messageFormat"]?.pathPattern;
+  if (pathPattern === undefined) {
     ctx.logger.warn(
       `init sets up General Translation for the inlang message format only. See ${TRANSLATING_MESSAGES_URL} to translate other files.`
     );
     return false;
   }
-  const messagePath = messagePathFromRoot({
-    root: ctx.root,
-    projectPath: ctx.projectPath,
-    pathPattern,
-  });
+  const messagePaths = [pathPattern].flat().map((pattern) =>
+    messagePathFromRoot({
+      root: ctx.root,
+      projectPath: ctx.projectPath,
+      pathPattern: pattern,
+    })
+  );
 
   const configPath = nodePath.join(ctx.root, GT_CONFIG_FILE);
   const configExists = await ctx.fs.access(configPath).then(
@@ -108,45 +114,63 @@ async function addGeneralTranslation(
       `Kept the existing ${GT_CONFIG_FILE}. See ${TRANSLATING_MESSAGES_URL} for the settings Paraglide message files need.`
     );
   } else {
+    const targetLocales = settings.locales.filter(
+      (locale) => locale !== settings.baseLocale
+    );
+    const unsupportedLocales = (await hasPluralMessages(ctx.project))
+      ? localesNeedingExtraPluralForms({
+          baseLocale: settings.baseLocale,
+          locales: targetLocales,
+        })
+      : [];
     const config = {
       $schema: GT_CONFIG_SCHEMA_URL,
       defaultLocale: settings.baseLocale,
-      locales: settings.locales.filter(
-        (locale) => locale !== settings.baseLocale
+      locales: targetLocales.filter(
+        (locale) => !unsupportedLocales.includes(locale)
       ),
       files: {
-        json: { include: [messagePath.replaceAll("{locale}", "[locale]")] },
+        json: {
+          include: messagePaths.map((path) =>
+            path.replace(LOCALE_PLACEHOLDER, "[locale]")
+          ),
+        },
       },
       options: {
         saveLocal: true,
-        jsonSchema: {
-          [messagePath.replaceAll("{locale}", "*")]: {
-            include: [GT_MESSAGE_TEXT_JSONPATH],
-          },
-        },
+        jsonSchema: Object.fromEntries(
+          messagePaths.map((path) => [
+            path.replace(LOCALE_PLACEHOLDER, "*"),
+            { include: [GT_MESSAGE_TEXT_JSONPATH] },
+          ])
+        ),
       },
     };
     await ctx.fs.writeFile(configPath, JSON.stringify(config, null, 2) + "\n");
     ctx.logger.success(
       `Added ${GT_CONFIG_FILE} to translate your message files with General Translation.`
     );
+    if (unsupportedLocales.length > 0) {
+      ctx.logger.warn(
+        `Left ${unsupportedLocales.join(", ")} out of ${GT_CONFIG_FILE}: your messages have plurals, and General Translation does not yet add the extra plural forms these languages need. See ${TRANSLATING_MESSAGES_URL}#limits.`
+      );
+    }
   }
 
-  let addedCli = false;
+  const pkg = JSON.parse(await ctx.fs.readFile(ctx.packageJsonPath, "utf8"));
+  const hasCli =
+    pkg.dependencies?.gt !== undefined || pkg.devDependencies?.gt !== undefined;
   let addedScript = false;
   await updatePackageJson({
-    devDependencies: async (devDeps) => {
-      if (devDeps["gt"] !== undefined) return devDeps;
-      addedCli = true;
-      return { ...devDeps, gt: GT_CLI_VERSION_RANGE };
-    },
+    devDependencies: async (devDeps) =>
+      hasCli ? devDeps : { ...devDeps, gt: GT_CLI_VERSION_RANGE },
     scripts: async (scripts) => {
       if (scripts[TRANSLATE_SCRIPT_NAME] !== undefined) return scripts;
       addedScript = true;
       return { ...scripts, [TRANSLATE_SCRIPT_NAME]: "gt translate" };
     },
   })(ctx);
-  if (addedCli) {
+  if (!hasCli) {
     ctx.logger.success("Added gt to the devDependencies in package.json.");
   }
   if (addedScript) {
@@ -155,6 +179,36 @@ async function addGeneralTranslation(
     );
   }
   return true;
+}
+
+async function hasPluralMessages(project: InlangProject): Promise<boolean> {
+  const { selectBundleNested } = await import("@inlang/sdk");
+  const bundles = await selectBundleNested(project.db).execute();
+  return bundles.some((bundle) =>
+    bundle.declarations.some(
+      (declaration) =>
+        declaration.type === "local-variable" &&
+        declaration.value.annotation?.name === "plural"
+    )
+  );
+}
+
+/**
+ * Target locales whose plurals need forms the base locale lacks, other than
+ * the `many` form that a variant's `*` branch covers (French, Spanish).
+ */
+function localesNeedingExtraPluralForms(args: {
+  baseLocale: string;
+  locales: string[];
+}): string[] {
+  const categories = (locale: string) =>
+    new Intl.PluralRules(locale).resolvedOptions().pluralCategories;
+  const base = new Set(categories(args.baseLocale));
+  return args.locales.filter((locale) =>
+    categories(locale).some(
+      (category) => category !== "many" && !base.has(category)
+    )
+  );
 }
 
 async function addMachineTranslation(ctx: TranslationContext) {
