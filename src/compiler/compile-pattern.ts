@@ -67,13 +67,16 @@ function compilePatternToString(args: {
   registryUsage?: RegistryUsage;
 }): Compiled<Pattern> {
   let result = "";
+  let text = "";
 
   for (const part of args.pattern) {
     switch (part.type) {
       case "text":
-        result += escapeForTemplateLiteral(part.value);
+        text += part.value;
         break;
       case "expression":
+        result += escapeForTemplateLiteral(text);
+        text = "";
         result += `\${${compileExpression(
           part,
           args.declarations,
@@ -88,6 +91,8 @@ function compilePatternToString(args: {
         break;
     }
   }
+
+  result += escapeForTemplateLiteral(text);
 
   return {
     code: `\`${result}\``,
