@@ -168,6 +168,10 @@ npm run preview
 
 Use your app's TypeScript check as well, such as `npx tsc --noEmit` for a single-config project or `npx tsc -b` for Vite's project-reference template.
 
+## Translate your messages
+
+Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them automatically and keep them updated as your app changes, we recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=react). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.
+
 ## Generated files and CI
 
 The plugin regenerates output during development and builds. Its generated `.gitignore` ignores the output directory by default, so commit your source translations and configuration rather than regenerated JavaScript. On a fresh checkout, compile before a TypeScript check that needs the generated imports. See [build workflow, Git, and CI](https://paraglidejs.com/build-workflow) for the exact sequence and a reproducible tree-shaking probe.

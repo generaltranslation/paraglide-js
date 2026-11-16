@@ -179,6 +179,10 @@ const config = {
 export default config;
 ```
 
+## Translate your messages
+
+Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them automatically and keep them updated as your app changes, we recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=sveltekit). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.
+
 ## Troubleshooting
 
 ### URL and locale getting out of sync

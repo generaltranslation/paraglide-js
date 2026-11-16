@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildMirrorMarkdown,
   canonicalUrlForPath,
   extractHeadingsAndInjectIds,
   flattenManifestPages,
@@ -55,6 +56,29 @@ describe("Paraglide docs data helpers", () => {
         .flatMap((section) => section.pages)
         .some((page) => page.route === "/tanstack-start" && !page.isExternal)
     ).toBe(true);
+  });
+
+  it("appends the outro after a mirrored example", () => {
+    const markdown = buildMirrorMarkdown(
+      {
+        rawUrl: "https://example.com/README.md",
+        sourceUrl: "https://example.com",
+        sourceLabel: "example/repo",
+        ogTitle: "Example",
+        ogDescription: "Example page",
+        ogImage: "https://example.com/og.png",
+        heroImage: "https://example.com/hero.png",
+        heroImageAlt: "Example",
+        pitch: "Pitch",
+        outro: "## Outro",
+      },
+      "# Upstream\n\nUpstream body"
+    );
+
+    expect(markdown.indexOf("Upstream body")).toBeGreaterThan(-1);
+    expect(markdown.indexOf("## Outro")).toBeGreaterThan(
+      markdown.indexOf("Upstream body")
+    );
   });
 
   it("rewrites old marketplace links to standalone URLs", () => {

@@ -25,3 +25,7 @@ Both setups use a `[locale]` root layout, await route parameters, and pass the l
 ## Usage
 
 Continue passing the resolved route locale with `m.example_message(inputs, { locale })` when translating on the server or in client components rendered by the server. See the [basics documentation](/basics) for message parameters and locale management.
+
+## Translate your messages
+
+Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them automatically and keep them updated as your app changes, we recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=next-js). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.

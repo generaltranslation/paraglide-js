@@ -68,7 +68,16 @@ type MirrorSpec = {
   heroImage: string;
   heroImageAlt: string;
   pitch: string;
+  // Appended after the mirrored example.
+  outro: string;
 };
+
+const translateMessagesOutro = (content: string) =>
+  [
+    "## Translate your messages",
+    "",
+    `Paraglide compiles whatever is in your message files, such as \`messages/de.json\`. To translate them automatically and keep them updated as your app changes, we recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=${content}). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.`,
+  ].join("\n");
 
 const mirrorPages: Record<string, MirrorSpec> = {
   "/tanstack-router": {
@@ -89,6 +98,7 @@ const mirrorPages: Record<string, MirrorSpec> = {
       "- Works with CSR, SSR, and SSG",
       "- Tested as part of [TanStack's CI/CD pipeline](https://paraglidejs.com/blog/tanstack-ci)",
     ].join("\n"),
+    outro: translateMessagesOutro("tanstack-router"),
   },
   "/tanstack-start": {
     rawUrl:
@@ -118,6 +128,7 @@ const mirrorPages: Record<string, MirrorSpec> = {
       "",
       "Locale switching uses document navigation by default so the localized URL, server-rendered HTML, and client locale agree. See [locale switching](https://paraglidejs.com/basics#getting-and-setting-the-locale) before implementing an in-place switcher.",
     ].join("\n"),
+    outro: translateMessagesOutro("tanstack-start"),
   },
 };
 
@@ -636,7 +647,7 @@ function getPageNeighbors(pages: Record<string, string>, currentRoute: string) {
   };
 }
 
-function buildMirrorMarkdown(spec: MirrorSpec, exampleMarkdown: string) {
+export function buildMirrorMarkdown(spec: MirrorSpec, exampleMarkdown: string) {
   const cleaned = stripLeadingMarkdownH1(stripFrontmatterBlock(exampleMarkdown));
   return [
     "---",
@@ -659,6 +670,8 @@ function buildMirrorMarkdown(spec: MirrorSpec, exampleMarkdown: string) {
     `> This example is mirrored from the official TanStack example in the [${spec.sourceLabel}](${spec.sourceUrl}) repository.`,
     "",
     cleaned,
+    "",
+    spec.outro,
     "",
   ].join("\n");
 }
