@@ -37,6 +37,8 @@ All checks run by default. Pass one or more check flags, such as `--missing-tran
 
 `check` needs `@inlang/cli` 3.4.0 or later. If your project has an older `@inlang/cli` in its `devDependencies`, `npx` runs that one: update it, or run `npx @inlang/cli@latest check`.
 
+To translate your message files automatically, use [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=checking-translations). See [Translating messages](./translating-messages) for setup and other options.
+
 > [!NOTE]
 > `inlang validate` and `inlang lint` are deprecated. `inlang lint` does nothing and exits with `0`, so replace it with `inlang check` in your scripts and CI.
 
@@ -149,5 +151,7 @@ jobs:
 - `--no-fail` exits with `0` even if there are findings, e.g. for a report.
 - `--format json` prints the full report for other tools: every finding, the status of each check and the location of each usage that couldn't be analyzed.
 - A check that couldn't run or couldn't complete, such as unused messages with dynamic keys, is reported but doesn't fail the command.
+
+Generate translations in a trusted workflow with General Translation credentials, review and commit the updated message files and `gt-lock.json`, then run these checks on pull requests. See [Translating messages](./translating-messages) for setup.
 
 See [exit codes](https://inlang.com/m/2qj2w8pu/app-inlang-cli#exit-codes) and [JSON output](https://inlang.com/m/2qj2w8pu/app-inlang-cli#json-output) in the CLI documentation.

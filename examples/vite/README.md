@@ -111,6 +111,10 @@ Run your app's `dev` and `build` scripts as usual. The Vite plugin generates mes
 
 Tree-shaking depends on static references such as `m.greeting()`. Unrestricted dynamic access such as `m[key]()` can retain the whole catalog. Removing unused messages is different from loading only the current locale; default output includes all configured locales for retained messages. See [dynamic messages](https://paraglidejs.com/basics#dynamic-messages), [compiler options](https://paraglidejs.com/compiling-messages), and the [benchmark methodology](https://paraglidejs.com/benchmark) before comparing bundle sizes.
 
+## Translate your messages
+
+Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them automatically and keep them updated as your app changes, we recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=vite). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.
+
 ## Advanced concepts
 
 - [I18n routing](https://paraglidejs.com/i18n-routing) — localized URLs and translated pathnames

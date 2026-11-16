@@ -88,6 +88,10 @@ setLocale("de"); // switches to German
 
 [Learn more about messages, parameters, and locale management →](/basics)
 
+## Translate your messages
+
+Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them automatically and keep them updated as your app changes, we recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=astro). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.
+
 ## Disabling AsyncLocalStorage
 
 If you're deploying Astro to Vercel Edge or to Cloudflare Workers with Node.js compatibility enabled, keep AsyncLocalStorage enabled. Those runtimes support it today, so `disableAsyncLocalStorage` is no longer part of the recommended setup.

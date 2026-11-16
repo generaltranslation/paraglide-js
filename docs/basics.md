@@ -118,6 +118,8 @@ Add locales in `project.inlang/settings.json`:
 }
 ```
 
+Then translate your messages into the new locales; see [Translating Messages](./translating-messages).
+
 ---
 
 ## Additional features

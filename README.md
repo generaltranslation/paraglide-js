@@ -236,6 +236,10 @@ getLocale(); // "en"
 setLocale("de"); // loads the German document
 ```
 
+### Translate your messages
+
+Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them automatically and keep them updated as your app changes, we recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=readme&utm_content=quick-start). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.
+
 **[Full Getting Started Guide →](https://paraglidejs.com)**
 
 ## Rich Text

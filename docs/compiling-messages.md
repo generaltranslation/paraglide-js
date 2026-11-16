@@ -385,3 +385,9 @@ export * from "./paraglide/messages.js";
 Use your own build tooling for extra assets, metadata files, and source maps. Paraglide owns the generated output directory and may remove files placed there during compilation. With `emitTsDeclarations: true`, Paraglide continues to emit declarations for its generated JavaScript.
 
 Paraglide JS 3 uses the SDK catalog API directly; older SDKs without `@inlang/sdk/catalog` are no longer supported.
+
+## Next steps
+
+- [Translating Messages](./translating-messages) - Translate message files with General Translation or other workflows
+- [Checking Translations](./checking-translations) - Find missing translations and unused messages in CI
+- [Basics](./basics) - Messages, parameters, and locale management
