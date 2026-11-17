@@ -126,6 +126,43 @@ test("plain string mode strips markup wrappers", () => {
   expect(code).toBe("`Hello ${i?.name}!`");
 });
 
+test("escapes variable interpolation split across text parts", () => {
+  const pattern: Pattern = [
+    { type: "text", value: "cost $" },
+    { type: "text", value: "{1 + 1}" },
+  ];
+  const { code } = compilePattern({ pattern, declarations: [] });
+
+  expect(code).toBe("`cost \\${1 + 1}`");
+  expect(new Function(`return ${code}`)()).toBe("cost ${1 + 1}");
+});
+
+test("escapes variable interpolation split by stripped markup", () => {
+  const pattern: Pattern = [
+    { type: "text", value: "cost $" },
+    { type: "markup-standalone", name: "br" },
+    { type: "text", value: "{1 + 1}" },
+  ];
+  const { code } = compilePattern({ pattern, declarations: [] });
+
+  expect(code).toBe("`cost \\${1 + 1}`");
+  expect(new Function(`return ${code}`)()).toBe("cost ${1 + 1}");
+});
+
+test("keeps a dollar sign before an expression literal", () => {
+  const pattern: Pattern = [
+    { type: "text", value: "price $" },
+    { type: "expression", arg: { type: "variable-reference", name: "price" } },
+  ];
+  const { code } = compilePattern({
+    pattern,
+    declarations: [{ type: "input-variable", name: "price" }],
+  });
+
+  expect(code).toBe("`price $${i?.price}`");
+  expect(new Function("i", `return ${code}`)({ price: 5 })).toBe("price $5");
+});
+
 test("compiles a pattern expression annotation to a registry call", () => {
   // https://github.com/opral/paraglide-js/issues/694
   const pattern: Pattern = [
