@@ -4,6 +4,7 @@ Paraglide JS is a compiler-first internationalization library for React + Vite, 
 
 ## Documentation
 
+- [Full documentation as one Markdown file](https://paraglidejs.com/llms-full.txt): every docs page in navigation order. Any page is also available as Markdown by adding `.md` to its URL, for example https://paraglidejs.com/basics.md.
 - [Introduction](https://paraglidejs.com/)
 - [Comparison](https://paraglidejs.com/comparison)
 - [Choosing a React i18n library](https://paraglidejs.com/react-i18next-alternatives)

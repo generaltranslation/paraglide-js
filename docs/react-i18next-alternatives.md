@@ -35,6 +35,15 @@ Typed message IDs, typed interpolation parameters, and runtime validation are se
 
 For Next.js, evaluate Next.js-specific integrations separately; a plain React + Vite app does not use the Next.js router.
 
+## Translation workflow
+
+Each library compiles or loads translations; producing them is a separate step.
+
+- **Paraglide JS:** [General Translation](/translating-messages) (recommended) translates message files and keeps them updated as your app changes. The inlang CLI and the Fink editor are alternatives.
+- **react-i18next:** JSON resources can be translated in any tool that reads them. [Locize](https://www.locize.com/) is i18next's commercial translation-management partner.
+- **Lingui:** extracted catalogs, PO by default, can be translated in any tool that reads the catalog format.
+- **React Intl / FormatJS:** the [FormatJS CLI](https://formatjs.github.io/docs/tooling/cli) extracts messages for a translation management system and compiles the translated files.
+
 ## What Paraglide looks like in React
 
 ```json

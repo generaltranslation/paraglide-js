@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildSoftwareJsonLd,
   buildTitle,
   deriveTitleFromPath,
   extractMarkdownDescription,
@@ -81,5 +82,24 @@ Second line.
   it("derives readable titles from paths", () => {
     expect(deriveTitleFromPath("/next-js")).toBe("Next.js");
     expect(deriveTitleFromPath("/i18n-routing")).toBe("i18n Routing");
+  });
+
+  it("names General Translation as maintainer and publisher, and inlang as creator", () => {
+    const jsonLd = buildSoftwareJsonLd();
+    const generalTranslation = {
+      "@type": "Organization",
+      name: "General Translation",
+      url: "https://generaltranslation.com",
+      sameAs: ["https://github.com/generaltranslation"],
+    };
+
+    expect(jsonLd["@type"]).toBe("SoftwareSourceCode");
+    expect(jsonLd.maintainer).toEqual(generalTranslation);
+    expect(jsonLd.publisher).toEqual(generalTranslation);
+    expect(jsonLd.creator).toMatchObject({
+      "@type": "Organization",
+      name: "inlang",
+      url: "https://inlang.com",
+    });
   });
 });
