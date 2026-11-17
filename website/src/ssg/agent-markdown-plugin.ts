@@ -50,14 +50,28 @@ export async function loadAgentMarkdownPages({
   return pages.filter((page): page is AgentMarkdownPage => Boolean(page));
 }
 
-/** Maps output file names (`llms-full.txt`, `basics.md`, ...) to their contents. */
+function sourceUrlForPage(page: { route: string }, siteUrl: string) {
+  return `${siteUrl.replace(/\/+$/, "")}${page.route === "/" ? "" : page.route}`;
+}
+
+function markdownWithSource(page: AgentMarkdownPage, siteUrl: string) {
+  return `Source: ${sourceUrlForPage(page, siteUrl)}\n\n${page.markdown}\n`;
+}
+
+/** Maps Markdown assets and Cloudflare's `_headers` file to their contents. */
 export async function buildAgentMarkdownFiles(options: AgentMarkdownOptions) {
   const pages = await loadAgentMarkdownPages(options);
   const files = new Map<string, string>();
+  const headers: string[] = [];
   files.set(LLMS_FULL_FILE, buildLlmsFullText(pages, options.siteUrl));
   for (const page of pages) {
-    files.set(markdownPathForRoute(page.route).slice(1), `${page.markdown}\n`);
+    const path = markdownPathForRoute(page.route);
+    files.set(path.slice(1), markdownWithSource(page, options.siteUrl));
+    headers.push(
+      `${path}\n  Content-Type: text/markdown; charset=utf-8\n  Link: <${sourceUrlForPage(page, options.siteUrl)}>; rel="canonical"`
+    );
   }
+  files.set("_headers", `${headers.join("\n\n")}\n`);
   return files;
 }
 
@@ -89,7 +103,17 @@ export function agentMarkdownPlugin(
             "Content-Type",
             isLlmsFull ? "text/plain; charset=utf-8" : "text/markdown; charset=utf-8"
           );
-          response.end(isLlmsFull ? content : `${content}\n`);
+          if (!isLlmsFull) {
+            response.setHeader(
+              "Link",
+              `<${sourceUrlForPage(page!, options.siteUrl)}>; rel="canonical"`
+            );
+          }
+          response.end(
+            isLlmsFull
+              ? content
+              : markdownWithSource({ route: page!.route, markdown: content }, options.siteUrl)
+          );
         } catch (error) {
           next(error);
         }

@@ -1,6 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
+import { createServer } from "vite";
 import {
   buildLlmsFullText,
   listMarkdownPageSources,
@@ -8,7 +9,7 @@ import {
   toAgentMarkdown,
 } from "./agent-markdown";
 import { getDocsSections } from "./data";
-import { buildAgentMarkdownFiles } from "../ssg/agent-markdown-plugin";
+import { agentMarkdownPlugin, buildAgentMarkdownFiles } from "../ssg/agent-markdown-plugin";
 
 const SITE = "https://paraglidejs.com";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -140,19 +141,64 @@ describe("agent Markdown export", () => {
     expect([...files.keys()]).toEqual([
       "llms-full.txt",
       ...pages.map((page) => markdownPathForRoute(page.route).slice(1)),
+      "_headers",
     ]);
     expect(files.get("translating-messages.md")).toContain("General Translation");
     expect(files.get("tanstack-start.md")).toContain("# Paraglide JS for TanStack Start");
     expect(files.get("tanstack-start.md")).toContain("## Translate your messages");
 
     const full = files.get("llms-full.txt")!;
+    const headers = files.get("_headers")!;
     let previous = -1;
     for (const page of pages) {
+      const sourceUrl = `${SITE}${page.route === "/" ? "" : page.route}`;
+      const path = markdownPathForRoute(page.route);
+      expect(files.get(path.slice(1))?.startsWith(`Source: ${sourceUrl}\n\n`), page.route).toBe(true);
+      expect(headers).toContain(
+        `${path}\n  Content-Type: text/markdown; charset=utf-8\n  Link: <${sourceUrl}>; rel="canonical"\n`
+      );
       const index = full.indexOf(
         `Source: ${SITE}${page.route === "/" ? "/" : page.route}\n`
       );
       expect(index, page.route).toBeGreaterThan(previous);
       previous = index;
+    }
+  });
+
+  it("serves the same source links and canonical headers in development", async () => {
+    const options = {
+      repoRoot,
+      siteUrl: `${SITE}/`,
+      fetch: vi.fn(async () => new Response("# Example\n\nMirrored content")) as unknown as typeof globalThis.fetch,
+    };
+    const files = await buildAgentMarkdownFiles(options);
+    const server = await createServer({
+      configFile: false,
+      root: join(repoRoot, "website"),
+      plugins: [agentMarkdownPlugin(options)],
+      server: { host: "127.0.0.1", port: 0 },
+    });
+
+    try {
+      await server.listen();
+      const baseUrl = server.resolvedUrls!.local[0]!;
+      for (const [path, canonical] of [
+        ["/index.md", SITE],
+        ["/basics.md", `${SITE}/basics`],
+        ["/tanstack-start.md", `${SITE}/tanstack-start`],
+      ]) {
+        const response = await globalThis.fetch(new URL(path!, baseUrl));
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toBe("text/markdown; charset=utf-8");
+        expect(response.headers.get("Link")).toBe(`<${canonical}>; rel="canonical"`);
+        expect(await response.text()).toBe(files.get(path!.slice(1)));
+      }
+
+      const full = await globalThis.fetch(new URL("/llms-full.txt", baseUrl));
+      expect(full.headers.get("Link")).toBeNull();
+      expect(await full.text()).toBe(files.get("llms-full.txt"));
+    } finally {
+      await server.close();
     }
   });
 
@@ -165,6 +211,8 @@ describe("agent Markdown export", () => {
 
     expect(files.has("tanstack-start.md")).toBe(false);
     expect(files.has("basics.md")).toBe(true);
+    expect(files.get("_headers")).not.toContain("/tanstack-start.md");
+    expect(files.get("_headers")).not.toContain("/tanstack-router.md");
     expect(warn).toHaveBeenCalledTimes(2);
   });
 });
