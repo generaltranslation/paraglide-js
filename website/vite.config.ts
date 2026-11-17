@@ -8,6 +8,7 @@ import viteTsConfigPaths from "vite-tsconfig-paths";
 import tailwindcss from "@tailwindcss/vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import { paraglideStaticPages } from "./src/ssg/static-pages";
+import { agentMarkdownPlugin } from "./src/ssg/agent-markdown-plugin";
 
 const websiteDir = dirname(fileURLToPath(import.meta.url));
 const blogDir = join(websiteDir, "../blog");
@@ -104,6 +105,7 @@ export default defineConfig(({ mode, command }: ConfigEnv) => {
       }),
       tailwindcss(),
       serveBlogAssetsPlugin(),
+      !isTest && agentMarkdownPlugin({ repoRoot: join(websiteDir, ".."), siteUrl }),
       !isTest &&
         viteStaticCopy({
           targets: [

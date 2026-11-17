@@ -1,5 +1,6 @@
 import manifest from "../../../marketplace-manifest.json";
 import { GITHUB_REPOSITORY, SITE_NAME, SITE_URL } from "../site";
+import { markdownPathForRoute } from "./agent-markdown";
 import type { DocsPageData } from "./data";
 import { canonicalUrlForPath, formatNavTitle } from "./data";
 
@@ -7,6 +8,20 @@ const PRODUCT_DESCRIPTION =
   "Compiler-first i18n for TanStack Start, SvelteKit, Vite, React Router, Next.js, Astro, and vanilla JavaScript or TypeScript apps.";
 const DEFAULT_OG_IMAGE =
   "https://raw.githubusercontent.com/opral/paraglide-js/refs/heads/main/assets/og.png";
+
+// inlang created Paraglide JS. General Translation maintains it.
+const GENERAL_TRANSLATION_ORGANIZATION = {
+  "@type": "Organization",
+  name: "General Translation",
+  url: "https://generaltranslation.com",
+  sameAs: ["https://github.com/generaltranslation"],
+};
+const INLANG_ORGANIZATION = {
+  "@type": "Organization",
+  name: "inlang",
+  url: "https://inlang.com",
+  logo: "https://inlang.com/favicon/safari-pinned-tab.svg",
+};
 
 type HeadInput = {
   pagePath: string;
@@ -20,7 +35,14 @@ export function buildPageHead(data: DocsPageData) {
   const canonicalUrl = canonicalUrlForPath(data.pagePath);
   const image = getImage(data);
   const subpageTitle = getSubpageTitle(data);
-  const links = [{ rel: "canonical", href: canonicalUrl }];
+  const links: Array<{ rel: string; href: string; type?: string }> = [
+    { rel: "canonical", href: canonicalUrl },
+    {
+      rel: "alternate",
+      type: "text/markdown",
+      href: markdownPathForRoute(data.pagePath),
+    },
+  ];
 
   if (data.prevPagePath) {
     links.push({ rel: "prev", href: canonicalUrlForPath(data.prevPagePath) });
@@ -263,7 +285,7 @@ function buildBreadcrumbJsonLd(
   };
 }
 
-function buildSoftwareJsonLd() {
+export function buildSoftwareJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareSourceCode",
@@ -271,12 +293,9 @@ function buildSoftwareJsonLd() {
     description: PRODUCT_DESCRIPTION,
     url: SITE_URL,
     image: DEFAULT_OG_IMAGE,
-    publisher: {
-      "@type": "Organization",
-      name: "inlang",
-      url: "https://inlang.com",
-      logo: "https://inlang.com/favicon/safari-pinned-tab.svg",
-    },
+    maintainer: GENERAL_TRANSLATION_ORGANIZATION,
+    publisher: GENERAL_TRANSLATION_ORGANIZATION,
+    creator: INLANG_ORGANIZATION,
     license: "MIT",
     codeRepository: GITHUB_REPOSITORY,
     sameAs: [SITE_URL, GITHUB_REPOSITORY],
