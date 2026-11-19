@@ -90,7 +90,7 @@ export function localizeUrl(url, options) {
       element
     );
     if (fastPathLocalized !== undefined) {
-      return fastPathLocalized;
+      return normalizeTrailingSlash(fastPathLocalized);
     }
 
     // match localized patterns
@@ -238,7 +238,7 @@ export function deLocalizeUrl(url) {
   for (const element of getUrlPatternCandidates(urlObj)) {
     const fastPathDeLocalized = deLocalizeUrlFastPath(urlObj, element);
     if (fastPathDeLocalized !== undefined) {
-      return fastPathDeLocalized;
+      return normalizeTrailingSlash(fastPathDeLocalized);
     }
 
     // Iterate over localized versions

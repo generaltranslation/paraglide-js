@@ -1131,3 +1131,41 @@ test("correctly handles port numbers as pattern parameters", async () => {
     "http://localhost:5173/about"
   );
 });
+
+test.each(["never", "always"] as const)(
+  "applies trailingSlash %s to catch-all fast path results",
+  async (trailingSlash) => {
+    const runtime = await createParaglide({
+      blob: await newProject({
+        settings: { baseLocale: "ja", locales: ["en", "ja"] },
+      }),
+      strategy: ["url"],
+      trailingSlash,
+      urlPatterns: [
+        {
+          pattern: "/:path(.*)?",
+          localized: [
+            ["en", "/en/:path(.*)?"],
+            ["ja", "/:path(.*)?"],
+          ],
+        },
+      ],
+    });
+
+    const enRoot = trailingSlash === "never" ? "/en" : "/en/";
+    const enAbout = trailingSlash === "never" ? "/en/about" : "/en/about/";
+    const jaAbout = trailingSlash === "never" ? "/about" : "/about/";
+
+    const localize = (path: string) =>
+      runtime.localizeUrl(`https://example.com${path}`, { locale: "en" })
+        .pathname;
+    const deLocalize = (path: string) =>
+      runtime.deLocalizeUrl(`https://example.com${path}`).pathname;
+
+    expect(localize("/")).toBe(enRoot);
+    expect(localize("/about")).toBe(enAbout);
+    expect(localize("/about/")).toBe(enAbout);
+    expect(deLocalize("/en/about/")).toBe(jaAbout);
+    expect(deLocalize("/en/about")).toBe(jaAbout);
+  }
+);
