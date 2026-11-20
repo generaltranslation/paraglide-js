@@ -211,7 +211,7 @@ npx @inlang/paraglide-js init --yes --outdir ./src/paraglide --lint eslint
 # Or choose --lint oxlint; omit --lint to skip lint setup.
 ```
 
-`--non-interactive` is an alias for `--yes`. Existing inlang projects are reused, and optional editor recommendations and machine translation are skipped unless explicitly enabled. Dirty git trees require `--allow-dirty`. Use `--no-compile` to stage setup before installing dependencies; then run your build. Run `init --help` for the other options. See [optional lint setup](https://paraglidejs.com/basics#eslint-and-oxlint).
+`--non-interactive` is an alias for `--yes`. Existing inlang projects are reused, and optional editor recommendations and translation setup are skipped unless explicitly enabled (`--translation gt` or `--translation inlang`). Dirty git trees require `--allow-dirty`. Use `--no-compile` to stage setup before installing dependencies; then run your build. Run `init --help` for the other options. See [optional lint setup](https://paraglidejs.com/basics#eslint-and-oxlint).
 
 Stable and production-ready — `@inlang/paraglide-js` is on v2 (MIT-licensed), with framework adapters like `@inlang/paraglide-js-react` at v1.
 

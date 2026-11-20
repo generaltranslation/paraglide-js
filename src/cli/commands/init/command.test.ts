@@ -1,5 +1,12 @@
 import { test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mkdtemp, writeFile, readFile, readdir, rm } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  writeFile,
+  readFile,
+  readdir,
+  rm,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
@@ -81,6 +88,266 @@ test("headless setup and rerun preserve project/messages/comments and skip optio
   expect(utils.prompt).not.toHaveBeenCalled();
   expect(utils.promptSelection).not.toHaveBeenCalled();
 });
+
+test("headless General Translation setup writes gt.config.json and a translate script, and keeps an existing config", async () => {
+  await runInit({ yes: true, compile: false, translation: "gt" });
+  const config = JSON.parse(
+    await readFile(join(root, "gt.config.json"), "utf8")
+  );
+  expect(config).toMatchObject({
+    defaultLocale: "en",
+    locales: ["de"],
+    files: { json: { include: ["messages/[locale].json"] } },
+    options: { saveLocal: true },
+  });
+  expect(Object.keys(config.options.jsonSchema)).toEqual(["messages/*.json"]);
+  const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+  expect(pkg.devDependencies.gt).toBeDefined();
+  expect(pkg.scripts.translate).toBe("gt translate");
+  expect(pkg.scripts["machine-translate"]).toBeUndefined();
+  expect(utils.promptSelection).not.toHaveBeenCalled();
+
+  await writeFile(join(root, "gt.config.json"), '{ "locales": ["fr"] }\n');
+  await runInit({ yes: true, compile: false, translation: "gt" });
+  expect(await readFile(join(root, "gt.config.json"), "utf8")).toBe(
+    '{ "locales": ["fr"] }\n'
+  );
+});
+
+test.each([
+  ["dependencies", "~2.28.1", true],
+  ["devDependencies", "^2.28.2", false],
+  ["devDependencies", "workspace:*", false],
+] as const)(
+  "General Translation checks existing %s gt %s without replacing it",
+  async (field, version, warning) => {
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({ name: "fixture", [field]: { gt: version } })
+    );
+    const warn = vi.spyOn(Logger.prototype, "warn");
+    await runInit({ yes: true, compile: false, translation: "gt" });
+    const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+    expect(pkg[field].gt).toBe(version);
+    expect(
+      pkg[field === "dependencies" ? "devDependencies" : "dependencies"]?.gt
+    ).toBeUndefined();
+    const message = expect.stringContaining('Update it to "^2.28.2"');
+    if (warning) expect(warn).toHaveBeenCalledWith(message);
+    else expect(warn).not.toHaveBeenCalledWith(message);
+  }
+);
+
+test("General Translation setup is skipped until the inlang project has target locales", async () => {
+  await mkdir(join(root, "project.inlang"));
+  await writeFile(
+    join(root, "project.inlang/settings.json"),
+    JSON.stringify({
+      baseLocale: "en",
+      locales: ["en"],
+      modules: defaults.getNewProjectTemplate().modules,
+      "plugin.inlang.messageFormat": {
+        pathPattern: "./messages/{locale}.json",
+      },
+    })
+  );
+  const warn = vi.spyOn(Logger.prototype, "warn");
+  await runInit({ yes: true, compile: false, translation: "gt" });
+  expect(await readdir(root)).not.toContain("gt.config.json");
+  const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+  expect(pkg.devDependencies?.gt).toBeUndefined();
+  expect(warn).toHaveBeenCalledWith(
+    expect.stringContaining(
+      "project.inlang/settings.json has no target locales"
+    )
+  );
+});
+
+test("General Translation setup reads every message path and leaves out locales whose plurals it can't translate", async () => {
+  await mkdir(join(root, "project.inlang"));
+  await mkdir(join(root, "messages/extra"), { recursive: true });
+  await writeFile(
+    join(root, "project.inlang/settings.json"),
+    JSON.stringify({
+      baseLocale: "en",
+      locales: ["en", "de", "fr", "ru"],
+      modules: defaults.getNewProjectTemplate().modules,
+      "plugin.inlang.messageFormat": {
+        pathPattern: [
+          "./messages/{languageTag}.json",
+          "./messages/extra/{locale}.json",
+        ],
+      },
+    })
+  );
+  await writeFile(
+    join(root, "messages/en.json"),
+    JSON.stringify({
+      cart_items: [
+        {
+          declarations: ["input count", "local countPlural = count: plural"],
+          selectors: ["countPlural"],
+          match: {
+            "countPlural=one": "{count} item",
+            "countPlural=*": "{count} items",
+          },
+        },
+      ],
+    })
+  );
+
+  await runInit({ yes: true, compile: false, translation: "gt" });
+
+  const config = JSON.parse(
+    await readFile(join(root, "gt.config.json"), "utf8")
+  );
+  expect(config.locales).toEqual(["de", "fr"]);
+  expect(config.files.json.include).toEqual([
+    "messages/[locale].json",
+    "messages/extra/[locale].json",
+  ]);
+  expect(Object.keys(config.options.jsonSchema)).toEqual([
+    "messages/*.json",
+    "messages/extra/*.json",
+  ]);
+});
+
+test.each([
+  {
+    name: "cardinal plurals unsupported by every target",
+    baseLocale: "en",
+    locales: ["en", "ru"],
+    declarations: ["local placePlural = place: plural"],
+    match: {
+      "placePlural=one": "{place} item",
+      "placePlural=*": "{place} items",
+    },
+    expected: [],
+    warning: "source plurals lack forms",
+  },
+  {
+    name: "ordinal plurals",
+    baseLocale: "de",
+    locales: ["de", "en", "ja"],
+    declarations: ["local placePlural = place: plural type=ordinal"],
+    match: { "placePlural=*": "{place}." },
+    expected: ["ja"],
+  },
+  {
+    name: "cardinal plurals without a * branch",
+    baseLocale: "en",
+    locales: ["en", "fr", "ja"],
+    declarations: ["local placePlural = place: plural"],
+    match: {
+      "placePlural=one": "{place} item",
+      "placePlural=other": "{place} items",
+    },
+    expected: ["ja"],
+  },
+  {
+    name: "plurals selected together with another variable",
+    baseLocale: "en",
+    locales: ["en", "de", "is"],
+    declarations: ["input gender", "local placePlural = place: plural"],
+    selectors: ["gender", "placePlural"],
+    match: {
+      "gender=female, placePlural=one": "{place} item",
+      "gender=*, placePlural=*": "{place} items",
+    },
+    expected: [],
+    warning: "complex plural selectors",
+  },
+  {
+    name: "aliased plurals",
+    baseLocale: "en",
+    locales: ["en", "ru", "ja"],
+    declarations: [
+      "local rawPlural = place: plural",
+      "local placePlural = rawPlural",
+    ],
+    match: {
+      "placePlural=one": "{place} item",
+      "placePlural=*": "{place} items",
+    },
+    expected: [],
+    warning: "complex plural selectors",
+  },
+  {
+    name: "plurals whose type is a variable",
+    baseLocale: "de",
+    locales: ["de", "en", "ja"],
+    declarations: [
+      "input mode",
+      "local placePlural = place: plural type=$mode",
+    ],
+    match: { "placePlural=one": "{place}st", "placePlural=*": "{place}th" },
+    expected: [],
+    warning: "complex plural selectors",
+  },
+])(
+  "General Translation setup leaves out locales that may lose forms of $name",
+  async ({
+    baseLocale,
+    locales,
+    declarations,
+    selectors,
+    match,
+    expected,
+    warning,
+  }) => {
+    await mkdir(join(root, "project.inlang"));
+    await mkdir(join(root, "messages"));
+    await writeFile(
+      join(root, "project.inlang/settings.json"),
+      JSON.stringify({
+        baseLocale,
+        locales,
+        modules: defaults.getNewProjectTemplate().modules,
+        "plugin.inlang.messageFormat": {
+          pathPattern: "./messages/{locale}.json",
+        },
+      })
+    );
+    await writeFile(
+      join(root, `messages/${baseLocale}.json`),
+      JSON.stringify({
+        place: [
+          {
+            declarations: ["input place", ...declarations],
+            selectors: selectors ?? ["placePlural"],
+            match,
+          },
+        ],
+      })
+    );
+
+    const warn = vi.spyOn(Logger.prototype, "warn");
+    const info = vi.spyOn(Logger.prototype, "info");
+    await runInit({ yes: true, compile: false, translation: "gt" });
+
+    if (expected.length === 0) {
+      expect(await readdir(root)).not.toContain("gt.config.json");
+      const pkg = JSON.parse(
+        await readFile(join(root, "package.json"), "utf8")
+      );
+      expect(pkg.devDependencies?.gt).toBeUndefined();
+      expect(pkg.scripts?.translate).toBeUndefined();
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("Skipped General Translation setup")
+      );
+      if (warning)
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining(warning));
+      expect(info).not.toHaveBeenCalledWith(
+        expect.stringContaining("--dev-credentials")
+      );
+    } else {
+      const config = JSON.parse(
+        await readFile(join(root, "gt.config.json"), "utf8")
+      );
+      expect(config.locales).toEqual(expected);
+    }
+  }
+);
 
 test("explicit paths and ESLint setup work without prompts", async () => {
   await writeFile(

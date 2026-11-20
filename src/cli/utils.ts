@@ -66,9 +66,52 @@ export function toRelativeDisplayPath(root: string, path: string): string {
     .join("/");
 }
 
+/**
+ * A message `pathPattern`, which is relative to the inlang project's parent
+ * folder, as a path relative to `root`.
+ */
+export function messagePathFromRoot(args: {
+  root: string;
+  projectPath: string;
+  pathPattern: string;
+}): string {
+  return toRelativeDisplayPath(
+    args.root,
+    nodePath.resolve(
+      nodePath.dirname(nodePath.resolve(args.root, args.projectPath)),
+      args.pathPattern
+    )
+  );
+}
+
 /** Quote package-script arguments containing shell metacharacters. */
 export function shellArgument(value: string): string {
   return /^[A-Za-z0-9_./-]+$/.test(value)
     ? value
     : "'" + value.replaceAll("'", `'"'"'`) + "'";
+}
+
+/**
+ * Whether a version range may resolve to a version before `version`, judged
+ * by the first version it names (`^3.0.0`, `3.2.0`, `~2.1.0`). Ranges without
+ * a version (`latest`, `*`, `workspace:*`) are trusted.
+ */
+export function mayBeOlderThan(args: {
+  range: string;
+  version: string;
+}): boolean {
+  const [named, minimum] = [args.range, args.version].map(versionNumbers);
+  if (!named || !minimum) return false;
+  for (const part of [0, 1, 2] as const) {
+    if (named[part] !== minimum[part]) return named[part] < minimum[part];
+  }
+  return false;
+}
+
+function versionNumbers(
+  text: string
+): [major: number, minor: number, patch: number] | undefined {
+  const match = text.match(/(\d+)\.(\d+)(?:\.(\d+))?/);
+  if (!match) return undefined;
+  return [Number(match[1]), Number(match[2]), Number(match[3] ?? 0)];
 }
