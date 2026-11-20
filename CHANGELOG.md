@@ -1,5 +1,16 @@
 # @inlang/paraglide-js
 
+## 3.2.3
+
+### Patch Changes
+
+- c90030f: Escape `${` in compiled messages when the `$` and `{` come from separate text parts, or from text on either side of markup that is stripped in string output. Before, a pattern like `cost $` followed by `{1 + 1}` compiled to a live template literal substitution.
+- edc2576: Don't reload Vite environments when the first virtual message output is published in `buildStart`. Vite buffered that `full-reload` and replayed it to the first browser that connected, so the first page opened after `vite dev` started reloaded itself. Replacing the virtual output and editing messages still reload.
+- a5af446: The README in the compiled output now recommends General Translation for translating messages, alongside the inlang CLI's machine translation.
+- bdb4f36: License under MIT with copyright General Translation, Inc. The framework packages now include the `LICENSE` file in their npm package.
+- 05a3df3: Use locale modules by default in Vite dev servers and Vitest to avoid one HTTP request per message in large catalogs. Keep virtual modules for Vite builds, preserve explicit layout overrides, and retain generated TypeScript declarations for the default layouts.
+- 6e69650: Fix Vitest reusing stale cached transforms of rewritten message imports after `outputStructure` changes outside the Vite config file. The plugin now registers a Vitest cache key (`defineCacheKeyGenerator`) derived from the effective virtual output and its message ids.
+
 ## 3.2.2
 
 ### Patch Changes
