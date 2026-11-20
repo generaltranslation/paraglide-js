@@ -58,6 +58,8 @@ test.each([
   "const [first]=m",
   "m[`hel${suffix}`]()",
   "let hello; use(({hello}=m))",
+  "({x:m.hello=1}=other)",
+  "[m.hello=1]=other",
 ])(
   "ambiguous or mutable namespace usage keeps the barrel: %s",
   (expression) => {
@@ -129,6 +131,29 @@ export const output = [hello(), greet(), renamed(), read(), m[\`class\`]()];`,
     "hello",
     "class",
   ]);
+});
+
+test("messages read in default values are rewritten without the barrel", async () => {
+  const { original, rewritten } = await runBoth(
+    `import {m} from "./messages.js";
+const fromParam = ({text = m.hello()} = {}) => text;
+const {a = m.hello()} = {};
+const [b = m["greeting.hello"]()] = [];
+let c;
+({c = m.class()} = {});
+export const output = [fromParam(), fromParam({text: "x"}), a, b, c];`,
+    ["hello", "greeting.hello", "class"]
+  );
+  expect(rewritten).toEqual(original);
+  expect(original).toEqual(["hello", "x", "hello", "greeting.hello", "class"]);
+});
+
+test("a message in a default value keeps the barrel only when another read is unsafe", () => {
+  expect(
+    rewrite(
+      `import {m} from './messages.js'; const f = ({t = m.hello()} = {}) => t; ({x: m.hello = 1} = o);`
+    )
+  ).toBeNull();
 });
 
 test("a destructured __proto__ message reads the message twice", async () => {
