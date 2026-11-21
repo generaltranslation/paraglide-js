@@ -154,3 +154,49 @@ test("uses normalized effectiveRequestUrl for route strategy selection", async (
 
   expect(locale).toBe("fr");
 });
+
+test("evaluates custom strategies in order with built-in strategies", async () => {
+  const runtime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "fr", "de"],
+      },
+    }),
+    strategy: ["cookie", "custom-x", "baseLocale"],
+  });
+
+  runtime.defineCustomServerStrategy("custom-x", {
+    getLocale: async () => "fr",
+  });
+
+  const withCookie = new Request("http://example.com", {
+    headers: { cookie: "PARAGLIDE_LOCALE=de" },
+  });
+  expect(await runtime.extractLocaleFromRequestAsync(withCookie)).toBe("de");
+
+  const withoutCookie = new Request("http://example.com");
+  expect(await runtime.extractLocaleFromRequestAsync(withoutCookie)).toBe("fr");
+});
+
+test("url strategy wins over a later custom strategy", async () => {
+  const runtime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "fr", "de"],
+      },
+    }),
+    strategy: ["url", "custom-x", "baseLocale"],
+  });
+
+  runtime.defineCustomServerStrategy("custom-x", {
+    getLocale: () => "de",
+  });
+
+  expect(
+    await runtime.extractLocaleFromRequestAsync(
+      new Request("https://example.com/fr/page")
+    )
+  ).toBe("fr");
+});

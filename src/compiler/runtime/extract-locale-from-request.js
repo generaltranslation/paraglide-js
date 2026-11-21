@@ -2,7 +2,6 @@ import { toLocale } from "./check-locale.js";
 import { extractLocaleFromHeader } from "./extract-locale-from-header.js";
 import { extractLocaleFromUrl } from "./extract-locale-from-url.js";
 import { getStrategyForUrl } from "./route-strategy.js";
-import { isCustomStrategy } from "./strategy.js";
 import {
   baseLocale,
   cookieName,
@@ -63,38 +62,13 @@ export const extractLocaleFromRequestWithStrategies = (
   url = request.url
 ) => {
   const effectiveRequestUrl = resolveEffectiveRequestUrl(request, url);
-  /** @type {string|undefined} */
-  let locale;
 
   for (const strat of strategies) {
-    if (TREE_SHAKE_COOKIE_STRATEGY_USED && strat === "cookie") {
-      const cookiePrefix = cookieName + "=";
-
-      locale = request.headers
-        .get("cookie")
-        ?.split(";")
-        .map((c) => c.trim())
-        .find((c) => c.startsWith(cookiePrefix))
-        ?.slice(cookiePrefix.length);
-    } else if (TREE_SHAKE_URL_STRATEGY_USED && strat === "url") {
-      locale = extractLocaleFromUrl(effectiveRequestUrl);
-    } else if (
-      TREE_SHAKE_PREFERRED_LANGUAGE_STRATEGY_USED &&
-      strat === "preferredLanguage"
-    ) {
-      locale = extractLocaleFromHeader(request);
-    } else if (strat === "globalVariable") {
-      locale = _locale;
-    } else if (strat === "baseLocale") {
-      return baseLocale;
-    } else if (strat === "localStorage") {
-      continue;
-    } else if (isCustomStrategy(strat)) {
-      // Custom strategies are not supported in sync version
-      // Use extractLocaleFromRequestAsync for custom server strategies
-      continue;
-    }
-    const matchedLocale = toLocale(locale);
+    const matchedLocale = extractLocaleForStrategy(
+      request,
+      strat,
+      effectiveRequestUrl
+    );
     if (matchedLocale) {
       return matchedLocale;
     }
@@ -103,6 +77,39 @@ export const extractLocaleFromRequestWithStrategies = (
     "No locale found. There is an error in your strategy. Try adding 'baseLocale' as the very last strategy. Read more here https://paraglidejs.com/errors#no-locale-found"
   );
 };
+
+/**
+ * @param {Request} request
+ * @param {typeof strategy[number]} strat
+ * @param {URL} effectiveRequestUrl
+ * @returns {Locale | undefined}
+ */
+export function extractLocaleForStrategy(request, strat, effectiveRequestUrl) {
+  /** @type {string|undefined} */
+  let locale;
+  if (TREE_SHAKE_COOKIE_STRATEGY_USED && strat === "cookie") {
+    const cookiePrefix = cookieName + "=";
+
+    locale = request.headers
+      .get("cookie")
+      ?.split(";")
+      .map((c) => c.trim())
+      .find((c) => c.startsWith(cookiePrefix))
+      ?.slice(cookiePrefix.length);
+  } else if (TREE_SHAKE_URL_STRATEGY_USED && strat === "url") {
+    locale = extractLocaleFromUrl(effectiveRequestUrl);
+  } else if (
+    TREE_SHAKE_PREFERRED_LANGUAGE_STRATEGY_USED &&
+    strat === "preferredLanguage"
+  ) {
+    locale = extractLocaleFromHeader(request);
+  } else if (strat === "globalVariable") {
+    locale = _locale;
+  } else if (strat === "baseLocale") {
+    return baseLocale;
+  }
+  return toLocale(locale);
+}
 
 /**
  * @param {Request} request

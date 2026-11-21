@@ -1,7 +1,7 @@
 import { customServerStrategies, isCustomStrategy } from "./strategy.js";
 import { getStrategyForUrl } from "./route-strategy.js";
 import { toLocale } from "./check-locale.js";
-import { extractLocaleFromRequestWithStrategies } from "./extract-locale-from-request.js";
+import { extractLocaleForStrategy } from "./extract-locale-from-request.js";
 
 /**
  * Asynchronously extracts a locale from a request.
@@ -10,8 +10,8 @@ import { extractLocaleFromRequestWithStrategies } from "./extract-locale-from-re
  * `extractLocaleFromRequest`. Use this function when you have custom server strategies
  * that need to perform asynchronous operations (like database calls) in their getLocale method.
  *
- * The function first processes any custom server strategies asynchronously, then falls back
- * to the synchronous `extractLocaleFromRequest` for all other strategies.
+ * The function goes through the strategies in the order they are defined, awaiting
+ * custom server strategies and resolving built-in strategies like `extractLocaleFromRequest`.
  *
  * @see {@link https://github.com/opral/inlang-paraglide-js/issues/527#issuecomment-2978151022}
  *
@@ -35,36 +35,34 @@ import { extractLocaleFromRequestWithStrategies } from "./extract-locale-from-re
  * @returns {Promise<Locale>} The extracted locale.
  */
 export const extractLocaleFromRequestAsync = async (request, options = {}) => {
-  /** @type {string|undefined} */
-  let locale;
   const effectiveRequestUrl = resolveEffectiveRequestUrlFromRequestAsync(
     request,
     options.effectiveRequestUrl
   );
   const strategy = getStrategyForUrl(effectiveRequestUrl);
 
-  // Process custom strategies first, in order
   for (const strat of strategy) {
+    /** @type {Locale|undefined} */
+    let matchedLocale;
     if (isCustomStrategy(strat) && customServerStrategies.has(strat)) {
       const handler = customServerStrategies.get(strat);
-      if (handler) {
-        /** @type {string|undefined} */
-        locale = await handler.getLocale(request);
-      }
-
-      // If we got a valid locale from this custom strategy, use it
-      const matchedLocale = toLocale(locale);
-      if (matchedLocale) {
-        return matchedLocale;
-      }
+      matchedLocale = toLocale(
+        handler ? await handler.getLocale(request) : undefined
+      );
+    } else {
+      matchedLocale = extractLocaleForStrategy(
+        request,
+        strat,
+        effectiveRequestUrl
+      );
+    }
+    if (matchedLocale) {
+      return matchedLocale;
     }
   }
 
-  // If no custom strategy provided a valid locale, fall back to sync version
-  return extractLocaleFromRequestWithStrategies(
-    request,
-    strategy,
-    effectiveRequestUrl
+  throw new Error(
+    "No locale found. There is an error in your strategy. Try adding 'baseLocale' as the very last strategy. Read more here https://paraglidejs.com/errors#no-locale-found"
   );
 };
 

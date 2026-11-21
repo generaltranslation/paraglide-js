@@ -1790,7 +1790,7 @@ test.each([
   ["/fr/about/", "application/json", false, "en", 200],
   ["/fr/about/", "text/html", false, "en", 307],
   ["/fr/about", "text/html", true, "fr", 200],
-  ["/fr/about", "text/html", true, "en", 307],
+  ["/fr/about", "text/html", true, "en", 200],
 ] as const)(
   "navigation cache for %s with Accept %s, custom strategy=%s and preference=%s",
   async (path, accept, custom, preference, status) => {
@@ -1836,9 +1836,7 @@ test.each([
       );
       expect(response.status).toBe(status);
       expect(response.headers.get("Location")).toBe(
-        status === 307
-          ? `https://example.com${custom ? "/about" : "/fr/about"}`
-          : null
+        status === 307 ? "https://example.com/fr/about" : null
       );
       const fields = custom
         ? "Cookie, Accept-Language, Accept, Sec-Fetch-Dest"
@@ -1882,7 +1880,7 @@ test.each(["document", "navigation"] as const)(
       ({ locale }) => new Response(locale),
       { redirect }
     );
-    expect(await response.text()).toBe("en");
+    expect(await response.text()).toBe("fr");
     expect(response.headers.get("Vary")).toBe(
       redirect === "navigation"
         ? "Cookie, Accept-Language, Accept, Sec-Fetch-Dest"

@@ -246,7 +246,9 @@ ${injectCode("./exec-url-pattern.js", {
   privateExports: ["execUrlPattern"],
 })}
 
-${injectCode("./extract-locale-from-request.js")}
+${injectCode("./extract-locale-from-request.js", {
+  privateExports: ["extractLocaleForStrategy"],
+})}
 
 ${injectCode("./extract-locale-from-request-async.js")}
 
