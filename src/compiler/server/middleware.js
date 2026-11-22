@@ -119,7 +119,9 @@ export async function paraglideMiddleware(request, resolve, options) {
     effectiveRequestUrl: url,
   });
   const locale = decision.locale;
-  // Custom server strategies run before built-in strategies, regardless of order.
+  // Strategies run in order, but a custom server strategy can read any part of
+  // the request. Keep the full Vary whenever one is configured, even if it is
+  // listed after `url`.
   const hasCustomStrategy = strategy.some((strat) =>
     strat.startsWith("custom-")
   );
