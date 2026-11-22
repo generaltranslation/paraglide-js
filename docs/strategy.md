@@ -447,8 +447,8 @@ Custom strategies offer several advantages over the traditional `overwriteGetLoc
 
 - Custom strategies are processed in the order they appear in your `strategy` array
 - If a custom strategy returns `undefined`, the system falls back to the next strategy
-- Server-side: Custom strategies are checked first, then built-in strategies
-- Client-side: All strategies (custom and built-in) are processed in your defined order
+- All strategies (custom and built-in) are processed in your defined order, on both the server and the client
+- A custom strategy listed after a strategy that always resolves, such as `url` with the default URL patterns or `baseLocale`, never runs. To use it as a fallback, list it before those strategies. See "Strategy order matters" at the top of this page
 
 **Validation**:
 Custom strategy names must start with `custom-` followed by at least one character. The name part after `custom-` can contain any characters including hyphens, underscores, etc.
