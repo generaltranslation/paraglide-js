@@ -255,7 +255,11 @@ export function rewriteVirtualMessageImports(args: {
         }
         // Destructuring writes may nest the target below a pattern node.
         let ancestor: Node | undefined = member;
+        let child: Node | undefined;
         while (ancestor && ancestor !== statement) {
+          // A default value is an ordinary read, never a write target.
+          if (ancestor.type === "AssignmentPattern" && child === ancestor.right)
+            break;
           if (
             ancestor.type === "AssignmentPattern" ||
             ancestor.type === "ArrayPattern" ||
@@ -264,6 +268,7 @@ export function rewriteVirtualMessageImports(args: {
             unsafe = true;
             return;
           }
+          child = ancestor;
           ancestor = parents.get(ancestor);
         }
         references.push({ node: member, name });
