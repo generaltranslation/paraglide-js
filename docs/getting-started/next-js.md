@@ -28,4 +28,10 @@ Continue passing the resolved route locale with `m.example_message(inputs, { loc
 
 ## Translate your messages
 
-Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them automatically and keep them updated as your app changes, we recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=next-js). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.
+Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them, we recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=next-js), which the inlang CLI uses by default:
+
+```bash
+npx @inlang/cli machine translate --project ./project.inlang
+```
+
+See [Translating messages](https://paraglidejs.com/translating-messages) for sign-in, coding agents, CI and other options.
