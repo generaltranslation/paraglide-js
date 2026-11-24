@@ -56,7 +56,10 @@ export const maybeAddMachineTranslation: CliStep<
   else if (ctx.machineTranslation === "gt") setup = chosen ? "script" : "gt";
   else if (ctx.machineTranslation === true) setup = "script";
   else if (ctx.interactive === false) setup = "none";
-  else if (chosen) {
+  else if (chosen && (await hasScript(ctx.fs, ctx.packageJsonPath))) {
+    // Set up already, as when init runs again: nothing to ask.
+    setup = "script";
+  } else if (chosen) {
     // The project already has a provider; only the script is missing.
     setup = (await prompt("Add a machine-translate script?", {
       type: "confirm",
@@ -79,7 +82,7 @@ export const maybeAddMachineTranslation: CliStep<
           {
             label: "Another provider",
             value: "script",
-            hint: "community service, DeepL, Google or OpenAI; choose on the first run",
+            hint: "community service or other machine translation provider",
           },
           {
             label: "Skip",
@@ -175,6 +178,14 @@ async function providerChosen(
     // gt's file, which `init` can't read: leave the choice to the inlang CLI.
     return true;
   }
+}
+
+async function hasScript(
+  fs: typeof import("node:fs/promises"),
+  packageJsonPath: string
+): Promise<boolean> {
+  const pkg = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
+  return Boolean(pkg?.scripts?.[MACHINE_TRANSLATE_SCRIPT_NAME]);
 }
 
 /** The variables of a `.env` file: `NAME=value`, optionally quoted or exported. */

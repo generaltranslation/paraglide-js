@@ -147,6 +147,21 @@ test.each([
   }
 );
 
+test("a project that chose a provider and has the script isn't asked again", async () => {
+  const { setup, logged } = await run({
+    files: {
+      "/package.json": JSON.stringify({
+        scripts: { "machine-translate": "inlang machine translate" },
+      }),
+      "/.env.local": "INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n",
+    },
+  });
+  expect(utils.prompt).not.toHaveBeenCalled();
+  expect(utils.promptSelection).not.toHaveBeenCalled();
+  expect(setup).toBe("script");
+  expect(logged).toEqual([]);
+});
+
 test("a provider chosen in the shell counts too", async () => {
   process.env.GT_API_KEY = "k";
   vi.mocked(utils.prompt).mockResolvedValueOnce(false as never);
