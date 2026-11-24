@@ -74,6 +74,13 @@ npx @inlang/cli machine translate --project ./project.inlang --no-browser
 
 It prints a sign-in link and code for you to open. Once you sign in, it saves the key and translates. Later runs reuse the key in `.env.local` without signing in.
 
+The agent can't ask which General Translation project to use. If your project doesn't have a `gt.config.json` with a project ID yet, first do one of these:
+
+- Run `npx @inlang/cli machine translate --project ./project.inlang` once in your own terminal and choose or create the project there.
+- Set `GT_PROJECT_ID` in `.env.local` to a project ID from the [General Translation dashboard](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages).
+
+Otherwise, the command creates a project only if your account has none and belongs to one organization. If your account has projects or several organizations, it stops after sign-in and asks you to do one of the above.
+
 ### In CI
 
 Add two secrets: `GT_API_KEY`, an API key from the [General Translation dashboard](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages), and `GT_PROJECT_ID`, the ID in your committed `gt.config.json`. After installing dependencies, translate and check before your build:
