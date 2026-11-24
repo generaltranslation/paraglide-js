@@ -1,5 +1,11 @@
 # @inlang/paraglide-js-svelte
 
+## 1.0.6
+
+### Patch Changes
+
+- bdb4f36: License under MIT with copyright General Translation, Inc. The framework packages now include the `LICENSE` file in their npm package.
+
 ## 1.0.5
 
 ### Patch Changes

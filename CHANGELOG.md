@@ -1,5 +1,22 @@
 # @inlang/paraglide-js
 
+## 3.2.3
+
+### Patch Changes
+
+- 9ff2e5d: Evaluate custom server strategies in their configured order in `extractLocaleFromRequestAsync` and `paraglideMiddleware`. Before, a custom strategy always took precedence over built-in strategies listed before it, such as `url` or `cookie`.
+
+  To keep the old behaviour, list your custom strategy first. With the default URL patterns, `url` resolves a locale for every path, so a custom strategy listed after it never runs.
+
+- c90030f: Escape `${` in compiled messages when the `$` and `{` come from separate text parts, or from text on either side of markup that is stripped in string output. Before, a pattern like `cost $` followed by `{1 + 1}` compiled to a live template literal substitution.
+- edc2576: Don't reload Vite environments when the first virtual message output is published in `buildStart`. Vite buffered that `full-reload` and replayed it to the first browser that connected, so the first page opened after `vite dev` started reloaded itself. Replacing the virtual output and editing messages still reload.
+- 99a4a91: Apply the configured `trailingSlash` policy to the catch-all fast path of `localizeUrl` and `deLocalizeUrl`. Previously `localizeHref("/", { locale: "en" })` returned `/en/` with `trailingSlash: "never"` because the fast path returned before normalization.
+- a5af446: The README in the compiled output now recommends General Translation for translating messages, through the inlang CLI's machine translation (`npx @inlang/cli machine translate --no-browser`).
+- bdb4f36: License under MIT with copyright General Translation, Inc. The framework packages now include the `LICENSE` file in their npm package.
+- 05a3df3: Use locale modules by default in Vite dev servers and Vitest to avoid one HTTP request per message in large catalogs. Keep virtual modules for Vite builds, preserve explicit layout overrides, and retain generated TypeScript declarations for the default layouts.
+- ecb7914: Keep the virtual-modules optimization when a message is read in a destructuring default value, such as `let { text = m.hello() } = $props()` in Svelte 5 server output. Before, any `m.key` below an `AssignmentPattern` made the file fall back to importing the whole message barrel.
+- 6e69650: Fix Vitest reusing stale cached transforms of rewritten message imports after `outputStructure` changes outside the Vite config file. The plugin now registers a Vitest cache key (`defineCacheKeyGenerator`) derived from the effective virtual output and its message ids.
+
 ## 3.2.2
 
 ### Patch Changes
