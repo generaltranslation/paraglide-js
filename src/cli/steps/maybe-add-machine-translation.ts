@@ -32,6 +32,9 @@ const CHOOSES_PROVIDER =
  *   unless the project already chose one
  * - `none`: nothing
  */
+/** A script that runs the inlang CLI's `machine translate`. */
+const RUNS_INLANG_CLI = /\binlang\s+machine\s+translate\b/;
+
 export type MachineTranslationSetup = "gt" | "script" | "none";
 
 export const maybeAddMachineTranslation: CliStep<
@@ -49,49 +52,60 @@ export const maybeAddMachineTranslation: CliStep<
 > = async (ctx) => {
   // The inlang CLI reads its settings next to the project.
   const envDir = nodePath.dirname(nodePath.resolve(ctx.root, ctx.projectPath));
-  const chosen = await providerChosen(ctx.fs, envDir);
 
   let setup: MachineTranslationSetup;
   if (ctx.machineTranslation === false) setup = "none";
-  else if (ctx.machineTranslation === "gt") setup = chosen ? "script" : "gt";
   else if (ctx.machineTranslation === true) setup = "script";
-  else if (ctx.interactive === false) setup = "none";
-  else if (chosen && (await hasScript(ctx.fs, ctx.packageJsonPath))) {
-    // Set up already, as when init runs again: nothing to ask.
-    setup = "script";
-  } else if (chosen) {
-    // The project already has a provider; only the script is missing.
-    setup = (await prompt("Add a machine-translate script?", {
-      type: "confirm",
-      initial: true,
-    }))
-      ? "script"
-      : "none";
-  } else {
-    // Worded as the inlang CLI asks on its first run.
-    setup = await promptSelection<MachineTranslationSetup>(
-      "Which translation provider should this project use?",
-      {
-        initial: "gt",
-        options: [
-          {
-            label: "General Translation (recommended)",
-            value: "gt",
-            hint: "free to start; sign in on the first run",
-          },
-          {
-            label: "Another provider",
-            value: "script",
-            hint: "community service or other machine translation provider",
-          },
-          {
-            label: "Skip",
-            value: "none",
-            hint: "no machine-translate script",
-          },
-        ],
-      }
-    );
+  else if (ctx.machineTranslation === undefined && ctx.interactive === false)
+    setup = "none";
+  else {
+    const existing = await existingScript(ctx.fs, ctx.packageJsonPath);
+    if (existing !== undefined && !RUNS_INLANG_CLI.test(existing)) {
+      // Choosing a provider for the inlang CLI wouldn't change that command.
+      ctx.logger.info(
+        "Kept the machine-translate script in package.json, which doesn't run the inlang CLI."
+      );
+      return { ...ctx, machineTranslationSetup: "none" };
+    }
+    const chosen = await providerChosen(ctx.fs, envDir);
+    if (ctx.machineTranslation === "gt") setup = chosen ? "script" : "gt";
+    else if (chosen && existing !== undefined) {
+      // Set up already, as when init runs again: nothing to ask.
+      setup = "script";
+    } else if (chosen) {
+      // The project already has a provider; only the script is missing.
+      setup = (await prompt("Add a machine-translate script?", {
+        type: "confirm",
+        initial: true,
+      }))
+        ? "script"
+        : "none";
+    } else {
+      // Worded as the inlang CLI asks on its first run.
+      setup = await promptSelection<MachineTranslationSetup>(
+        "Which translation provider should this project use?",
+        {
+          initial: "gt",
+          options: [
+            {
+              label: "General Translation (recommended)",
+              value: "gt",
+              hint: "free to start; sign in on the first run",
+            },
+            {
+              label: "Another provider",
+              value: "script",
+              hint: "community service or other machine translation provider",
+            },
+            {
+              label: "Skip",
+              value: "none",
+              hint: "no machine-translate script",
+            },
+          ],
+        }
+      );
+    }
   }
 
   if (setup === "none") return { ...ctx, machineTranslationSetup: setup };
@@ -160,6 +174,19 @@ async function providerChosen(
   fs: typeof import("node:fs/promises"),
   dir: string
 ): Promise<boolean> {
+  try {
+    return await findProviderChoice(fs, dir);
+  } catch {
+    // A file init can't read, such as an unreadable .env.local: leave the
+    // choice to the inlang CLI, which reports it.
+    return true;
+  }
+}
+
+async function findProviderChoice(
+  fs: typeof import("node:fs/promises"),
+  dir: string
+): Promise<boolean> {
   const chooses = (variables: Record<string, string | undefined>) =>
     Object.entries(variables).some(
       ([name, value]) => CHOOSES_PROVIDER.test(name) && Boolean(value?.trim())
@@ -180,12 +207,14 @@ async function providerChosen(
   }
 }
 
-async function hasScript(
+/** The project's machine-translate script, if it has one. */
+async function existingScript(
   fs: typeof import("node:fs/promises"),
   packageJsonPath: string
-): Promise<boolean> {
+): Promise<string | undefined> {
   const pkg = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
-  return Boolean(pkg?.scripts?.[MACHINE_TRANSLATE_SCRIPT_NAME]);
+  const script = pkg?.scripts?.[MACHINE_TRANSLATE_SCRIPT_NAME];
+  return typeof script === "string" && script.trim() ? script : undefined;
 }
 
 /** The variables of a `.env` file: `NAME=value`, optionally quoted or exported. */

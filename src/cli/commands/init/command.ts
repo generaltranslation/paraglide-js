@@ -19,7 +19,6 @@ import { compile } from "../../../compiler/compile.js";
 import { maybeAddMachineTranslation } from "../../steps/maybe-add-machine-translation.js";
 import { addInlangCheck } from "../../steps/add-inlang-check.js";
 import { agentsMdSuggestion } from "../../steps/agents-md-suggestion.js";
-import { getNewProjectTemplate } from "../../defaults.js";
 
 import type { InitOptions } from "../../init-options.js";
 import {
@@ -201,6 +200,7 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
     );
     const settings = await ctx9.project.settings.get();
     const pattern = settings["plugin.inlang.messageFormat"]?.pathPattern;
+    // Known only for the inlang message format plugin.
     const pathPattern =
       typeof pattern === "string"
         ? nodePath
@@ -213,15 +213,18 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
             )
             .split(nodePath.sep)
             .join("/")
-        : getNewProjectTemplate()["plugin.inlang.messageFormat"].pathPattern;
+        : undefined;
     if (ctx9.machineTranslationSetup !== "none") {
       logger.info(
         machineTranslateNextStep({
           setup: ctx9.machineTranslationSetup,
-          sourceFile: toRelativeDisplayPath(
-            root,
-            pathPattern.replaceAll("{locale}", settings.baseLocale)
-          ),
+          sourceFile:
+            pathPattern &&
+            toRelativeDisplayPath(
+              root,
+              pathPattern.replaceAll("{locale}", settings.baseLocale)
+            ),
+          baseLocale: settings.baseLocale,
           targetLocales: settings.locales.filter(
             (locale) => locale !== settings.baseLocale
           ),
@@ -249,15 +252,21 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
  */
 export function machineTranslateNextStep(args: {
   setup: "gt" | "script";
-  sourceFile: string;
+  /** The base locale's message file, if init knows it. */
+  sourceFile: string | undefined;
+  baseLocale: string;
   targetLocales: string[];
 }): string {
   const into = args.targetLocales.length
     ? ` into ${args.targetLocales.join(", ")}`
     : "";
-  return args.setup === "gt"
-    ? `Next: add messages to ${args.sourceFile}, then run \`npm run machine-translate\` to translate them${into}. The first run opens your browser to sign in.`
-    : `Next: add messages to ${args.sourceFile}, then run \`npm run machine-translate\` to translate them${into}.`;
+  const where = args.sourceFile
+    ? `to ${args.sourceFile}`
+    : `for ${args.baseLocale}`;
+  return (
+    `Next: add messages ${where}, then run \`npm run machine-translate\` to translate them${into}.` +
+    (args.setup === "gt" ? " The first run opens your browser to sign in." : "")
+  );
 }
 
 const addParaglideJsToDevDependencies: CliStep<

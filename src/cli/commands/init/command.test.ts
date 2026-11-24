@@ -9,7 +9,11 @@ import { checkForUncommittedChanges } from "../../steps/check-for-uncomitted-cha
 import { fileURLToPath } from "node:url";
 import * as defaults from "../../defaults.js";
 import * as utils from "../../utils.js";
-import { createInitCommand, runInit } from "./command.js";
+import {
+  createInitCommand,
+  machineTranslateNextStep,
+  runInit,
+} from "./command.js";
 
 let root: string;
 beforeEach(async () => {
@@ -206,4 +210,17 @@ test("--machine-translation gt chooses General Translation and says what happens
     "Next: add messages to messages/en.json, then run `npm run machine-translate` to translate them into de. The first run opens your browser to sign in."
   );
   expect(printed).toContain("npm run machine-translate -- --no-browser");
+});
+
+test("the next step names the base locale when init doesn't know its message file", () => {
+  expect(
+    machineTranslateNextStep({
+      setup: "script",
+      sourceFile: undefined,
+      baseLocale: "en",
+      targetLocales: ["de", "fr"],
+    })
+  ).toBe(
+    "Next: add messages for en, then run `npm run machine-translate` to translate them into de, fr."
+  );
 });

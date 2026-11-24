@@ -40,6 +40,7 @@ async function run(
   });
   const logger = new Logger({ silent: true, prefix: false });
   const success = vi.spyOn(logger, "success");
+  const info = vi.spyOn(logger, "info");
   const warn = vi.spyOn(logger, "warn");
   const result = await maybeAddMachineTranslation({
     fs: fs.promises as unknown as typeof import("node:fs/promises"),
@@ -61,6 +62,7 @@ async function run(
     envLocal: await read("/.env.local"),
     gitignore: await read("/.gitignore"),
     logged: success.mock.calls.map(([message]) => message),
+    informed: info.mock.calls.map(([message]) => message),
     warned: warn.mock.calls.map(([message]) => String(message)),
   };
 }
@@ -220,4 +222,35 @@ test("parseEnv reads quoted, exported and commented values", () => {
       ].join("\n")
     )
   ).toEqual({ A: "1", B: "two words", C: "x", D: "4", E: "" });
+});
+
+test("an unreadable .env.local doesn't fail init when it needn't be read", async () => {
+  const files = { "/.env.local/not-a-file": "" };
+  expect((await run({ files, interactive: false })).setup).toBe("none");
+  expect(
+    (await run({ files, interactive: false, machineTranslation: false })).setup
+  ).toBe("none");
+});
+
+test("an unreadable .env.local leaves the provider to the inlang CLI", async () => {
+  vi.mocked(utils.prompt).mockResolvedValueOnce(true as never);
+  const { setup } = await run({ files: { "/.env.local/not-a-file": "" } });
+  expect(utils.promptSelection).not.toHaveBeenCalled();
+  expect(setup).toBe("script");
+});
+
+test("a machine-translate script that doesn't run the inlang CLI is kept, without a provider", async () => {
+  const pkg = { scripts: { "machine-translate": "my-translator --all" } };
+  const files = { "/package.json": JSON.stringify(pkg) };
+  for (const options of [{}, { machineTranslation: "gt" as const }]) {
+    const result = await run({ files, ...options });
+    expect(result.setup).toBe("none");
+    expect(result.pkg).toEqual(pkg);
+    expect(result.envLocal).toBeUndefined();
+    expect(result.informed).toEqual([
+      "Kept the machine-translate script in package.json, which doesn't run the inlang CLI.",
+    ]);
+  }
+  expect(utils.prompt).not.toHaveBeenCalled();
+  expect(utils.promptSelection).not.toHaveBeenCalled();
 });

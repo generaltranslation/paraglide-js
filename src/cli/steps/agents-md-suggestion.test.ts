@@ -67,3 +67,15 @@ test("the AGENTS.md suggestion tells agents how to translate with the provider i
     agentsMdSuggestion({ ...base, machineTranslation: "none" })
   ).not.toContain("machine-translate");
 });
+
+test("the AGENTS.md suggestion points to the settings when init doesn't know the message files", () => {
+  expect(
+    agentsMdSuggestion({
+      root: "/app",
+      projectPath: "./project.inlang",
+      outdir: "./src/paraglide",
+    })
+  ).toContain(
+    "- Edit messages in the files `project.inlang/settings.json` names. Never edit"
+  );
+});
