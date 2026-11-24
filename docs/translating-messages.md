@@ -57,16 +57,33 @@ These checks catch issues such as missing translations and variables (see [Check
 
 ### What gets translated
 
-- **Missing translations only.** A message that already has a translation in a locale keeps it, so your edits are never overwritten. When you change a source message, its existing translations stay as they are: delete the outdated translations and run the command again to translate them anew.
+- **Missing translations only.** A message that already has a translation in a locale keeps it, so your edits are never overwritten. This also means a changed source message keeps its old translations; see [After changing a source message](#after-changing-a-source-message).
 - **Placeholders and [markup](/markup)** are kept. A translation that drops or changes one isn't saved; the command lists it and exits with code 1.
 - **[Variants](/variants) such as plurals** get every form the target language needs: an English message with `one` and `other` gets `one`, `few`, `many` and `other` in Russian.
 - **Descriptions** of your messages are sent as context, and never end up in the translated text.
 
 Each locale is saved as soon as it's done, so a run that is stopped keeps the locales it finished.
 
+### After changing a source message
+
+The command doesn't notice that a source message changed: its translations in other locales keep the old wording, and `inlang check` still passes, because nothing is missing. To translate a changed message again:
+
+1. Delete the message's translations from the other locales' files, such as `messages/de.json`.
+2. Run `npx @inlang/cli machine translate --project ./project.inlang`.
+3. Review the new translations.
+
+A passing `inlang check` means translations are complete and keep their variables, not that they match your latest wording.
+
 ### With coding agents
 
-A coding agent can't use the browser sign-in. Have it run:
+A coding agent can't choose a General Translation project for you. If your project doesn't have a `gt.config.json` with a project ID yet, first do one of these:
+
+- Run `npx @inlang/cli machine translate --project ./project.inlang` once in your own terminal and choose or create the project there.
+- Set `GT_PROJECT_ID` in `.env.local` to a project ID from the [General Translation dashboard](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages).
+
+Without either, the command creates a project only if your account has none and belongs to one organization; otherwise it stops after sign-in.
+
+Then have the agent run:
 
 ```sh
 npx @inlang/cli machine translate --project ./project.inlang --no-browser
@@ -74,16 +91,9 @@ npx @inlang/cli machine translate --project ./project.inlang --no-browser
 
 It prints a sign-in link and code for you to open. Once you sign in, it saves the key and translates. Later runs reuse the key in `.env.local` without signing in.
 
-The agent can't ask which General Translation project to use. If your project doesn't have a `gt.config.json` with a project ID yet, first do one of these:
-
-- Run `npx @inlang/cli machine translate --project ./project.inlang` once in your own terminal and choose or create the project there.
-- Set `GT_PROJECT_ID` in `.env.local` to a project ID from the [General Translation dashboard](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages).
-
-Otherwise, the command creates a project only if your account has none and belongs to one organization. If your account has projects or several organizations, it stops after sign-in and asks you to do one of the above.
-
 ### In CI
 
-Add two secrets: `GT_API_KEY`, an API key from the [General Translation dashboard](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages), and `GT_PROJECT_ID`, the ID in your committed `gt.config.json`. After installing dependencies, translate and check before your build:
+Add two secrets: `GT_API_KEY`, an API key from the [General Translation dashboard](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages), and `GT_PROJECT_ID`, the ID in your committed `gt.config.json`. After installing dependencies, fill missing translations and check them before your build:
 
 ```yaml
 - run: npx @inlang/cli machine translate --project ./project.inlang
