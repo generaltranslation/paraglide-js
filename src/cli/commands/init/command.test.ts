@@ -183,3 +183,27 @@ test("init emits declarations without requiring or editing a tsconfig", async ()
     await readFile(join(root, "src/paraglide/runtime.d.ts"), "utf8")
   ).toContain("getLocale");
 });
+
+test("--machine-translation gt chooses General Translation and says what happens next", async () => {
+  for (const name of Object.keys(process.env))
+    if (/INLANG_|GT_/.test(name)) vi.stubEnv(name, "");
+  const info = vi.spyOn(Logger.prototype, "info");
+  const stdout = vi
+    .spyOn(process.stdout, "write")
+    .mockImplementation(() => true);
+  await runInit({ yes: true, machineTranslation: "gt", compile: false });
+  const printed = stdout.mock.calls.map(([chunk]) => String(chunk)).join("");
+  stdout.mockRestore();
+  const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+  expect(pkg.scripts["machine-translate"]).toBe(
+    "inlang machine translate --project project.inlang"
+  );
+  expect(await readFile(join(root, ".env.local"), "utf8")).toBe(
+    "INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n"
+  );
+  expect(await readFile(join(root, ".gitignore"), "utf8")).toBe(".env.local\n");
+  expect(info).toHaveBeenCalledWith(
+    "Next: add messages to messages/en.json, then run `npm run machine-translate` to translate them into de. The first run opens your browser to sign in."
+  );
+  expect(printed).toContain("npm run machine-translate -- --no-browser");
+});

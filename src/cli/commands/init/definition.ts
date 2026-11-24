@@ -29,7 +29,12 @@ export function createInitCommand() {
     .option("--no-check", "Skip adding inlang check")
     .option("--sherlock", "Add the editor recommendation")
     .option("--no-sherlock", "Skip the editor recommendation")
-    .option("--machine-translation", "Add a machine-translate script")
+    .addOption(
+      new Option(
+        "--machine-translation [provider]",
+        'Add a machine-translate script; pass "gt" to also choose General Translation'
+      ).choices(["gt"])
+    )
     .option("--no-machine-translation", "Skip the machine-translate script")
     .option(
       "--no-compile",

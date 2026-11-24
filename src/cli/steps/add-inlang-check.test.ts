@@ -39,7 +39,7 @@ test("adds @inlang/cli and a check:i18n script", async () => {
 
   expect(pkg.devDependencies).toEqual({
     vite: "^6.0.0",
-    "@inlang/cli": "^3.4.0",
+    "@inlang/cli": "^3.7.1",
   });
   expect(pkg.scripts).toEqual({
     build: "vite build",
@@ -52,7 +52,7 @@ test("adds @inlang/cli and a check:i18n script", async () => {
 test("adds devDependencies and scripts to a package.json without them", async () => {
   const { pkg } = await runAddInlangCheck({ name: "app" });
 
-  expect(pkg.devDependencies).toEqual({ "@inlang/cli": "^3.4.0" });
+  expect(pkg.devDependencies).toEqual({ "@inlang/cli": "^3.7.1" });
   expect(pkg.scripts).toEqual({
     "check:i18n": "inlang check --project ./project.inlang",
   });
@@ -91,9 +91,9 @@ test("adds only @inlang/cli when the check:i18n script exists", async () => {
     scripts: { "check:i18n": "my-own-check" },
   });
 
-  expect(pkg.devDependencies).toEqual({ "@inlang/cli": "^3.4.0" });
+  expect(pkg.devDependencies).toEqual({ "@inlang/cli": "^3.7.1" });
   expect(pkg.scripts).toEqual({ "check:i18n": "my-own-check" });
   expect(logged).toEqual([
-    "Added @inlang/cli ^3.4.0 to the devDependencies in package.json.",
+    "Added @inlang/cli ^3.7.1 to the devDependencies in package.json.",
   ]);
 });

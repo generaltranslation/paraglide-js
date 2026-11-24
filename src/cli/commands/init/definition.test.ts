@@ -66,6 +66,31 @@ test("help stays independent of init implementation and action preserves explici
   );
 });
 
+test("--machine-translation takes an optional provider", async () => {
+  await createInitCommand().parseAsync(
+    ["--yes", "--machine-translation", "gt"],
+    {
+      from: "user",
+    }
+  );
+  expect(implementation.runInit).toHaveBeenLastCalledWith(
+    expect.objectContaining({ machineTranslation: "gt" })
+  );
+  await createInitCommand().parseAsync(["--yes", "--no-machine-translation"], {
+    from: "user",
+  });
+  expect(implementation.runInit).toHaveBeenLastCalledWith(
+    expect.objectContaining({ machineTranslation: false })
+  );
+  const command = createInitCommand().exitOverride();
+  command.configureOutput({ writeErr: () => {} });
+  await expect(
+    command.parseAsync(["--yes", "--machine-translation", "deepl"], {
+      from: "user",
+    })
+  ).rejects.toThrow("Allowed choices are gt");
+});
+
 test.each([new Error("setup failed"), "setup string failure"])(
   "lazy init action preserves error reporting and exit status: %s",
   async (failure) => {

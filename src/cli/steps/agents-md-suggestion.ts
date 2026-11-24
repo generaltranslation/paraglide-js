@@ -1,4 +1,5 @@
 import { toRelativeDisplayPath } from "../utils.js";
+import type { MachineTranslationSetup } from "./maybe-add-machine-translation.js";
 
 /**
  * The localization section `init` suggests adding to AGENTS.md. `init` only
@@ -10,6 +11,8 @@ export function agentsMdSuggestion(args: {
   /** The message files, e.g. `./messages/{locale}.json`. */
   pathPattern: string;
   outdir: string;
+  /** What `init` set up for machine translation. */
+  machineTranslation?: MachineTranslationSetup;
 }): string {
   const projectPath = toRelativeDisplayPath(args.root, args.projectPath);
   const pathPattern = toRelativeDisplayPath(args.root, args.pathPattern);
@@ -21,5 +24,12 @@ export function agentsMdSuggestion(args: {
     "## Localization",
     `- Translations are an inlang project. Before localization work, read \`${projectPath}/README.md\`. It covers checks, machine translation and editors. It is git-ignored, so search tools may skip it.`,
     `- Edit messages in \`${pathPattern}\`. Never edit \`${outdir}/\`: Paraglide JS generates it.`,
+    ...(args.machineTranslation === "gt"
+      ? [
+          "- To fill missing translations, run `npm run machine-translate -- --no-browser`. The first time, it prints a General Translation sign-in link and code: give them to the user.",
+        ]
+      : args.machineTranslation === "script"
+        ? ["- To fill missing translations, run `npm run machine-translate`."]
+        : []),
   ].join("\n");
 }

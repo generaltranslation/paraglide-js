@@ -6,7 +6,11 @@ import { initializeInlangProject } from "../../steps/initialize-inlang-project.j
 import { maybeAddSherlock } from "../../steps/maybe-add-sherlock.js";
 import { promptForOutdir } from "../../steps/prompt-for-outdir.js";
 import { updatePackageJson } from "../../steps/update-package-json.js";
-import { shellArgument, type CliStep } from "../../utils.js";
+import {
+  shellArgument,
+  toRelativeDisplayPath,
+  type CliStep,
+} from "../../utils.js";
 import nodeFs from "node:fs";
 import { ENV_VARIABLES } from "../../../services/env-variables/index.js";
 import { detectBundler } from "../../steps/detect-bundler.js";
@@ -197,30 +201,63 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
     );
     const settings = await ctx9.project.settings.get();
     const pattern = settings["plugin.inlang.messageFormat"]?.pathPattern;
+    const pathPattern =
+      typeof pattern === "string"
+        ? nodePath
+            .relative(
+              root,
+              nodePath.resolve(
+                nodePath.dirname(nodePath.resolve(root, ctx9.projectPath)),
+                pattern
+              )
+            )
+            .split(nodePath.sep)
+            .join("/")
+        : getNewProjectTemplate()["plugin.inlang.messageFormat"].pathPattern;
+    if (ctx9.machineTranslationSetup !== "none") {
+      logger.info(
+        machineTranslateNextStep({
+          setup: ctx9.machineTranslationSetup,
+          sourceFile: toRelativeDisplayPath(
+            root,
+            pathPattern.replaceAll("{locale}", settings.baseLocale)
+          ),
+          targetLocales: settings.locales.filter(
+            (locale) => locale !== settings.baseLocale
+          ),
+        })
+      );
+    }
     process.stdout.write(
       agentsMdSuggestion({
         root,
         projectPath: ctx9.projectPath,
         outdir: ctx9.outdir,
-        pathPattern:
-          typeof pattern === "string"
-            ? nodePath
-                .relative(
-                  root,
-                  nodePath.resolve(
-                    nodePath.dirname(nodePath.resolve(root, ctx9.projectPath)),
-                    pattern
-                  )
-                )
-                .split(nodePath.sep)
-                .join("/")
-            : getNewProjectTemplate()["plugin.inlang.messageFormat"]
-                .pathPattern,
+        pathPattern,
+        machineTranslation: ctx9.machineTranslationSetup,
       }) + "\n"
     );
   } finally {
     await initialized.project.close();
   }
+}
+
+/**
+ * The step after `init` for a project with a machine-translate script: add
+ * messages, then translate them. With General Translation, it says the first
+ * run signs in, so the browser opening is no surprise.
+ */
+export function machineTranslateNextStep(args: {
+  setup: "gt" | "script";
+  sourceFile: string;
+  targetLocales: string[];
+}): string {
+  const into = args.targetLocales.length
+    ? ` into ${args.targetLocales.join(", ")}`
+    : "";
+  return args.setup === "gt"
+    ? `Next: add messages to ${args.sourceFile}, then run \`npm run machine-translate\` to translate them${into}. The first run opens your browser to sign in.`
+    : `Next: add messages to ${args.sourceFile}, then run \`npm run machine-translate\` to translate them${into}.`;
 }
 
 const addParaglideJsToDevDependencies: CliStep<
