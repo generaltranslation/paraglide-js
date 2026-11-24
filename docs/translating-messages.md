@@ -1,137 +1,111 @@
 ---
 title: Translating Messages
 "og:title": "Paraglide JS translation — General Translation, inlang CLI, and Fink"
-description: "Automatically translate Paraglide JS message files with General Translation and keep them updated in CI, or use machine translation from the inlang CLI, Fink, or manual edits."
+description: "Translate Paraglide JS message files with General Translation through the inlang CLI, in your terminal, with coding agents and in CI. Or review in Fink, or edit by hand."
 ---
 
 # Translating Messages
 
-We recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) to translate your Paraglide JS message files and keep them updated as your app changes.
+We recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages), the company that maintains Paraglide JS, to translate your message files. The [inlang CLI](https://inlang.com/m/2qj2w8pu/app-inlang-cli) offers it as its recommended provider: one command fills every missing translation in `messages/{locale}.json`, and Paraglide compiles the result into the same type-safe message functions you already use. Your translations stay in your repository.
 
-General Translation writes translations to files such as `messages/de.json`. Paraglide compiles those files into the same type-safe message functions you already use. You keep your Paraglide setup, and your translations stay in your repository.
+You can also translate without a General Translation account: the inlang CLI works with your own DeepL, Google or OpenAI key, or with the free community translation service. See [Other providers](#other-providers).
 
-Short UI messages can have more than one meaning. In a test of short UI messages, General Translation translated "Book" on a booking button as "Buchen" in German, where the inlang CLI's default service returned "Buch", a book you read.
-
-| Workflow                                                                     | When to use it                                                                |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| **[General Translation](#translate-with-general-translation) (recommended)** | Automatically translate UI messages and keep them updated as your app changes |
-| [inlang CLI](#translate-with-the-inlang-cli)                                 | Fill missing translations using a free community service                      |
-| [Fink](#review-with-translators)                                             | Have translators or reviewers edit messages through a browser                 |
-| [By hand](#translate-by-hand)                                                | Translate or adjust a small number of messages directly                       |
+| Workflow                                                                     | When to use it                                                     |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **[General Translation](#translate-with-general-translation) (recommended)** | Fill missing translations with the inlang CLI, locally or in CI    |
+| [Fink](#review-with-translators)                                             | Have translators or reviewers edit messages through a browser      |
+| [By hand](#translate-by-hand)                                                | Translate or adjust a small number of messages directly            |
+| [Other providers](#other-translation-options)                                | Use your own DeepL, Google or OpenAI key, or the community service |
 
 These workflows can be combined. For example, translate with General Translation, then review the results in Fink.
 
 ## Translate with General Translation
 
-You need a General Translation account. You can [get started for free](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages); see [pricing](https://generaltranslation.com/pricing) for usage charges.
+You need a General Translation account. You can [get started for free](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages); see [pricing](https://generaltranslation.com/pricing) for usage charges. The steps below need `@inlang/cli` 3.7.0 or later and Node.js 20.3 or later.
 
-### Supported message files
+### 1. Translate
 
-The steps below use the default inlang message format, with files at `messages/{locale}.json`.
+> [!TIP]
+> Commit your message files first, so you can review the translations as a diff.
 
-- **Supported:** messages with placeholders and [markup](/markup), nested message objects, and [variants](/variants) such as plurals.
-- **Plurals:** end each plural variant in your source messages with a `*` branch, such as `countPlural=*`, instead of `countPlural=other`. If a language uses a plural form your source messages do not have, such as the form French and Spanish use for large round numbers, Paraglide falls back to the `*` branch.
-
-### 1. Set up the CLI
-
-Install the CLI and initialize a translation project:
+In your project's root, run:
 
 ```sh
-npm install --save-dev gt
-npx gt init --no-react-setup --file-patterns "json=messages/[locale].json" --dev-credentials
+npx @inlang/cli machine translate --project ./project.inlang
 ```
 
-Follow the prompts to sign in and choose your languages. Use the same source locale as `baseLocale` in `project.inlang/settings.json`, and choose target locales from its `locales`. If your messages have plurals, leave out Russian, Ukrainian, Polish, Czech and Arabic for now; see [Limits](#limits).
+The first time, the command asks which translation provider the project should use. Choose **General Translation**. It signs you in through your browser, asks which of your General Translation projects to use or creates one, and then translates.
 
-The flags configure GT to translate your existing message files:
+It translates from `baseLocale` into every other locale in `project.inlang/settings.json`. To translate only some, add `--targetLocales de,fr`.
 
-- `--no-react-setup` leaves your app's code unchanged. If the wizard suggests installing `gt-react`, skip that step: Paraglide continues to handle your app's messages.
-- `--file-patterns` specifies where your message files live.
-- `--dev-credentials` creates the translation project and saves its ID to `.env.local`.
+Sign-in saves two files next to `project.inlang`:
 
-For coding agents: `gt init` needs a signed-in user. Run `npx gt login --no-browser` and ask the user to open the sign-in link it prints. Add `--json` to `gt init` for structured output and non-interactive behavior, and pass `--default-locale` and `--locales`. Reuse the project's existing GT project with `--project-id <id>` when one is already configured; otherwise, use `--create-project --org-id <id>` to create one. `gt init` lists any options it still needs.
+- `.env.local` gets a development key that can only translate. The command adds `.env.local` to `.gitignore` unless git already ignores it.
+- `gt.config.json` gets the project ID. Commit it, so teammates who sign in use the same project instead of creating their own.
 
-### 2. Configure your message files
+If your project has an older `@inlang/cli` in its `devDependencies`, `npx` runs that one: update it, or run `npx @inlang/cli@latest machine translate --project ./project.inlang`.
 
-Merge the `options` block below into the `gt.config.json` that `gt init` created. Keep its `defaultLocale`, `locales` and `files`.
+### 2. Review
 
-```json
-{
-  "defaultLocale": "en",
-  "locales": ["de", "fr"],
-  "files": {
-    "json": {
-      "include": ["messages/[locale].json"]
-    }
-  },
-  "options": {
-    "saveLocal": true,
-    "jsonSchema": {
-      "messages/*.json": {
-        "include": [
-          "$..[?(typeof @ === 'string' && @property !== '$schema' && !(typeof @property === 'number' && (@parentProperty === 'declarations' || @parentProperty === 'selectors')))]"
-        ]
-      }
-    }
-  }
-}
-```
-
-The `jsonSchema` rule selects the text of every message, including nested messages and each variant, for translation. It skips the `$schema` URL and the `declarations` and `selectors` lists of variants, so message structure stays unchanged.
-
-> [!IMPORTANT]
-> Keep this rule when using the inlang message format. Without it, declarations and selectors in [variants](/variants), such as `"input count"`, can be translated and prevent your project from compiling.
-
-With `saveLocal`, edits to supported message strings are kept on later runs; see [Limits](#limits) for target-language plural forms.
-
-### 3. Translate and review
-
-> [!WARNING]
-> Before your first translation, commit your message files. The first run rewrites target-locale files from your source messages, including translations already in those files. Review the diff and restore any existing translations you want to keep.
-
-Run:
-
-```sh
-npx gt translate
-```
-
-General Translation writes the translated files into your messages directory. Review the wording and run the translation checks:
+Review the wording and run the translation checks:
 
 ```sh
 npx @inlang/cli check --project ./project.inlang
 ```
 
-These checks catch issues such as missing translations and variables, and need `@inlang/cli` 3.4.0 or later (see [Checking translations](/checking-translations)). Review the translated text as well, especially short labels, product terminology, and important user flows.
+These checks catch issues such as missing translations and variables (see [Checking translations](/checking-translations)). Review the translated text as well, especially short labels, product terminology, and important user flows.
 
-Commit your message files and `gt-lock.json`. The lockfile records downloaded translations so `saveLocal` can identify your manual edits on later runs.
+### What gets translated
 
-### 4. Keep translations updated
+- **Missing translations only.** A message that already has a translation in a locale keeps it, so your edits are never overwritten. This also means a changed source message keeps its old translations; see [After changing a source message](#after-changing-a-source-message).
+- **Placeholders and [markup](/markup)** are kept. A translation that drops or changes one isn't saved; the command lists it and exits with code 1.
+- **[Variants](/variants) such as plurals** get every form the target language needs: an English message with `one` and `other` gets `one`, `few`, `many` and `other` in Russian.
+- **Descriptions** of your messages are sent as context, and never end up in the translated text.
 
-When you change your source messages, run:
+Each locale is saved as soon as it's done, so a run that is stopped keeps the locales it finished.
+
+### After changing a source message
+
+The command doesn't notice that a source message changed: its translations in other locales keep the old wording, and `inlang check` still passes, because nothing is missing. To translate a changed message again:
+
+1. Delete the message's translations from the other locales' files, such as `messages/de.json`.
+2. Run `npx @inlang/cli machine translate --project ./project.inlang`.
+3. Review the new translations.
+
+A passing `inlang check` means translations are complete and keep their variables, not that they match your latest wording.
+
+### With coding agents
+
+A coding agent can't choose a General Translation project for you. If your project doesn't have a `gt.config.json` with a project ID yet, first do one of these:
+
+- Run `npx @inlang/cli machine translate --project ./project.inlang` once in your own terminal and choose or create the project there.
+- Set `GT_PROJECT_ID` in `.env.local` to a project ID from the [General Translation dashboard](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages).
+
+Without either, the command creates a project only if your account has none and belongs to one organization; otherwise it stops after sign-in.
+
+Then have the agent run:
 
 ```sh
-npx gt translate
+npx @inlang/cli machine translate --project ./project.inlang --no-browser
 ```
 
-Changed source messages are translated again. With `saveLocal` enabled and `gt-lock.json` committed, the CLI can preserve your local edits between runs.
+It prints a sign-in link and code for you to open. Once you sign in, it saves the key and translates. Later runs reuse the key in `.env.local` without signing in.
 
-To automate translation in CI, add two secrets: `GT_API_KEY`, a server-side API key from the [General Translation dashboard](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages) with permission to upload files and enqueue translations (not the development key from `gt init`), and `GT_PROJECT_ID`, the project ID `gt init` saved in `.env.local`, whatever its variable name there.
+### In CI
 
-After installing dependencies, run translation and validation before your build:
+Add two secrets: `GT_API_KEY`, an API key from the [General Translation dashboard](https://dash.generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages), and `GT_PROJECT_ID`, the ID in your committed `gt.config.json`. After installing dependencies, fill missing translations and check them before your build:
 
 ```yaml
-- run: npx gt translate
+- run: npx @inlang/cli machine translate --project ./project.inlang
   env:
     GT_API_KEY: ${{ secrets.GT_API_KEY }}
     GT_PROJECT_ID: ${{ secrets.GT_PROJECT_ID }}
 - run: npx @inlang/cli check --project ./project.inlang
 ```
 
-Run this in a trusted workflow. Save updated message files and `gt-lock.json` together in a pull request so you can review the translations before deploying them.
+Run this in a trusted workflow, and save the updated message files in a pull request so you can review the translations before deploying them.
 
-### Limits
-
-Plural messages that need more forms in the target language than in your source language are not supported yet, for example English plurals translated into Russian, Ukrainian, Polish, Czech or Arabic, which use extra forms for everyday numbers. General Translation does not create those forms yet, and does not keep ones you add by hand, so affected plural messages use the wrong grammar for some numbers and fail `inlang check`. If your message files contain these plurals, leave the affected languages out of `locales` in `gt.config.json` and translate them another way. If your message files have no plurals, these languages work like any other.
+Because `gt.config.json` names a General Translation project, a run without the key, as in a pull request from a fork, fails instead of sending your messages to another service.
 
 ## Review with translators
 
@@ -139,21 +113,15 @@ Translators and reviewers can use [Fink](https://fink.inlang.com/docs/paraglide-
 
 ## Other translation options
 
-Paraglide compiles message files regardless of how they were translated. You can combine General Translation with manual editing or use another translation workflow.
+Paraglide compiles message files regardless of how they were translated.
 
-### Translate with the inlang CLI
+### Other providers
 
-The [inlang CLI](https://inlang.com/m/2qj2w8pu/app-inlang-cli) can fill missing translations using a free, community-operated service, without an account:
+The inlang CLI can also translate with your own DeepL, Google or OpenAI key; see [bring your own key](https://inlang.com/m/2qj2w8pu/app-inlang-cli/byok). Or choose the **community translation service** at the first run's question: it needs no account, but it's operated independently of inlang and its availability isn't guaranteed. Review the results before shipping.
 
-```sh
-npx @inlang/cli machine translate --project ./project.inlang
-```
+### The gt CLI
 
-The default service is operated independently of inlang, and its availability is not guaranteed.
-
-To use your own translation provider, see [bring your own key](https://inlang.com/m/2qj2w8pu/app-inlang-cli/byok).
-
-Review the results before shipping.
+General Translation's own CLI translates Paraglide message files too, and translates changed source messages again on each run; see [its Paraglide quickstart](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages). It needs extra configuration for the inlang message format, and doesn't support plurals that need more forms in the target language yet, such as English plurals translated into Russian or Polish.
 
 ### Translate by hand
 

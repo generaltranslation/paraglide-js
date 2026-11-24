@@ -35,7 +35,7 @@ npx @inlang/paraglide-js init
 | **Rich text / `<Trans>`** | ✅ Typed [markup adapter](https://paraglidejs.com/markup) | ✅ `<Trans>` component |
 | **Pluralization / ICU** | ✅ `Intl.PluralRules` + [variants](https://paraglidejs.com/variants); [ICU plugin](https://inlang.com/m/p7c8m1d2/plugin-inlang-icu-messageformat-1) | ✅ Mature |
 | **Runtime / CMS-driven keys** | 🟠 Best when keys are known at build time | ✅ Strong |
-| **Translation workflow** | [General Translation](/translating-messages) (recommended), the inlang CLI, or the Fink editor | JSON resources can be translated in any tool that reads them; [Locize](https://www.locize.com/) is i18next's commercial partner |
+| **Translation workflow** | [General Translation](/translating-messages) through the inlang CLI (recommended), or the Fink editor | JSON resources can be translated in any tool that reads them; [Locize](https://www.locize.com/) is i18next's commercial partner |
 | **Ecosystem maturity** | Newer, growing | ✅ Very mature, huge community |
 | **Frameworks** | React, Vite, TanStack Start, SvelteKit, React Router, Astro, Vue, Solid, vanilla | React (with wrappers for other frameworks) |
 

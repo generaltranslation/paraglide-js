@@ -238,7 +238,13 @@ setLocale("de"); // loads the German document
 
 ### Translate your messages
 
-Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them automatically and keep them updated as your app changes, we recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=readme&utm_content=quick-start). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.
+Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them, we recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=readme&utm_content=quick-start), which maintains Paraglide JS. Choose it when the inlang CLI asks for a translation provider:
+
+```bash
+npx @inlang/cli machine translate --project ./project.inlang
+```
+
+See [Translating messages](https://paraglidejs.com/translating-messages) for sign-in, coding agents, CI and other options.
 
 **[Full Getting Started Guide →](https://paraglidejs.com)**
 
@@ -399,7 +405,7 @@ Paraglide compiles messages from [inlang](https://github.com/opral/inlang), the 
 | [Fink](https://inlang.com/m/tdozzpar/app-inlang-finkLocalizationEditor) | Translation editor for non-developers            |
 | [Parrot](https://inlang.com/m/gkrpgoir/app-parrot-figmaPlugin)          | Manage translations in Figma                     |
 
-To translate your message files, we recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=readme&utm_content=ecosystem). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.
+To translate your message files, we recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=readme&utm_content=ecosystem), which maintains Paraglide JS, through the inlang CLI. See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.
 
 **[Explore the inlang ecosystem →](https://inlang.com/c/apps)**
 

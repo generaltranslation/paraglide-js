@@ -113,7 +113,13 @@ Tree-shaking depends on static references such as `m.greeting()`. Unrestricted d
 
 ## Translate your messages
 
-Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them automatically and keep them updated as your app changes, we recommend [General Translation](https://generaltranslation.com/docs/integrations/paraglide/quickstart?utm_source=paraglidejs&utm_medium=docs&utm_content=vite). See [Translating messages](https://paraglidejs.com/translating-messages) for setup and other options.
+Paraglide compiles whatever is in your message files, such as `messages/de.json`. To translate them, we recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=vite), which maintains Paraglide JS. Choose it when the inlang CLI asks for a translation provider:
+
+```bash
+npx @inlang/cli machine translate --project ./project.inlang
+```
+
+See [Translating messages](https://paraglidejs.com/translating-messages) for sign-in, coding agents, CI and other options.
 
 ## Advanced concepts
 
