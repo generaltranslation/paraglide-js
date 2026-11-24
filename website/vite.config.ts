@@ -133,7 +133,16 @@ export default defineConfig(({ mode, command }: ConfigEnv) => {
           enabled: true,
           host: siteUrl,
         },
-        pages: paraglideStaticPages().map((path) => ({ path })),
+        pages: [
+          ...paraglideStaticPages().map((path) => ({ path })),
+          // Static path discovery also finds the blog index route as `/blog/`.
+          // The blog is served at `/blog`, so skip the duplicate.
+          {
+            path: "/blog/",
+            prerender: { enabled: false },
+            sitemap: { exclude: true },
+          },
+        ],
       }),
       viteReact(),
     ].filter(Boolean),
