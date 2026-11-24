@@ -6,16 +6,23 @@ import { initializeInlangProject } from "../../steps/initialize-inlang-project.j
 import { maybeAddSherlock } from "../../steps/maybe-add-sherlock.js";
 import { promptForOutdir } from "../../steps/prompt-for-outdir.js";
 import { updatePackageJson } from "../../steps/update-package-json.js";
-import { shellArgument, type CliStep } from "../../utils.js";
+import {
+  messagePathFromRoot,
+  shellArgument,
+  type CliStep,
+} from "../../utils.js";
 import nodeFs from "node:fs";
 import { ENV_VARIABLES } from "../../../services/env-variables/index.js";
 import { detectBundler } from "../../steps/detect-bundler.js";
 import { addVitePlugin } from "../../steps/add-vite-plugin.js";
 import { compile } from "../../../compiler/compile.js";
-import { maybeAddMachineTranslation } from "../../steps/maybe-add-machine-translation.js";
+import { maybeAddTranslation } from "../../steps/maybe-add-translation.js";
 import { addInlangCheck } from "../../steps/add-inlang-check.js";
 import { agentsMdSuggestion } from "../../steps/agents-md-suggestion.js";
-import { getNewProjectTemplate } from "../../defaults.js";
+import {
+  getNewProjectTemplate,
+  TRANSLATING_MESSAGES_URL,
+} from "../../defaults.js";
 
 import type { InitOptions } from "../../init-options.js";
 import {
@@ -78,7 +85,7 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
       ? "./" + nodePath.relative(root, outdir).split(nodePath.sep).join("/")
       : undefined,
     sherlock: options.sherlock,
-    machineTranslation: options.machineTranslation,
+    translation: resolveTranslation(options),
   };
   await checkForUncommittedChanges(ctx);
   const ctx2 = await enforcePackageJsonExists(ctx);
@@ -169,7 +176,7 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
     else await addCompileStepToPackageJSON(ctx6);
     const ctx8 = await maybeAddSherlock(ctx6);
     if (options.check !== false) await addInlangCheck(ctx8);
-    const ctx9 = await maybeAddMachineTranslation(ctx8);
+    const ctx9 = await maybeAddTranslation(ctx8);
     await addMessageLint({ ...ctx9, lint });
     if (options.compile !== false) {
       try {
@@ -195,6 +202,14 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
       "Setup complete! Install dependencies, then run your build" +
         (lint !== "none" ? " and lint:i18n." : ".")
     );
+    if (ctx9.translation === "gt")
+      logger.info(
+        `To translate with General Translation, commit your message files, then run \`npx gt init --no-react-setup --dev-credentials\` to sign in and create a translation project, and \`npx gt translate\`. The first translation replaces existing translations in your target-locale files. See ${TRANSLATING_MESSAGES_URL}.`
+      );
+    else if (ctx9.translation === "none")
+      logger.info(
+        `To translate your messages, see ${TRANSLATING_MESSAGES_URL}.`
+      );
     const settings = await ctx9.project.settings.get();
     const pattern = settings["plugin.inlang.messageFormat"]?.pathPattern;
     process.stdout.write(
@@ -204,18 +219,14 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
         outdir: ctx9.outdir,
         pathPattern:
           typeof pattern === "string"
-            ? nodePath
-                .relative(
-                  root,
-                  nodePath.resolve(
-                    nodePath.dirname(nodePath.resolve(root, ctx9.projectPath)),
-                    pattern
-                  )
-                )
-                .split(nodePath.sep)
-                .join("/")
+            ? messagePathFromRoot({
+                root,
+                projectPath: ctx9.projectPath,
+                pathPattern: pattern,
+              })
             : getNewProjectTemplate()["plugin.inlang.messageFormat"]
                 .pathPattern,
+        translation: ctx9.translation,
       }) + "\n"
     );
   } finally {
@@ -306,3 +317,9 @@ const addCompileStepToPackageJSON: CliStep<
 
   return ctx;
 };
+
+function resolveTranslation(options: InitOptions) {
+  if (options.translation) return options.translation;
+  if (options.machineTranslation === undefined) return undefined;
+  return options.machineTranslation ? "inlang" : "none";
+}

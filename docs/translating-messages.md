@@ -107,6 +107,8 @@ Run this in a trusted workflow, and save the updated message files in a pull req
 
 Because `gt.config.json` names a General Translation project, a run without the key, as in a pull request from a fork, fails instead of sending your messages to another service.
 
+Paraglide `init --translation gt` checks for these plurals only when it creates `gt.config.json`. If you add plural messages or languages later, check them against this limit yourself.
+
 ## Review with translators
 
 Translators and reviewers can use [Fink](https://fink.inlang.com/docs/paraglide-js) to review General Translation's output or edit messages in the browser, and save changes to GitHub.
