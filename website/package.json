@@ -12,10 +12,10 @@
   "dependencies": {
     "@opral/markdown-wc": "0.8.1",
     "@tailwindcss/vite": "^4.0.6",
-    "@tanstack/react-router": "^1.132.0",
+    "@tanstack/react-router": "1.170.42",
     "@tanstack/react-router-ssr-query": "^1.131.7",
-    "@tanstack/react-start": "^1.132.0",
-    "@tanstack/router-plugin": "^1.132.0",
+    "@tanstack/react-start": "1.168.61",
+    "@tanstack/router-plugin": "1.168.43",
     "@vitejs/plugin-react": "^5.0.4",
     "posthog-js": "^1.447.9",
     "react": "^19.2.0",
