@@ -30,7 +30,10 @@
     {
       "source": "/index.md",
       "headers": [
-        { "key": "Link", "value": "<https://paraglidejs.com>; rel=\"canonical\"" }
+        {
+          "key": "Link",
+          "value": "<https://paraglidejs.com>; rel=\"canonical\""
+        }
       ]
     }
   ]
