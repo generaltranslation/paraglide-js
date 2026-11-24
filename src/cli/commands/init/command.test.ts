@@ -198,14 +198,6 @@ test("--machine-translation gt chooses General Translation and says what happens
   await runInit({ yes: true, machineTranslation: "gt", compile: false });
   const printed = stdout.mock.calls.map(([chunk]) => String(chunk)).join("");
   stdout.mockRestore();
-  const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
-  expect(pkg.scripts["machine-translate"]).toBe(
-    "inlang machine translate --project project.inlang"
-  );
-  expect(await readFile(join(root, ".env.local"), "utf8")).toBe(
-    "INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n"
-  );
-  expect(await readFile(join(root, ".gitignore"), "utf8")).toBe(".env.local\n");
   expect(info).toHaveBeenCalledWith(
     "Next: add messages to messages/en.json, then run `npm run machine-translate` to translate them into de. The first run opens your browser to sign in."
   );

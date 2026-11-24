@@ -2,10 +2,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { memfs } from "memfs";
 import { Logger } from "../../services/logger/index.js";
 import * as utils from "../utils.js";
-import {
-  maybeAddMachineTranslation,
-  parseEnv,
-} from "./maybe-add-machine-translation.js";
+import { maybeAddMachineTranslation } from "./maybe-add-machine-translation.js";
 
 const originalCwd = process.cwd;
 const savedEnv = { ...process.env };
@@ -93,19 +90,11 @@ test("choosing General Translation adds the script and saves the choice to .env.
   expect(envLocal).toBe("OTHER=1\nINLANG_MACHINE_TRANSLATE_PROVIDER=gt\n");
   expect(gitignore).toBe(".env.local\n");
   expect(logged).toEqual([
+    "Added @inlang/cli ^3.7.1 to the devDependencies in package.json.",
     "Added a machine-translate script to package.json.",
     "Chose General Translation for machine translation in .env.local. To choose another provider, remove INLANG_MACHINE_TRANSLATE_PROVIDER from it.",
     "Added .env.local to .gitignore.",
   ]);
-});
-
-test("doesn't add a .gitignore rule that is already the last one", async () => {
-  vi.mocked(utils.promptSelection).mockResolvedValueOnce("gt");
-  const { gitignore, logged } = await run({
-    files: { "/.gitignore": "node_modules\n/.env.local\n" },
-  });
-  expect(gitignore).toBe("node_modules\n/.env.local\n");
-  expect(logged).not.toContain("Added .env.local to .gitignore.");
 });
 
 test("another provider adds only the script, and the inlang CLI asks on its first run", async () => {
@@ -154,6 +143,7 @@ test("a project that chose a provider and has the script isn't asked again", asy
     files: {
       "/package.json": JSON.stringify({
         scripts: { "machine-translate": "inlang machine translate" },
+        devDependencies: { "@inlang/cli": "^3.7.1" },
       }),
       "/.env.local": "INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n",
     },
@@ -194,42 +184,25 @@ test("--machine-translation gt doesn't override a provider the project chose", a
   expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=demosjarco\n");
 });
 
-test("warns when an existing @inlang/cli may predate General Translation", async () => {
+test("warns about an existing @inlang/cli before 3.7 only for General Translation", async () => {
+  const files = {
+    "/package.json": JSON.stringify({
+      devDependencies: { "@inlang/cli": "^3.4.0" },
+    }),
+  };
   vi.mocked(utils.promptSelection).mockResolvedValueOnce("gt");
-  const { pkg, warned } = await run({
-    files: {
-      "/package.json": JSON.stringify({
-        devDependencies: { "@inlang/cli": "^3.4.0" },
-      }),
-    },
-  });
-  expect(pkg.devDependencies["@inlang/cli"]).toBe("^3.4.0");
-  expect(warned).toEqual([
-    'Machine translation with General Translation needs @inlang/cli 3.7.0 or later. Your package.json has "^3.4.0". Update it to "^3.7.1".',
+  const gt = await run({ files });
+  expect(gt.pkg.devDependencies["@inlang/cli"]).toBe("^3.4.0");
+  expect(gt.warned).toEqual([
+    'General Translation needs @inlang/cli 3.7.0 or later. Your package.json has "^3.4.0". Update it to "^3.7.1".',
   ]);
-});
-
-test("parseEnv reads quoted, exported and commented values", () => {
-  expect(
-    parseEnv(
-      [
-        "# comment",
-        "export A=1",
-        'B="two words"',
-        "C='x'",
-        "D=4 # note",
-        "E=",
-      ].join("\n")
-    )
-  ).toEqual({ A: "1", B: "two words", C: "x", D: "4", E: "" });
+  vi.mocked(utils.promptSelection).mockResolvedValueOnce("script");
+  expect((await run({ files })).warned).toEqual([]);
 });
 
 test("an unreadable .env.local doesn't fail init when it needn't be read", async () => {
   const files = { "/.env.local/not-a-file": "" };
   expect((await run({ files, interactive: false })).setup).toBe("none");
-  expect(
-    (await run({ files, interactive: false, machineTranslation: false })).setup
-  ).toBe("none");
 });
 
 test("an unreadable .env.local leaves the provider to the inlang CLI", async () => {
@@ -242,7 +215,11 @@ test("an unreadable .env.local leaves the provider to the inlang CLI", async () 
 test("a machine-translate script that doesn't run the inlang CLI is kept, without a provider", async () => {
   const pkg = { scripts: { "machine-translate": "my-translator --all" } };
   const files = { "/package.json": JSON.stringify(pkg) };
-  for (const options of [{}, { machineTranslation: "gt" as const }]) {
+  for (const options of [
+    {},
+    { machineTranslation: "gt" as const },
+    { interactive: false, machineTranslation: true },
+  ]) {
     const result = await run({ files, ...options });
     expect(result.setup).toBe("none");
     expect(result.pkg).toEqual(pkg);

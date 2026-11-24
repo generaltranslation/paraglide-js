@@ -16,7 +16,10 @@ import { ENV_VARIABLES } from "../../../services/env-variables/index.js";
 import { detectBundler } from "../../steps/detect-bundler.js";
 import { addVitePlugin } from "../../steps/add-vite-plugin.js";
 import { compile } from "../../../compiler/compile.js";
-import { maybeAddMachineTranslation } from "../../steps/maybe-add-machine-translation.js";
+import {
+  MACHINE_TRANSLATE_SCRIPT_NAME,
+  maybeAddMachineTranslation,
+} from "../../steps/maybe-add-machine-translation.js";
 import { addInlangCheck } from "../../steps/add-inlang-check.js";
 import { agentsMdSuggestion } from "../../steps/agents-md-suggestion.js";
 
@@ -264,7 +267,7 @@ export function machineTranslateNextStep(args: {
     ? `to ${args.sourceFile}`
     : `for ${args.baseLocale}`;
   return (
-    `Next: add messages ${where}, then run \`npm run machine-translate\` to translate them${into}.` +
+    `Next: add messages ${where}, then run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}\` to translate them${into}.` +
     (args.setup === "gt" ? " The first run opens your browser to sign in." : "")
   );
 }

@@ -12,6 +12,8 @@ import { updatePackageJson } from "./update-package-json.js";
  */
 export const INLANG_CLI_VERSION_RANGE = "^3.7.1";
 
+export const INLANG_CLI_PACKAGE = "@inlang/cli";
+
 export const CHECK_SCRIPT_NAME = "check:i18n";
 
 /**
@@ -36,10 +38,10 @@ export const addInlangCheck: CliStep<
 
   await updatePackageJson({
     devDependencies: async (devDeps) => {
-      existingCli = devDeps["@inlang/cli"];
+      existingCli = devDeps[INLANG_CLI_PACKAGE];
       if (existingCli !== undefined) return devDeps;
       addedCli = true;
-      return { ...devDeps, "@inlang/cli": INLANG_CLI_VERSION_RANGE };
+      return { ...devDeps, [INLANG_CLI_PACKAGE]: INLANG_CLI_VERSION_RANGE };
     },
     scripts: async (scripts) => {
       if (scripts[CHECK_SCRIPT_NAME] !== undefined) return scripts;
@@ -61,7 +63,10 @@ export const addInlangCheck: CliStep<
       `Added a ${CHECK_SCRIPT_NAME} script that checks the translations to package.json.`
     );
   }
-  if (existingCli !== undefined && mayBeOlderThan(existingCli, 3, 4)) {
+  if (
+    existingCli !== undefined &&
+    mayBeOlderThan(existingCli, { major: 3, minor: 4 })
+  ) {
     ctx.logger.warn(
       `\`inlang check\` needs @inlang/cli 3.4.0 or later. Your package.json has "${existingCli}". Update it to "${INLANG_CLI_VERSION_RANGE}".`
     );
@@ -77,8 +82,7 @@ export const addInlangCheck: CliStep<
  */
 export function mayBeOlderThan(
   range: string,
-  major: number,
-  minor: number
+  { major, minor }: { major: number; minor: number }
 ): boolean {
   const match = range.match(/(\d+)\.(\d+)/);
   if (!match) return false;

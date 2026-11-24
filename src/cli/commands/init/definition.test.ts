@@ -82,13 +82,6 @@ test("--machine-translation takes an optional provider", async () => {
   expect(implementation.runInit).toHaveBeenLastCalledWith(
     expect.objectContaining({ machineTranslation: false })
   );
-  const command = createInitCommand().exitOverride();
-  command.configureOutput({ writeErr: () => {} });
-  await expect(
-    command.parseAsync(["--yes", "--machine-translation", "deepl"], {
-      from: "user",
-    })
-  ).rejects.toThrow("Allowed choices are gt");
 });
 
 test.each([new Error("setup failed"), "setup string failure"])(

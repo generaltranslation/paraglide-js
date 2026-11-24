@@ -1,5 +1,8 @@
 import { toRelativeDisplayPath } from "../utils.js";
-import type { MachineTranslationSetup } from "./maybe-add-machine-translation.js";
+import {
+  MACHINE_TRANSLATE_SCRIPT_NAME,
+  type MachineTranslationSetup,
+} from "./maybe-add-machine-translation.js";
 
 /**
  * The localization section `init` suggests adding to AGENTS.md. `init` only
@@ -28,10 +31,12 @@ export function agentsMdSuggestion(args: {
     `- Edit messages in ${messages}. Never edit \`${outdir}/\`: Paraglide JS generates it.`,
     ...(args.machineTranslation === "gt"
       ? [
-          "- To fill missing translations, run `npm run machine-translate -- --no-browser`. The first time, it prints a General Translation sign-in link and code: give them to the user.",
+          `- To fill missing translations, run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME} -- --no-browser\`. The first time, it prints a General Translation sign-in link and code: give them to the user.`,
         ]
       : args.machineTranslation === "script"
-        ? ["- To fill missing translations, run `npm run machine-translate`."]
+        ? [
+            `- To fill missing translations, run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}\`.`,
+          ]
         : []),
   ].join("\n");
 }
