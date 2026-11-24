@@ -6,7 +6,7 @@ description: "Translate Paraglide JS message files with General Translation thro
 
 # Translating Messages
 
-We recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages), the company that maintains Paraglide JS, to translate your message files. The [inlang CLI](https://inlang.com/m/2qj2w8pu/app-inlang-cli) uses it by default: one command fills every missing translation in `messages/{locale}.json`, and Paraglide compiles the result into the same type-safe message functions you already use. Your translations stay in your repository.
+We recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=translating-messages), the company that maintains Paraglide JS, to translate your message files. The [inlang CLI](https://inlang.com/m/2qj2w8pu/app-inlang-cli) offers it as its recommended provider: one command fills every missing translation in `messages/{locale}.json`, and Paraglide compiles the result into the same type-safe message functions you already use. Your translations stay in your repository.
 
 You can also translate without a General Translation account: the inlang CLI works with your own DeepL, Google or OpenAI key, or with the free community translation service. See [Other providers](#other-providers).
 

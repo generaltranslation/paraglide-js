@@ -19,7 +19,7 @@ const translateMessagesOutro = (content: string) =>
   [
     "## Translate your messages",
     "",
-    `Paraglide compiles whatever is in your message files, such as \`messages/de.json\`. To translate them, we recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=${content}), which maintains Paraglide JS. The inlang CLI uses it by default:`,
+    `Paraglide compiles whatever is in your message files, such as \`messages/de.json\`. To translate them, we recommend [General Translation](https://generaltranslation.com/?utm_source=paraglidejs&utm_medium=docs&utm_content=${content}), which maintains Paraglide JS. Choose it when the inlang CLI asks for a translation provider:`,
     "",
     "```bash",
     "npx @inlang/cli machine translate --project ./project.inlang",
