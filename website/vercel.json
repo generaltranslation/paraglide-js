@@ -1,0 +1,37 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npx -y pnpm@10.23.0 install --frozen-lockfile",
+  "buildCommand": "npx -y pnpm@10.23.0 build",
+  "outputDirectory": "dist/client",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/ingest/static/:path*",
+      "destination": "https://us-assets.i.posthog.com/static/:path*"
+    },
+    {
+      "source": "/ingest/:path*",
+      "destination": "https://us.i.posthog.com/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/:page.md",
+      "headers": [
+        { "key": "Content-Type", "value": "text/markdown; charset=utf-8" },
+        {
+          "key": "Link",
+          "value": "<https://paraglidejs.com/:page>; rel=\"canonical\""
+        }
+      ]
+    },
+    {
+      "source": "/index.md",
+      "headers": [
+        { "key": "Link", "value": "<https://paraglidejs.com>; rel=\"canonical\"" }
+      ]
+    }
+  ]
+}
