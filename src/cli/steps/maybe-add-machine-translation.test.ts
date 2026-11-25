@@ -68,6 +68,7 @@ async function run(
       .catch(() => undefined);
   return {
     setup: result.machineTranslationSetup,
+    provider: result.machineTranslationProvider,
     pkg: JSON.parse((await read("/package.json"))!),
     envLocal: await read("/.env.local"),
     gitignore: await read("/.gitignore"),
@@ -112,8 +113,9 @@ test("choosing General Translation adds the script and saves the choice to .env.
 
 test("another provider adds only the script, and the inlang CLI asks on its first run", async () => {
   vi.mocked(utils.promptSelection).mockResolvedValueOnce("script");
-  const { setup, pkg, envLocal } = await run();
+  const { setup, provider, pkg, envLocal } = await run();
   expect(setup).toBe("script");
+  expect(provider).toBe("unchosen");
   expect(pkg.scripts["machine-translate"]).toBeDefined();
   expect(envLocal).toBeUndefined();
 });
@@ -151,8 +153,8 @@ test.each([
   }
 );
 
-test("a project that chose a provider and has the script isn't asked again", async () => {
-  const { setup, logged } = await run({
+test("a project that chose General Translation and has the script isn't asked again", async () => {
+  const { setup, provider, logged } = await run({
     files: {
       "/package.json": JSON.stringify({
         scripts: { "machine-translate": "inlang machine translate" },
@@ -164,6 +166,7 @@ test("a project that chose a provider and has the script isn't asked again", asy
   expect(utils.prompt).not.toHaveBeenCalled();
   expect(utils.promptSelection).not.toHaveBeenCalled();
   expect(setup).toBe("script");
+  expect(provider).toBe("gt");
   expect(logged).toEqual([]);
 });
 
@@ -188,12 +191,13 @@ test("without a terminal, nothing is set up unless a flag asks", async () => {
 });
 
 test("--machine-translation gt doesn't override a provider the project chose", async () => {
-  const { setup, envLocal } = await run({
+  const { setup, provider, envLocal } = await run({
     interactive: false,
     machineTranslation: "gt",
     files: { "/.env.local": "INLANG_MACHINE_TRANSLATE_PROVIDER=demosjarco\n" },
   });
   expect(setup).toBe("script");
+  expect(provider).toBe("other");
   expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=demosjarco\n");
 });
 
@@ -218,11 +222,24 @@ test("an unreadable .env.local doesn't fail init when it needn't be read", async
   expect((await run({ files, interactive: false })).setup).toBe("none");
 });
 
-test("an unreadable .env.local leaves the provider to the inlang CLI", async () => {
-  vi.mocked(utils.prompt).mockResolvedValueOnce(true as never);
-  const { setup } = await run({ files: { "/.env.local/not-a-file": "" } });
-  expect(utils.promptSelection).not.toHaveBeenCalled();
-  expect(setup).toBe("script");
+test("an unreadable .env.local or gt.config.json leaves the provider to the inlang CLI, with a warning", async () => {
+  for (const [file, files] of [
+    [".env.local", { "/.env.local/not-a-file": "" }],
+    ["gt.config.json", { "/gt.config.json": "{" }],
+  ] as const) {
+    const { setup, envLocal, warned } = await run({
+      files,
+      interactive: false,
+      machineTranslation: "gt",
+    });
+    expect(setup).toBe("script");
+    expect(envLocal).toBeUndefined();
+    expect(warned).toEqual([
+      expect.stringContaining(
+        `Couldn't read ${file}, so init left the machine translation provider to the inlang CLI`
+      ),
+    ]);
+  }
 });
 
 test("a machine-translate script that doesn't run the inlang CLI is kept, without a provider", async () => {
@@ -271,4 +288,70 @@ test("a script that runs the inlang CLI through npx counts as the inlang CLI", a
   expect(setup).toBe("gt");
   expect(pkg.scripts["machine-translate"]).toBe(script);
   expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n");
+});
+
+test("warns about an @inlang/cli version before 3.7 pinned in the script", async () => {
+  const { setup, warned } = await run({
+    interactive: false,
+    machineTranslation: "gt",
+    files: {
+      "/package.json": JSON.stringify({
+        scripts: {
+          "machine-translate": "npx @inlang/cli@3.4.0 machine translate",
+        },
+        devDependencies: { "@inlang/cli": "^3.7.1" },
+      }),
+    },
+  });
+  expect(setup).toBe("gt");
+  expect(warned).toEqual([
+    'General Translation needs @inlang/cli 3.7.0 or later. Your machine-translate script has "3.4.0". Update it to "^3.7.1".',
+  ]);
+});
+
+test("a symlinked .env.local is left alone", async () => {
+  const { fs } = memfs({
+    "/package.json": "{}",
+    "/shared/.env": "OTHER=1\n",
+  });
+  fs.symlinkSync("/shared/.env", "/.env.local");
+  const logger = new Logger({ silent: true, prefix: false });
+  const warn = vi.spyOn(logger, "warn");
+  const result = await maybeAddMachineTranslation({
+    fs: fs.promises as unknown as typeof import("node:fs/promises"),
+    logger,
+    projectPath: "./project.inlang",
+    root: "/",
+    packageJsonPath: "/package.json",
+    interactive: false,
+    machineTranslation: "gt",
+  });
+  expect(result.machineTranslationSetup).toBe("script");
+  expect(result.machineTranslationProvider).toBe("unchosen");
+  expect(String(fs.readFileSync("/shared/.env"))).toBe("OTHER=1\n");
+  expect(warn).toHaveBeenCalledWith(
+    "Didn't choose General Translation: .env.local is a symbolic link, which init doesn't change. The inlang CLI asks for a provider on its first run."
+  );
+});
+
+test("a machine-translate script added while init asks is kept", async () => {
+  const { fs } = memfs({ "/package.json": "{}" });
+  vi.mocked(utils.promptSelection).mockImplementationOnce(async () => {
+    fs.writeFileSync(
+      "/package.json",
+      JSON.stringify({ scripts: { "machine-translate": "my-translator" } })
+    );
+    return "script";
+  });
+  await maybeAddMachineTranslation({
+    fs: fs.promises as unknown as typeof import("node:fs/promises"),
+    logger: new Logger({ silent: true, prefix: false }),
+    projectPath: "./project.inlang",
+    root: "/",
+    packageJsonPath: "/package.json",
+    interactive: true,
+  });
+  expect(JSON.parse(String(fs.readFileSync("/package.json"))).scripts).toEqual({
+    "machine-translate": "my-translator",
+  });
 });

@@ -1,7 +1,7 @@
 import { toRelativeDisplayPath } from "../utils.js";
 import {
   MACHINE_TRANSLATE_SCRIPT_NAME,
-  type MachineTranslationSetup,
+  type MachineTranslationProvider,
 } from "./maybe-add-machine-translation.js";
 
 /**
@@ -14,8 +14,8 @@ export function agentsMdSuggestion(args: {
   /** The message files, e.g. `./messages/{locale}.json`, if init knows them. */
   pathPattern?: string;
   outdir: string;
-  /** What `init` set up for machine translation. */
-  machineTranslation?: MachineTranslationSetup;
+  /** The machine-translate script's provider, if there is a script. */
+  machineTranslation?: MachineTranslationProvider;
 }): string {
   const projectPath = toRelativeDisplayPath(args.root, args.projectPath);
   const messages = args.pathPattern
@@ -33,10 +33,14 @@ export function agentsMdSuggestion(args: {
       ? [
           `- To fill missing translations, run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME} -- --no-browser\`. The first time, it prints a General Translation sign-in link and code: give them to the user.`,
         ]
-      : args.machineTranslation === "script"
+      : args.machineTranslation === "other"
         ? [
             `- To fill missing translations, run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}\`.`,
           ]
-        : []),
+        : args.machineTranslation === "unchosen"
+          ? [
+              `- To fill missing translations, run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}\`. No provider is chosen yet: before the first run, ask the user to run it in their terminal and choose one.`,
+            ]
+          : []),
   ].join("\n");
 }

@@ -20,20 +20,20 @@ const PROVIDER_ENV = "INLANG_MACHINE_TRANSLATE_PROVIDER";
 
 const ENV_LOCAL = ".env.local";
 
-/**
- * Variables that choose a provider for the inlang CLI's `machine translate`:
- * the provider setting, the bring-your-own keys and General Translation's key
- * and project ID (`GT_API_KEY`, `VITE_GT_DEV_API_KEY`, `GT_PROJECT_ID`, ...).
- */
-const CHOOSES_PROVIDER =
-  /^(?:INLANG_MACHINE_TRANSLATE_PROVIDER|INLANG_GOOGLE_TRANSLATE_API_KEY|INLANG_DEEPL_API_KEY|INLANG_OPENAI_API_KEY|GT_API_KEY|(?:\w*_)?GT_DEV_API_KEY|(?:\w*_)?GT_PROJECT_ID)$/;
+/** The bring-your-own keys, which the inlang CLI prefers to General Translation. */
+const OWN_KEY =
+  /^(?:INLANG_GOOGLE_TRANSLATE_API_KEY|INLANG_DEEPL_API_KEY|INLANG_OPENAI_API_KEY)$/;
+
+/** General Translation's key and project ID (`GT_API_KEY`, `VITE_GT_DEV_API_KEY`, ...). */
+const GT_CREDENTIAL =
+  /^(?:GT_API_KEY|(?:\w*_)?GT_DEV_API_KEY|(?:\w*_)?GT_PROJECT_ID)$/;
 
 /**
  * A script that runs the inlang CLI's `machine translate`: `inlang ...`, or
- * `npx @inlang/cli[@version] ...` as the docs show.
+ * `npx @inlang/cli[@version] ...` as the docs show. Captures the version.
  */
 const RUNS_INLANG_CLI =
-  /(?:\binlang|@inlang\/cli(?:@\S+)?)\s+machine\s+translate\b/;
+  /(?:\binlang|@inlang\/cli(?:@(\S+))?)\s+machine\s+translate\b/;
 
 /**
  * What `init` set up for machine translation:
@@ -43,6 +43,13 @@ const RUNS_INLANG_CLI =
  * - `none`: nothing
  */
 export type MachineTranslationSetup = "gt" | "script" | "none";
+
+/**
+ * The provider the machine-translate script uses: General Translation,
+ * another one the project chose, or none yet, so the inlang CLI asks on its
+ * first run in a terminal and uses the community service without one.
+ */
+export type MachineTranslationProvider = "gt" | "other" | "unchosen";
 
 export const maybeAddMachineTranslation: CliStep<
   {
@@ -55,12 +62,16 @@ export const maybeAddMachineTranslation: CliStep<
     /** `true` adds the script, `"gt"` also chooses General Translation. */
     machineTranslation?: boolean | "gt";
   },
-  { machineTranslationSetup: MachineTranslationSetup }
+  {
+    machineTranslationSetup: MachineTranslationSetup;
+    /** Undefined without a script. */
+    machineTranslationProvider: MachineTranslationProvider | undefined;
+  }
 > = async (ctx) => {
-  const done = (machineTranslationSetup: MachineTranslationSetup) => ({
-    ...ctx,
-    machineTranslationSetup,
-  });
+  const done = (
+    machineTranslationSetup: MachineTranslationSetup,
+    machineTranslationProvider?: MachineTranslationProvider
+  ) => ({ ...ctx, machineTranslationSetup, machineTranslationProvider });
   if (
     ctx.machineTranslation === false ||
     (ctx.machineTranslation === undefined && ctx.interactive === false)
@@ -70,7 +81,8 @@ export const maybeAddMachineTranslation: CliStep<
   const pkg = JSON.parse(await ctx.fs.readFile(ctx.packageJsonPath, "utf8"));
   const existing: string | undefined =
     pkg?.scripts?.[MACHINE_TRANSLATE_SCRIPT_NAME] || undefined;
-  if (existing !== undefined && !RUNS_INLANG_CLI.test(existing)) {
+  const runsInlangCli = existing?.match(RUNS_INLANG_CLI);
+  if (existing !== undefined && !runsInlangCli) {
     // Choosing a provider for the inlang CLI wouldn't change that command.
     ctx.logger.info(
       "Kept the machine-translate script in package.json, which doesn't run the inlang CLI."
@@ -80,9 +92,14 @@ export const maybeAddMachineTranslation: CliStep<
 
   // The inlang CLI reads its settings next to the project.
   const envDir = nodePath.dirname(nodePath.resolve(ctx.root, ctx.projectPath));
+  const chosen = await chosenProvider({
+    fs: ctx.fs,
+    logger: ctx.logger,
+    dir: envDir,
+  });
   let setup: MachineTranslationSetup;
   if (ctx.machineTranslation === true) setup = "script";
-  else if (await providerChosen(ctx.fs, envDir)) {
+  else if (chosen) {
     if (ctx.machineTranslation === "gt" || existing !== undefined)
       setup = "script";
     else
@@ -124,6 +141,7 @@ export const maybeAddMachineTranslation: CliStep<
   try {
     const relativePath = nodePath.relative(ctx.root, ctx.projectPath);
     let existingCli: string | undefined;
+    let addedScript = false;
     await updatePackageJson({
       devDependencies: async (devDeps) => {
         existingCli = devDeps[INLANG_CLI_PACKAGE];
@@ -131,7 +149,8 @@ export const maybeAddMachineTranslation: CliStep<
         return { ...devDeps, [INLANG_CLI_PACKAGE]: INLANG_CLI_VERSION_RANGE };
       },
       scripts: async (scripts) => {
-        if (existing !== undefined) return scripts;
+        if (scripts[MACHINE_TRANSLATE_SCRIPT_NAME]) return scripts;
+        addedScript = true;
         return {
           ...scripts,
           [MACHINE_TRANSLATE_SCRIPT_NAME]: `inlang machine translate --project ${shellArgument(relativePath)}`,
@@ -142,17 +161,29 @@ export const maybeAddMachineTranslation: CliStep<
       ctx.logger.success(
         `Added ${INLANG_CLI_PACKAGE} ${INLANG_CLI_VERSION_RANGE} to the devDependencies in package.json.`
       );
-    if (existing === undefined)
+    if (addedScript)
       ctx.logger.success("Added a machine-translate script to package.json.");
 
     if (setup === "gt") {
+      // A version in the script, e.g. `npx @inlang/cli@3.4.0`, wins.
+      const pinned = runsInlangCli?.[1];
+      const version = pinned ?? existingCli;
       if (
-        existingCli !== undefined &&
-        mayBeOlderThan(existingCli, { major: 3, minor: 7 })
+        version !== undefined &&
+        mayBeOlderThan(version, { major: 3, minor: 7 })
       )
         ctx.logger.warn(
-          `General Translation needs ${INLANG_CLI_PACKAGE} 3.7.0 or later. Your package.json has "${existingCli}". Update it to "${INLANG_CLI_VERSION_RANGE}".`
+          `General Translation needs ${INLANG_CLI_PACKAGE} 3.7.0 or later. Your ${pinned ? "machine-translate script" : "package.json"} has "${version}". Update it to "${INLANG_CLI_VERSION_RANGE}".`
         );
+      const envLocal = nodePath.join(envDir, ENV_LOCAL);
+      const stats = await ctx.fs.lstat(envLocal).catch(() => undefined);
+      if (stats?.isSymbolicLink()) {
+        // It may be shared with other projects, and the inlang CLI won't save a key to it.
+        ctx.logger.warn(
+          `Didn't choose General Translation: ${ENV_LOCAL} is a symbolic link, which init doesn't change. The inlang CLI asks for a provider on its first run.`
+        );
+        return done("script", "unchosen");
+      }
       const addedIgnoreRule = await appendToEnvLocal({
         fs: ctx.fs,
         dir: envDir,
@@ -177,35 +208,48 @@ export const maybeAddMachineTranslation: CliStep<
     return done("none");
   }
 
-  return done(setup);
+  return done(setup, setup === "gt" ? "gt" : (chosen ?? "unchosen"));
 };
 
 /**
- * Whether the project already chose a machine translation provider for the
- * inlang CLI: in the shell, in `.env.local` or `.env`, or with a project ID in
- * `gt.config.json`. `init` never overrides that choice, and leaves it to the
- * inlang CLI when it can't read one of those files.
+ * The machine translation provider the project already chose for the inlang
+ * CLI: in the shell, in `.env.local` or `.env`, or with a project ID in
+ * `gt.config.json`. `init` never overrides that choice. When it can't read one
+ * of those files, it warns and leaves the provider to the inlang CLI.
  */
-async function providerChosen(
-  fs: typeof import("node:fs/promises"),
-  dir: string
-): Promise<boolean> {
-  const chooses = (variables: Record<string, string | undefined>) =>
-    Object.entries(variables).some(
-      ([name, value]) => CHOOSES_PROVIDER.test(name) && Boolean(value?.trim())
-    );
+async function chosenProvider(args: {
+  fs: typeof import("node:fs/promises");
+  logger: Logger;
+  dir: string;
+}): Promise<"gt" | "other" | undefined> {
+  // The shell wins over `.env.local`, which wins over `.env`.
+  let variables: Record<string, string | undefined> = {};
+  let file = "gt.config.json";
   try {
-    if (chooses(process.env)) return true;
-    for (const file of [ENV_LOCAL, ".env"]) {
-      const text = await readOptional(fs, nodePath.join(dir, file));
-      if (text !== undefined && chooses(parseEnv(text))) return true;
+    for (file of [".env", ENV_LOCAL]) {
+      const text = await readOptional(args.fs, nodePath.join(args.dir, file));
+      if (text !== undefined) variables = { ...variables, ...parseEnv(text) };
     }
-    const config = await readOptional(fs, nodePath.join(dir, "gt.config.json"));
+    variables = { ...variables, ...process.env };
+    file = "gt.config.json";
+    const config = await readOptional(args.fs, nodePath.join(args.dir, file));
     const projectId = config && JSON.parse(config)?.projectId;
-    return typeof projectId === "string" && projectId.trim() !== "";
-  } catch {
-    return true;
+    if (typeof projectId === "string") variables.GT_PROJECT_ID ||= projectId;
+  } catch (error) {
+    args.logger.warn(
+      `Couldn't read ${file}, so init left the machine translation provider to the inlang CLI: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return "other";
   }
+  const set = (pattern: RegExp) =>
+    Object.entries(variables).some(
+      ([name, value]) => pattern.test(name) && Boolean(value?.trim())
+    );
+  const provider = variables[PROVIDER_ENV]?.trim();
+  if (provider) return provider === "gt" ? "gt" : "other";
+  if (set(OWN_KEY)) return "other";
+  if (set(GT_CREDENTIAL)) return "gt";
+  return undefined;
 }
 
 /** The variables of a `.env` file: `NAME=value`, optionally quoted or exported. */

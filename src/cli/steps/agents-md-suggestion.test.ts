@@ -44,7 +44,7 @@ test("the AGENTS.md suggestion handles an outdir at the root", () => {
   ).toContain("Never edit `./`");
 });
 
-test("the AGENTS.md suggestion tells agents how to translate with the provider init set up", () => {
+test("the AGENTS.md suggestion tells agents how to translate with the script's provider", () => {
   const base = {
     root: "/app",
     projectPath: "./project.inlang",
@@ -59,13 +59,18 @@ test("the AGENTS.md suggestion tells agents how to translate with the provider i
     "- To fill missing translations, run `npm run machine-translate -- --no-browser`. The first time, it prints a General Translation sign-in link and code: give them to the user."
   );
   expect(
-    agentsMdSuggestion({ ...base, machineTranslation: "script" })
+    agentsMdSuggestion({ ...base, machineTranslation: "other" })
       .split("\n")
       .at(-1)
   ).toBe("- To fill missing translations, run `npm run machine-translate`.");
   expect(
-    agentsMdSuggestion({ ...base, machineTranslation: "none" })
-  ).not.toContain("machine-translate");
+    agentsMdSuggestion({ ...base, machineTranslation: "unchosen" })
+      .split("\n")
+      .at(-1)
+  ).toBe(
+    "- To fill missing translations, run `npm run machine-translate`. No provider is chosen yet: before the first run, ask the user to run it in their terminal and choose one."
+  );
+  expect(agentsMdSuggestion(base)).not.toContain("machine-translate");
 });
 
 test("the AGENTS.md suggestion points to the settings when init doesn't know the message files", () => {

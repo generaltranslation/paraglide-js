@@ -240,7 +240,7 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
         projectPath: ctx9.projectPath,
         outdir: ctx9.outdir,
         pathPattern,
-        machineTranslation: ctx9.machineTranslationSetup,
+        machineTranslation: ctx9.machineTranslationProvider,
       }) + "\n"
     );
   } finally {
