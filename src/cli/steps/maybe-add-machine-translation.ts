@@ -28,8 +28,12 @@ const ENV_LOCAL = ".env.local";
 const CHOOSES_PROVIDER =
   /^(?:INLANG_MACHINE_TRANSLATE_PROVIDER|INLANG_GOOGLE_TRANSLATE_API_KEY|INLANG_DEEPL_API_KEY|INLANG_OPENAI_API_KEY|GT_API_KEY|(?:\w*_)?GT_DEV_API_KEY|(?:\w*_)?GT_PROJECT_ID)$/;
 
-/** A script that runs the inlang CLI's `machine translate`. */
-const RUNS_INLANG_CLI = /\binlang\s+machine\s+translate\b/;
+/**
+ * A script that runs the inlang CLI's `machine translate`: `inlang ...`, or
+ * `npx @inlang/cli[@version] ...` as the docs show.
+ */
+const RUNS_INLANG_CLI =
+  /(?:\binlang|@inlang\/cli(?:@\S+)?)\s+machine\s+translate\b/;
 
 /**
  * What `init` set up for machine translation:
@@ -230,22 +234,24 @@ async function readOptional(
 /**
  * Appends `text` to `dir/.env.local`, which only the user can read if it is
  * new, and resolves whether it first added `.env.local` to `.gitignore`
- * because git doesn't ignore it.
+ * because git doesn't ignore it. Outside a git repository, `.gitignore` is left
+ * alone: the inlang CLI checks again before it saves a key there.
  */
 async function appendToEnvLocal(args: {
   fs: typeof import("node:fs/promises");
   dir: string;
   text: string;
 }): Promise<boolean> {
-  const ignored = await new Promise<boolean>((resolve) =>
+  // `git check-ignore` exits with 1 for a file it doesn't ignore.
+  const notIgnored = await new Promise<boolean>((resolve) =>
     execFile(
       "git",
       ["check-ignore", "-q", "--", ENV_LOCAL],
       { cwd: args.dir },
-      (error) => resolve(!error)
+      (error) => resolve(error?.code === 1)
     )
   );
-  if (!ignored)
+  if (notIgnored)
     await appendLine({
       fs: args.fs,
       file: nodePath.join(args.dir, ".gitignore"),
@@ -257,7 +263,7 @@ async function appendToEnvLocal(args: {
     text: args.text,
     mode: 0o600,
   });
-  return !ignored;
+  return notIgnored;
 }
 
 /** Appends `text`, starting on a new line if the file doesn't end with one. */

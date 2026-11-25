@@ -4,10 +4,23 @@ import { Logger } from "../../services/logger/index.js";
 import * as utils from "../utils.js";
 import { maybeAddMachineTranslation } from "./maybe-add-machine-translation.js";
 
+// `git check-ignore`: exit code 1 means a work tree that doesn't ignore the
+// file, 128 means no git repository.
+const git = vi.hoisted(() => ({ exitCode: 1 as number | undefined }));
+vi.mock("node:child_process", () => ({
+  execFile: (
+    _file: string,
+    _args: string[],
+    _options: object,
+    callback: (error: { code: number } | null) => void
+  ) => callback(git.exitCode === undefined ? null : { code: git.exitCode }),
+}));
+
 const originalCwd = process.cwd;
 const savedEnv = { ...process.env };
 beforeEach(() => {
   process.cwd = (() => "/") as typeof process.cwd;
+  git.exitCode = 1;
   // The developer's own shell may choose a provider.
   for (const name of Object.keys(process.env))
     if (/INLANG_|GT_/.test(name)) delete process.env[name];
@@ -230,4 +243,32 @@ test("a machine-translate script that doesn't run the inlang CLI is kept, withou
   }
   expect(utils.prompt).not.toHaveBeenCalled();
   expect(utils.promptSelection).not.toHaveBeenCalled();
+});
+
+test("outside a git repository, .gitignore is left alone", async () => {
+  git.exitCode = 128;
+  vi.mocked(utils.promptSelection).mockResolvedValueOnce("gt");
+  const { gitignore, envLocal, logged } = await run({
+    files: { "/.gitignore": "*.local\n" },
+  });
+  expect(gitignore).toBe("*.local\n");
+  expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n");
+  expect(logged).not.toContain("Added .env.local to .gitignore.");
+});
+
+test("a script that runs the inlang CLI through npx counts as the inlang CLI", async () => {
+  const script =
+    "npx @inlang/cli@latest machine translate --project ./project.inlang";
+  const { setup, pkg, envLocal } = await run({
+    interactive: false,
+    machineTranslation: "gt",
+    files: {
+      "/package.json": JSON.stringify({
+        scripts: { "machine-translate": script },
+      }),
+    },
+  });
+  expect(setup).toBe("gt");
+  expect(pkg.scripts["machine-translate"]).toBe(script);
+  expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n");
 });
