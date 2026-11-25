@@ -252,3 +252,59 @@ test("canonicalizes custom pattern input but preserves unmatched URLs", async ()
     "/de/ueber",
   ]);
 });
+
+test("does not return duplicate URLs with the default URL pattern", async () => {
+  const runtime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de"],
+      },
+    }),
+    strategy: ["url"],
+    trailingSlash: "never",
+  });
+
+  const urls = runtime.generateStaticLocalizedUrls([
+    "/about",
+    "/about/",
+    new URL("http://localhost/about"),
+  ]);
+  expect(urls.map((url) => url.href)).toEqual([
+    "http://localhost/about",
+    "http://localhost/de/about",
+  ]);
+});
+
+test("does not return duplicate URLs with custom URL patterns", async () => {
+  const runtime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "de"],
+      },
+    }),
+    strategy: ["url"],
+    urlPatterns: [
+      {
+        pattern: "/about",
+        localized: [
+          ["en", "/about"],
+          ["de", "/de/ueber"],
+        ],
+      },
+    ],
+  });
+
+  const urls = runtime.generateStaticLocalizedUrls([
+    "/about",
+    "/about",
+    "/asset",
+    "/asset",
+  ]);
+  expect(urls.map((url) => url.href)).toEqual([
+    "http://localhost/about",
+    "http://localhost/de/ueber",
+    "http://localhost/asset",
+  ]);
+});

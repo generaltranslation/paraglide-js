@@ -54,8 +54,8 @@ import {
  *   The order follows each input URL with all its locale variants before moving to the next URL.
  */
 export function generateStaticLocalizedUrls(urls) {
-  /** @type {Set<URL>} */
-  const localizedUrls = new Set();
+  /** @type {Map<string, URL>} */
+  const localizedUrls = new Map();
 
   // For default URL pattern, we can optimize the generation
   if (TREE_SHAKE_DEFAULT_URL_PATTERN_USED) {
@@ -70,18 +70,19 @@ export function generateStaticLocalizedUrls(urls) {
           : normalizeTrailingSlash(new URL(originalUrl));
 
       // Base locale doesn't get a prefix
-      localizedUrls.add(url);
+      localizedUrls.set(url.href, url);
 
       // Other locales get their code as prefix
       for (const locale of locales) {
         if (locale !== baseLocale) {
           const localizedPath = `/${locale}${url.pathname}${url.search}${url.hash}`;
           const localizedUrl = new URL(localizedPath, url.origin);
-          localizedUrls.add(normalizeTrailingSlash(localizedUrl));
+          const canonicalUrl = normalizeTrailingSlash(localizedUrl);
+          localizedUrls.set(canonicalUrl.href, canonicalUrl);
         }
       }
     }
-    return Array.from(localizedUrls);
+    return Array.from(localizedUrls.values());
   }
 
   // For custom URL patterns, we need to use localizeUrl for each URL and locale
@@ -106,20 +107,11 @@ export function generateStaticLocalizedUrls(urls) {
 
         patternFound = true;
 
-        // Track unique localized URLs to avoid duplicates when patterns are the same
-        const seenUrls = new Set();
-
         // Generate localized URL for each locale
         for (const [locale] of pattern.localized) {
           try {
             const localizedUrl = localizeUrl(url, { locale });
-            const urlString = localizedUrl.href;
-
-            // Only add if we haven't seen this exact URL before
-            if (!seenUrls.has(urlString)) {
-              seenUrls.add(urlString);
-              localizedUrls.add(localizedUrl);
-            }
+            localizedUrls.set(localizedUrl.href, localizedUrl);
           } catch {
             // Skip if localization fails for this locale
             continue;
@@ -134,9 +126,9 @@ export function generateStaticLocalizedUrls(urls) {
 
     // If no pattern matched, use the URL as is
     if (!patternFound) {
-      localizedUrls.add(originalUrl);
+      localizedUrls.set(originalUrl.href, originalUrl);
     }
   }
 
-  return Array.from(localizedUrls);
+  return Array.from(localizedUrls.values());
 }
