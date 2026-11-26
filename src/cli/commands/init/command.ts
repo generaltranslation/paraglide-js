@@ -19,6 +19,7 @@ import { compile } from "../../../compiler/compile.js";
 import {
   MACHINE_TRANSLATE_SCRIPT_NAME,
   maybeAddMachineTranslation,
+  type MachineTranslationProvider,
 } from "../../steps/maybe-add-machine-translation.js";
 import { addInlangCheck } from "../../steps/add-inlang-check.js";
 import { agentsMdSuggestion } from "../../steps/agents-md-suggestion.js";
@@ -214,10 +215,10 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
             )
           )
         : undefined;
-    if (ctx9.machineTranslationSetup !== "none") {
+    if (ctx9.machineTranslationProvider) {
       logger.info(
         machineTranslateNextStep({
-          setup: ctx9.machineTranslationSetup,
+          provider: ctx9.machineTranslationProvider,
           sourceFile: pathPattern?.replaceAll("{locale}", settings.baseLocale),
           baseLocale: settings.baseLocale,
           targetLocales: settings.locales.filter(
@@ -240,18 +241,15 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
   }
 }
 
-/**
- * The step after `init` for a project with a machine-translate script: add
- * messages, then translate them. With General Translation, it says the first
- * run signs in, so the browser opening is no surprise.
- */
 export function machineTranslateNextStep(args: {
-  setup: "gt" | "script";
+  provider: MachineTranslationProvider;
   /** The base locale's message file, if init knows it. */
   sourceFile: string | undefined;
   baseLocale: string;
   targetLocales: string[];
 }): string {
+  if (args.provider === "unknown")
+    return `Next: resolve the unreadable provider configuration before running \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}\`.`;
   const into = args.targetLocales.length
     ? ` into ${args.targetLocales.join(", ")}`
     : "";
@@ -260,7 +258,9 @@ export function machineTranslateNextStep(args: {
     : `for ${args.baseLocale}`;
   return (
     `Next: add messages ${where}, then run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}\` to translate them${into}.` +
-    (args.setup === "gt" ? " The first run opens your browser to sign in." : "")
+    (args.provider === "gt"
+      ? " If sign-in is needed, the command opens your browser."
+      : "")
   );
 }
 

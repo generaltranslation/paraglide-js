@@ -2,22 +2,22 @@ import { expect, test } from "vitest";
 import { agentsMdSuggestion } from "./agents-md-suggestion.js";
 
 test("the AGENTS.md suggestion names the project, message files and outdir", () => {
-  expect(
-    agentsMdSuggestion({
-      root: "/app",
-      projectPath: "./project.inlang",
-      pathPattern: "./messages/{locale}.json",
-      outdir: "./src/paraglide",
-    })
-  ).toBe(
-    [
-      "If you use coding agents, consider adding this to your AGENTS.md:",
-      "",
-      "## Localization",
-      "- Translations are an inlang project. Before localization work, read `project.inlang/README.md`. It covers checks, machine translation and editors. It is git-ignored, so search tools may skip it.",
-      "- Edit messages in `messages/{locale}.json`. Never edit `src/paraglide/`: Paraglide JS generates it.",
-    ].join("\n")
-  );
+  const suggestion = agentsMdSuggestion({
+    root: "/app",
+    projectPath: "./project.inlang",
+    pathPattern: "./messages/{locale}.json",
+    outdir: "./src/paraglide",
+  });
+  for (const text of [
+    "AGENTS.md",
+    "## Localization",
+    "`project.inlang/README.md`",
+    "git-ignored",
+    "`messages/{locale}.json`",
+    "Never edit `src/paraglide/`",
+  ])
+    expect(suggestion).toContain(text);
+  expect(suggestion).not.toContain("machine-translate");
 });
 
 test("the AGENTS.md suggestion uses custom paths relative to the root", () => {
@@ -44,33 +44,27 @@ test("the AGENTS.md suggestion handles an outdir at the root", () => {
   ).toContain("Never edit `./`");
 });
 
-test("the AGENTS.md suggestion tells agents how to translate with the script's provider", () => {
-  const base = {
+test.each([
+  [
+    "gt",
+    ["-- --no-browser", "background", "If sign-in is needed", "link and code"],
+  ],
+  ["other", ["`npm run machine-translate`"]],
+  [
+    "unchosen",
+    ["confirm a provider", "ask the user", "terminal to choose one"],
+  ],
+  ["unknown", ["could not be read", "Resolve it before running"]],
+] as const)("agent translation guidance handles %s", (provider, expected) => {
+  const suggestion = agentsMdSuggestion({
     root: "/app",
     projectPath: "./project.inlang",
-    pathPattern: "./messages/{locale}.json",
     outdir: "./src/paraglide",
-  };
-  expect(
-    agentsMdSuggestion({ ...base, machineTranslation: "gt" })
-      .split("\n")
-      .at(-1)
-  ).toBe(
-    "- To fill missing translations, run `npm run machine-translate -- --no-browser`. The first time, it prints a General Translation sign-in link and code and waits until the user signs in: run it in the background and give them the link and code."
-  );
-  expect(
-    agentsMdSuggestion({ ...base, machineTranslation: "other" })
-      .split("\n")
-      .at(-1)
-  ).toBe("- To fill missing translations, run `npm run machine-translate`.");
-  expect(
-    agentsMdSuggestion({ ...base, machineTranslation: "unchosen" })
-      .split("\n")
-      .at(-1)
-  ).toBe(
-    "- To fill missing translations, run `npm run machine-translate`. If no provider is set up yet (no INLANG_MACHINE_TRANSLATE_PROVIDER or API key in `.env.local` or `.env`, and no `projectId` in `gt.config.json`), first ask the user to run it once in their terminal to choose one."
-  );
-  expect(agentsMdSuggestion(base)).not.toContain("machine-translate");
+    machineTranslation: provider,
+  });
+  expect(suggestion).toContain("npm run machine-translate");
+  for (const text of expected) expect(suggestion).toContain(text);
+  if (provider !== "gt") expect(suggestion).not.toContain("--no-browser");
 });
 
 test("the AGENTS.md suggestion points to the settings when init doesn't know the message files", () => {
@@ -80,7 +74,5 @@ test("the AGENTS.md suggestion points to the settings when init doesn't know the
       projectPath: "./project.inlang",
       outdir: "./src/paraglide",
     })
-  ).toContain(
-    "- Edit messages in the files `project.inlang/settings.json` names. Never edit"
-  );
+  ).toContain("`project.inlang/settings.json`");
 });

@@ -48,6 +48,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   process.exitCode = 0;
   await rm(root, { recursive: true, force: true });
 });
@@ -188,26 +189,32 @@ test("init emits declarations without requiring or editing a tsconfig", async ()
   ).toContain("getLocale");
 });
 
-test("--machine-translation gt chooses General Translation and says what happens next", async () => {
+test("GT setup and reruns explain translation and conditional sign-in", async () => {
   for (const name of Object.keys(process.env))
     if (/INLANG_|GT_/.test(name)) vi.stubEnv(name, "");
   const info = vi.spyOn(Logger.prototype, "info");
   const stdout = vi
     .spyOn(process.stdout, "write")
     .mockImplementation(() => true);
-  await runInit({ yes: true, machineTranslation: "gt", compile: false });
-  const printed = stdout.mock.calls.map(([chunk]) => String(chunk)).join("");
-  stdout.mockRestore();
-  expect(info).toHaveBeenCalledWith(
-    "Next: add messages to messages/en.json, then run `npm run machine-translate` to translate them into de. The first run opens your browser to sign in."
-  );
-  expect(printed).toContain("npm run machine-translate -- --no-browser");
+  for (let run = 0; run < 2; run++) {
+    await runInit({ yes: true, machineTranslation: "gt", compile: false });
+    expect(info).toHaveBeenCalledWith(
+      expect.stringContaining("add messages to messages/en.json")
+    );
+    expect(info).toHaveBeenCalledWith(
+      expect.stringContaining("If sign-in is needed")
+    );
+    const printed = stdout.mock.calls.map(([chunk]) => String(chunk)).join("");
+    expect(printed).toContain("npm run machine-translate -- --no-browser");
+    info.mockClear();
+    stdout.mockClear();
+  }
 });
 
 test("the next step names the base locale when init doesn't know its message file", () => {
   expect(
     machineTranslateNextStep({
-      setup: "script",
+      provider: "other",
       sourceFile: undefined,
       baseLocale: "en",
       targetLocales: ["de", "fr"],
@@ -215,4 +222,15 @@ test("the next step names the base locale when init doesn't know its message fil
   ).toBe(
     "Next: add messages for en, then run `npm run machine-translate` to translate them into de, fr."
   );
+});
+
+test("unreadable provider configuration requires repair before translation", () => {
+  expect(
+    machineTranslateNextStep({
+      provider: "unknown",
+      sourceFile: "messages/en.json",
+      baseLocale: "en",
+      targetLocales: ["de"],
+    })
+  ).toContain("resolve the unreadable provider configuration before running");
 });

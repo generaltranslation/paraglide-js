@@ -8,9 +8,10 @@ const RUN = `- To fill missing translations, run \`npm run ${MACHINE_TRANSLATE_S
 
 /** How agents fill missing translations, by the script's provider. */
 const TRANSLATE_LINE: Record<MachineTranslationProvider, string> = {
-  gt: `${RUN} -- --no-browser\`. The first time, it prints a General Translation sign-in link and code and waits until the user signs in: run it in the background and give them the link and code.`,
+  gt: `${RUN} -- --no-browser\` in the background. If sign-in is needed, give the user the printed link and code, then wait for translation to finish.`,
   other: `${RUN}\`.`,
-  unchosen: `${RUN}\`. If no provider is set up yet (no INLANG_MACHINE_TRANSLATE_PROVIDER or API key in \`.env.local\` or \`.env\`, and no \`projectId\` in \`gt.config.json\`), first ask the user to run it once in their terminal to choose one.`,
+  unchosen: `${RUN}\`. Before running it unattended, confirm a provider is configured; otherwise ask the user to run it once in their terminal to choose one.`,
+  unknown: `- Machine translation configuration could not be read. Resolve it before running \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}\`.`,
 };
 
 /**

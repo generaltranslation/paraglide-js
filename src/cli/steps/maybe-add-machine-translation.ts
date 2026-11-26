@@ -1,10 +1,9 @@
 import type { Logger } from "../../services/logger/index.js";
 import type { CliStep } from "../utils.js";
 import { prompt, promptSelection, shellArgument } from "../utils.js";
-import { updatePackageJson } from "./update-package-json.js";
+import { detectJsonFormatting } from "../../utilities/detect-json-formatting.js";
 import nodePath from "node:path";
 import { execFile } from "node:child_process";
-// What the inlang CLI reads `.env` files with.
 import { parse as parseEnv } from "dotenv";
 import {
   INLANG_CLI_PACKAGE,
@@ -14,113 +13,87 @@ import {
 
 export const MACHINE_TRANSLATE_SCRIPT_NAME = "machine-translate";
 
-/**
- * The inlang CLI's provider setting. It is read from the shell, `.env.local`
- * and `.env` in the folder that contains the inlang project.
- */
 const PROVIDER_ENV = "INLANG_MACHINE_TRANSLATE_PROVIDER";
-
 const ENV_LOCAL = ".env.local";
-
-/** The bring-your-own keys, which the inlang CLI prefers to General Translation. */
 const OWN_KEY =
   /^(?:INLANG_GOOGLE_TRANSLATE_API_KEY|INLANG_DEEPL_API_KEY|INLANG_OPENAI_API_KEY)$/;
-
-/** General Translation's key and project ID (`GT_API_KEY`, `VITE_GT_DEV_API_KEY`, ...). */
 const GT_CREDENTIAL =
   /^(?:GT_API_KEY|(?:\w*_)?GT_DEV_API_KEY|(?:\w*_)?GT_PROJECT_ID)$/;
 
-/**
- * A script that runs the inlang CLI's `machine translate`: `inlang ...`, or
- * `npx @inlang/cli[@version] ...` as the docs show. Captures the version.
- */
-const RUNS_INLANG_CLI =
-  /(?:\binlang|@inlang\/cli(?:@(\S+))?)\s+machine\s+translate\b/;
+/** `unknown` means configuration couldn't be read; `unchosen` means none was found. */
+export type MachineTranslationProvider =
+  | "gt"
+  | "other"
+  | "unchosen"
+  | "unknown";
 
-/**
- * What `init` set up for machine translation:
- * - `gt`: the script, with General Translation chosen in `.env.local`
- * - `script`: the script; the inlang CLI asks for a provider on its first run,
- *   unless the project already chose one
- * - `none`: nothing
- */
-export type MachineTranslationSetup = "gt" | "script" | "none";
-
-/**
- * The provider the machine-translate script uses: General Translation,
- * another one the project chose, or none yet, so the inlang CLI asks on its
- * first run in a terminal and uses the community service without one.
- */
-export type MachineTranslationProvider = "gt" | "other" | "unchosen";
+type Context = {
+  fs: typeof import("node:fs/promises");
+  logger: Logger;
+  projectPath: string;
+  root: string;
+  packageJsonPath: string;
+  interactive?: boolean;
+  /** `true` adds the script, `"gt"` also chooses General Translation. */
+  machineTranslation?: boolean | "gt";
+};
 
 export const maybeAddMachineTranslation: CliStep<
-  {
-    fs: typeof import("node:fs/promises");
-    logger: Logger;
-    projectPath: string;
-    root: string;
-    packageJsonPath: string;
-    interactive?: boolean;
-    /** `true` adds the script, `"gt"` also chooses General Translation. */
-    machineTranslation?: boolean | "gt";
-  },
-  {
-    machineTranslationSetup: MachineTranslationSetup;
-    /** Undefined without a script. */
-    machineTranslationProvider: MachineTranslationProvider | undefined;
-  }
+  Context,
+  { machineTranslationProvider: MachineTranslationProvider | undefined }
 > = async (ctx) => {
-  const done = (
-    machineTranslationSetup: MachineTranslationSetup,
-    machineTranslationProvider?: MachineTranslationProvider
-  ) => ({ ...ctx, machineTranslationSetup, machineTranslationProvider });
+  const done = (machineTranslationProvider?: MachineTranslationProvider) => ({
+    ...ctx,
+    machineTranslationProvider,
+  });
   if (
     ctx.machineTranslation === false ||
     (ctx.machineTranslation === undefined && ctx.interactive === false)
   )
-    return done("none");
+    return done();
 
-  const pkg = JSON.parse(await ctx.fs.readFile(ctx.packageJsonPath, "utf8"));
-  const existing: string | undefined =
-    pkg?.scripts?.[MACHINE_TRANSLATE_SCRIPT_NAME] || undefined;
-  const runsInlangCli = existing?.match(RUNS_INLANG_CLI);
-  if (existing !== undefined && !runsInlangCli) {
-    // Choosing a provider for the inlang CLI wouldn't change that command.
-    ctx.logger.info(
-      "Kept the machine-translate script in package.json, which doesn't run the inlang CLI."
-    );
-    return done("none");
-  }
+  const projectPath = nodePath.resolve(ctx.root, ctx.projectPath);
+  const relativePath = nodePath.relative(ctx.root, projectPath);
+  const readPackage = async () => {
+    const text = await ctx.fs.readFile(ctx.packageJsonPath, "utf8");
+    const pkg = JSON.parse(text);
+    if (!pkg || typeof pkg !== "object" || Array.isArray(pkg))
+      throw new Error("package.json must contain a valid JSON object.");
+    const script = pkg.scripts?.[MACHINE_TRANSLATE_SCRIPT_NAME];
+    const command = scriptForProject(script, relativePath, projectPath);
+    if (script && !command) {
+      ctx.logger.info(
+        "Kept the machine-translate script and provider settings: init couldn't verify that the script runs the inlang CLI for this project."
+      );
+      return undefined;
+    }
+    return { pkg, text, script, command };
+  };
+  const initial = await readPackage();
+  if (!initial) return done();
 
   // The inlang CLI reads its settings next to the project.
-  const envDir = nodePath.dirname(nodePath.resolve(ctx.root, ctx.projectPath));
-  const found = await chosenProvider({
+  const providerContext = {
     fs: ctx.fs,
     logger: ctx.logger,
-    dir: envDir,
-  });
-  // A file init couldn't read is left to the inlang CLI, as another provider.
-  const chosen = found === "unreadable" ? "other" : found;
-  let setup: MachineTranslationSetup;
-  if (ctx.machineTranslation === true) setup = "script";
-  else if (chosen) {
-    if (ctx.machineTranslation === "gt" && found === "other")
-      ctx.logger.info(
-        `Kept the machine translation provider this project already chose. To use General Translation, remove ${PROVIDER_ENV} and any provider API key from the shell, ${ENV_LOCAL} and .env.`
-      );
-    if (ctx.machineTranslation === "gt" || existing !== undefined)
-      setup = "script";
-    else
-      setup = (await prompt("Add a machine-translate script?", {
+    dir: nodePath.dirname(projectPath),
+  };
+  let provider = await chosenProvider(providerContext);
+  let action: "gt" | "script" | "none";
+  if (ctx.machineTranslation === true) action = "script";
+  else if (provider !== "unchosen") {
+    action =
+      ctx.machineTranslation === "gt" ||
+      initial.script ||
+      (await prompt("Add a machine-translate script?", {
         type: "confirm",
         initial: true,
       }))
         ? "script"
         : "none";
-  } else if (ctx.machineTranslation === "gt") setup = "gt";
-  else {
-    // Worded as the inlang CLI asks on its first run.
-    setup = await promptSelection<MachineTranslationSetup>(
+  } else if (ctx.machineTranslation === "gt") action = "gt";
+  else
+    action = await promptSelection(
       "Which translation provider should this project use?",
       {
         initial: "gt",
@@ -135,124 +108,153 @@ export const maybeAddMachineTranslation: CliStep<
             value: "script",
             hint: "community service or other machine translation provider",
           },
-          {
-            label: "Skip",
-            value: "none",
-            hint: "no machine-translate script",
-          },
+          { label: "Skip", value: "none", hint: "no machine-translate script" },
         ],
       }
     );
-  }
-  if (setup === "none") return done(setup);
+  if (action === "none") return done();
 
-  const relativePath = nodePath.relative(ctx.root, ctx.projectPath);
-  let existingCli: string | undefined;
-  let addedScript = false;
+  let version: string | undefined;
+  let pinned: string | undefined;
   try {
-    await updatePackageJson({
-      devDependencies: async (devDeps) => {
-        existingCli = devDeps[INLANG_CLI_PACKAGE];
-        if (existingCli !== undefined) return devDeps;
-        return { ...devDeps, [INLANG_CLI_PACKAGE]: INLANG_CLI_VERSION_RANGE };
-      },
-      scripts: async (scripts) => {
-        if (scripts[MACHINE_TRANSLATE_SCRIPT_NAME]) return scripts;
-        addedScript = true;
-        return {
-          ...scripts,
-          [MACHINE_TRANSLATE_SCRIPT_NAME]: `inlang machine translate --project ${shellArgument(relativePath)}`,
-        };
-      },
-    })(ctx);
-    if (existingCli === undefined)
+    // A user or another tool may have edited the script while the prompt was open.
+    const current = await readPackage();
+    if (!current) return done();
+    const { pkg, text, script, command } = current;
+    version =
+      pkg.devDependencies?.[INLANG_CLI_PACKAGE] ??
+      pkg.dependencies?.[INLANG_CLI_PACKAGE];
+    pinned = command?.version;
+    if (!version)
+      pkg.devDependencies = {
+        ...pkg.devDependencies,
+        [INLANG_CLI_PACKAGE]: INLANG_CLI_VERSION_RANGE,
+      };
+    if (!script)
+      pkg.scripts = {
+        ...pkg.scripts,
+        [MACHINE_TRANSLATE_SCRIPT_NAME]: `inlang machine translate --project ${shellArgument(relativePath)}`,
+      };
+    if (!version || !script)
+      await ctx.fs.writeFile(
+        ctx.packageJsonPath,
+        detectJsonFormatting(text)(pkg)
+      );
+    if (!version)
       ctx.logger.success(
         `Added ${INLANG_CLI_PACKAGE} ${INLANG_CLI_VERSION_RANGE} to the devDependencies in package.json.`
       );
-    if (addedScript)
+    if (!script)
       ctx.logger.success("Added a machine-translate script to package.json.");
   } catch (error) {
     ctx.logger.error(
-      [
-        "Failed to set up machine translation. Please add it manually:",
-        `1. Add ${INLANG_CLI_PACKAGE} to devDependencies`,
-        "2. Add a machine-translate script to package.json",
-        error,
-      ].join("\n")
+      `Couldn't set up machine translation in package.json: ${String(error)}`
     );
     if (ctx.interactive === false) throw error;
-    return done("none");
+    return done();
   }
 
-  // A version in the script, e.g. `npx @inlang/cli@3.4.0`, wins.
-  const pinned = runsInlangCli?.[1];
-  const version = pinned ?? existingCli;
+  // Preserve a provider selected while the prompt was open, too.
+  if (action === "gt") provider = await chosenProvider(providerContext);
+  if (ctx.machineTranslation === "gt" && provider === "other")
+    ctx.logger.info(
+      `Kept this project's machine translation provider. To use General Translation, remove ${PROVIDER_ENV} and provider API keys from the shell, ${ENV_LOCAL} and .env.`
+    );
   if (
-    (setup === "gt" || chosen === "gt") &&
-    version !== undefined &&
+    action === "gt" &&
+    provider === "unchosen" &&
+    (await saveGtChoice(providerContext))
+  )
+    provider = "gt";
+
+  version = pinned ?? version;
+  if (
+    provider === "gt" &&
+    version &&
     mayBeOlderThan(version, { major: 3, minor: 7 })
   )
     ctx.logger.warn(
       `General Translation needs ${INLANG_CLI_PACKAGE} 3.7.0 or later. Your ${pinned ? "machine-translate script" : "package.json"} has "${version}". Update it to "${INLANG_CLI_VERSION_RANGE}".`
     );
-  if (setup !== "gt") return done(setup, chosen ?? "unchosen");
-
-  // Without the choice saved, the inlang CLI asks on its first run.
-  const notChosen = (reason: string) => {
-    ctx.logger.warn(
-      `Didn't choose General Translation: ${reason} The inlang CLI asks for a provider on its first run.`
-    );
-    return done("script", "unchosen");
-  };
-  const stats = await ctx.fs
-    .lstat(nodePath.join(envDir, ENV_LOCAL))
-    .catch(() => undefined);
-  // It may be shared with other projects; the inlang CLI won't save a key to it.
-  if (stats?.isSymbolicLink())
-    return notChosen(
-      `${ENV_LOCAL} is a symbolic link, which init doesn't change.`
-    );
-  // The inlang CLI won't save a key to it: it would be committed.
-  if ((await git({ dir: envDir, args: ["ls-files", "--error-unmatch"] })) === 0)
-    return notChosen(
-      `git tracks ${ENV_LOCAL}. Untrack it with \`git rm --cached ${ENV_LOCAL}\`.`
-    );
-  let ignoreRule: Awaited<ReturnType<typeof appendToEnvLocal>>;
-  try {
-    ignoreRule = await appendToEnvLocal({
-      fs: ctx.fs,
-      dir: envDir,
-      text: `${PROVIDER_ENV}=gt\n`,
-    });
-  } catch (error) {
-    return notChosen(
-      `couldn't save the choice to ${ENV_LOCAL} (${error instanceof Error ? error.message : String(error)}).`
-    );
-  }
-  ctx.logger.success(
-    `Chose General Translation for machine translation in ${ENV_LOCAL}. To choose another provider, remove ${PROVIDER_ENV} from it.`
-  );
-  if (ignoreRule === "added")
-    ctx.logger.success(`Added ${ENV_LOCAL} to .gitignore.`);
-  else if (ignoreRule === "missing")
-    // git doesn't read a symlinked .gitignore, and it may be shared.
-    ctx.logger.warn(
-      `Git doesn't ignore ${ENV_LOCAL}, and .gitignore is a symbolic link, which init doesn't change. Ignore ${ENV_LOCAL} before the first run: the inlang CLI only saves a key to an ignored file.`
-    );
-  return done("gt", "gt");
+  return done(provider);
 };
 
-/**
- * The machine translation provider the project already chose for the inlang
- * CLI: in the shell, in `.env.local` or `.env`, or with a project ID in
- * `gt.config.json`. `init` never overrides that choice. When it can't read one
- * of those files, it warns and resolves `unreadable`.
- */
+/** Recognize commands we can verify, without interpreting arbitrary shell scripts. */
+function scriptForProject(
+  script: unknown,
+  relativePath: string,
+  projectPath: string
+) {
+  if (typeof script !== "string") return undefined;
+  const match = script
+    .trim()
+    .match(
+      /^(?:inlang|npx(?:[ \t]+(?:--yes|-y))?[ \t]+@inlang\/cli(?:@([\w.^~+-]+))?)[ \t]+machine[ \t]+translate[ \t]+--project(?:=|[ \t]+)(.+)$/
+    );
+  if (!match) return undefined;
+  const matchesPath = [relativePath, "./" + relativePath, projectPath].some(
+    (path) =>
+      [
+        shellArgument(path),
+        ...(path.includes("'") ? [] : ["'" + path + "'"]),
+        '"' + path.replace(/["\\$`]/g, "\\$&") + '"',
+        ...(/^[\w./:@+-]+$/.test(path) ? [path] : []),
+      ].includes(match[2]!)
+  );
+  return matchesPath ? { version: match[1] } : undefined;
+}
+
+async function saveGtChoice({
+  fs,
+  logger,
+  dir,
+}: {
+  fs: Context["fs"];
+  logger: Logger;
+  dir: string;
+}): Promise<boolean> {
+  try {
+    const file = nodePath.join(dir, ENV_LOCAL);
+    if ((await fs.lstat(file).catch(() => undefined))?.isSymbolicLink())
+      throw new Error(
+        `${ENV_LOCAL} is a symbolic link, which init doesn't change.`
+      );
+    if ((await git(dir, "ls-files", "--error-unmatch")) === 0)
+      throw new Error(
+        `git tracks ${ENV_LOCAL}. Untrack it with \`git rm --cached ${ENV_LOCAL}\`.`
+      );
+
+    // Exit 1 means unignored. Outside Git, the CLI checks again before saving keys.
+    if ((await git(dir, "check-ignore", "-q")) === 1) {
+      const ignoreFile = nodePath.join(dir, ".gitignore");
+      if ((await fs.lstat(ignoreFile).catch(() => undefined))?.isSymbolicLink())
+        logger.warn(
+          `Git doesn't ignore ${ENV_LOCAL}, and .gitignore is a symbolic link, which init doesn't change. Ignore ${ENV_LOCAL} before the first run so the inlang CLI can save its key.`
+        );
+      else {
+        await appendLine(fs, ignoreFile, ENV_LOCAL);
+        logger.success(`Added ${ENV_LOCAL} to .gitignore.`);
+      }
+    }
+    await appendLine(fs, file, `${PROVIDER_ENV}=gt`, 0o600);
+    logger.success(
+      `Chose General Translation for machine translation in ${ENV_LOCAL}.`
+    );
+    return true;
+  } catch (error) {
+    logger.warn(
+      `Didn't choose General Translation in ${ENV_LOCAL}: ${error instanceof Error ? error.message : String(error)} The inlang CLI asks for a provider on its first run.`
+    );
+    return false;
+  }
+}
+
+/** Match the inlang CLI's provider precedence; never replace an existing choice. */
 async function chosenProvider(args: {
   fs: typeof import("node:fs/promises");
   logger: Logger;
   dir: string;
-}): Promise<"gt" | "other" | "unreadable" | undefined> {
+}): Promise<MachineTranslationProvider> {
   // As the inlang CLI: the shell wins over `.env.local`, which wins over
   // `.env`, except that a blank provider setting in the shell falls back to
   // the files.
@@ -275,7 +277,7 @@ async function chosenProvider(args: {
     args.logger.warn(
       `Couldn't read ${file}, so init left the machine translation provider to the inlang CLI: ${error instanceof Error ? error.message : String(error)}`
     );
-    return "unreadable";
+    return "unknown";
   }
   const set = (pattern: RegExp) =>
     Object.entries(env).some(
@@ -286,7 +288,7 @@ async function chosenProvider(args: {
   if (set(OWN_KEY)) return "other";
   if (set(GT_CREDENTIAL)) return "gt";
   if (typeof projectId === "string" && projectId.trim()) return "gt";
-  return undefined;
+  return "unchosen";
 }
 
 async function readOptional(
@@ -299,81 +301,33 @@ async function readOptional(
   });
 }
 
-/**
- * Appends `text` to `dir/.env.local`, which only the user can read if it is
- * new. If git doesn't ignore `.env.local`, it first adds it to `.gitignore`
- * (`added`), unless `.gitignore` is a symbolic link (`missing`). Outside a git
- * repository, `.gitignore` is left alone: the inlang CLI checks again before
- * it saves a key there.
- */
-async function appendToEnvLocal(args: {
-  fs: typeof import("node:fs/promises");
-  dir: string;
-  text: string;
-}): Promise<"added" | "missing" | undefined> {
-  // `git check-ignore` exits with 1 for a file it doesn't ignore.
-  const notIgnored =
-    (await git({ dir: args.dir, args: ["check-ignore", "-q"] })) === 1;
-  let ignoreRule: "added" | "missing" | undefined;
-  if (notIgnored) {
-    const gitignore = nodePath.join(args.dir, ".gitignore");
-    const stats = await args.fs.lstat(gitignore).catch(() => undefined);
-    if (stats?.isSymbolicLink()) ignoreRule = "missing";
-    else {
-      await appendLine({
-        fs: args.fs,
-        file: gitignore,
-        text: `${ENV_LOCAL}\n`,
-      });
-      ignoreRule = "added";
-    }
-  }
-  await appendLine({
-    fs: args.fs,
-    file: nodePath.join(args.dir, ENV_LOCAL),
-    text: args.text,
-    mode: 0o600,
-  });
-  return ignoreRule;
-}
-
-/** Appends `text`, starting on a new line if the file doesn't end with one. */
-async function appendLine(args: {
-  fs: typeof import("node:fs/promises");
-  file: string;
-  text: string;
-  mode?: number;
-}): Promise<void> {
-  const existing = await readOptional(args.fs, args.file);
+/** Append a line without joining it to existing content. */
+async function appendLine(
+  fs: Context["fs"],
+  file: string,
+  line: string,
+  mode?: number
+) {
+  const existing = await readOptional(fs, file);
   const separator = existing && !existing.endsWith("\n") ? "\n" : "";
-  await args.fs.appendFile(
-    args.file,
-    separator + args.text,
-    args.mode ? { mode: args.mode } : undefined
+  await fs.appendFile(
+    file,
+    separator + line + "\n",
+    mode ? { mode } : undefined
   );
 }
 
-/**
- * Runs `git <args> -- .env.local` in `dir` and resolves its exit code, or
- * undefined if git couldn't run.
- */
-function git(args: {
-  dir: string;
-  args: string[];
-}): Promise<number | undefined> {
+/** Exit code of `git <args> -- .env.local`, or undefined if Git couldn't run. */
+function git(dir: string, ...args: string[]): Promise<number | undefined> {
   return new Promise((resolve) =>
-    execFile(
-      "git",
-      [...args.args, "--", ENV_LOCAL],
-      { cwd: args.dir },
-      (error) =>
-        resolve(
-          error === null
-            ? 0
-            : typeof error.code === "number"
-              ? error.code
-              : undefined
-        )
+    execFile("git", [...args, "--", ENV_LOCAL], { cwd: dir }, (error) =>
+      resolve(
+        error === null
+          ? 0
+          : typeof error.code === "number"
+            ? error.code
+            : undefined
+      )
     )
   );
 }
