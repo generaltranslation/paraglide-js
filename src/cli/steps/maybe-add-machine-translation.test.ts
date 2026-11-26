@@ -410,3 +410,44 @@ test("a blank key in the shell or .env.local still overrides one in .env", async
     expect(provider).toBe("gt");
   }
 });
+
+test("warns about an @inlang/cli before 3.7 when the project already chose General Translation", async () => {
+  const { setup, provider, warned } = await run({
+    interactive: false,
+    machineTranslation: true,
+    files: {
+      "/package.json": JSON.stringify({
+        devDependencies: { "@inlang/cli": "3.4.0" },
+      }),
+      "/gt.config.json": '{"projectId":"p"}',
+    },
+  });
+  expect(setup).toBe("script");
+  expect(provider).toBe("gt");
+  expect(warned).toEqual([
+    'General Translation needs @inlang/cli 3.7.0 or later. Your package.json has "3.4.0". Update it to "^3.7.1".',
+  ]);
+});
+
+test("a symlinked .gitignore is left alone, with a warning", async () => {
+  const { fs } = memfs({ "/package.json": "{}", "/shared/ignore": "dist\n" });
+  fs.symlinkSync("/shared/ignore", "/.gitignore");
+  const logger = new Logger({ silent: true, prefix: false });
+  const warn = vi.spyOn(logger, "warn");
+  await maybeAddMachineTranslation({
+    fs: fs.promises as unknown as typeof import("node:fs/promises"),
+    logger,
+    projectPath: "./project.inlang",
+    root: "/",
+    packageJsonPath: "/package.json",
+    interactive: false,
+    machineTranslation: "gt",
+  });
+  expect(String(fs.readFileSync("/shared/ignore"))).toBe("dist\n");
+  expect(String(fs.readFileSync("/.env.local"))).toBe(
+    "INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n"
+  );
+  expect(warn).toHaveBeenCalledWith(
+    "Git doesn't ignore .env.local, and .gitignore is a symbolic link, which init doesn't change. Ignore .env.local before the first run: the inlang CLI only saves a key to an ignored file."
+  );
+});

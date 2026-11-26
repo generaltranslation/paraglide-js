@@ -164,17 +164,19 @@ export const maybeAddMachineTranslation: CliStep<
     if (addedScript)
       ctx.logger.success("Added a machine-translate script to package.json.");
 
+    // A version in the script, e.g. `npx @inlang/cli@3.4.0`, wins.
+    const pinned = runsInlangCli?.[1];
+    const version = pinned ?? existingCli;
+    if (
+      (setup === "gt" || chosen === "gt") &&
+      version !== undefined &&
+      mayBeOlderThan(version, { major: 3, minor: 7 })
+    )
+      ctx.logger.warn(
+        `General Translation needs ${INLANG_CLI_PACKAGE} 3.7.0 or later. Your ${pinned ? "machine-translate script" : "package.json"} has "${version}". Update it to "${INLANG_CLI_VERSION_RANGE}".`
+      );
+
     if (setup === "gt") {
-      // A version in the script, e.g. `npx @inlang/cli@3.4.0`, wins.
-      const pinned = runsInlangCli?.[1];
-      const version = pinned ?? existingCli;
-      if (
-        version !== undefined &&
-        mayBeOlderThan(version, { major: 3, minor: 7 })
-      )
-        ctx.logger.warn(
-          `General Translation needs ${INLANG_CLI_PACKAGE} 3.7.0 or later. Your ${pinned ? "machine-translate script" : "package.json"} has "${version}". Update it to "${INLANG_CLI_VERSION_RANGE}".`
-        );
       const envLocal = nodePath.join(envDir, ENV_LOCAL);
       const stats = await ctx.fs.lstat(envLocal).catch(() => undefined);
       if (stats?.isSymbolicLink()) {
@@ -184,7 +186,7 @@ export const maybeAddMachineTranslation: CliStep<
         );
         return done("script", "unchosen");
       }
-      const addedIgnoreRule = await appendToEnvLocal({
+      const ignoreRule = await appendToEnvLocal({
         fs: ctx.fs,
         dir: envDir,
         text: `${PROVIDER_ENV}=gt\n`,
@@ -192,8 +194,13 @@ export const maybeAddMachineTranslation: CliStep<
       ctx.logger.success(
         `Chose General Translation for machine translation in ${ENV_LOCAL}. To choose another provider, remove ${PROVIDER_ENV} from it.`
       );
-      if (addedIgnoreRule)
+      if (ignoreRule === "added")
         ctx.logger.success(`Added ${ENV_LOCAL} to .gitignore.`);
+      else if (ignoreRule === "missing")
+        // git doesn't read a symlinked .gitignore, and it may be shared.
+        ctx.logger.warn(
+          `Git doesn't ignore ${ENV_LOCAL}, and .gitignore is a symbolic link, which init doesn't change. Ignore ${ENV_LOCAL} before the first run: the inlang CLI only saves a key to an ignored file.`
+        );
     }
   } catch (error) {
     ctx.logger.error(
@@ -283,15 +290,16 @@ async function readOptional(
 
 /**
  * Appends `text` to `dir/.env.local`, which only the user can read if it is
- * new, and resolves whether it first added `.env.local` to `.gitignore`
- * because git doesn't ignore it. Outside a git repository, `.gitignore` is left
- * alone: the inlang CLI checks again before it saves a key there.
+ * new. If git doesn't ignore `.env.local`, it first adds it to `.gitignore`
+ * (`added`), unless `.gitignore` is a symbolic link (`missing`). Outside a git
+ * repository, `.gitignore` is left alone: the inlang CLI checks again before
+ * it saves a key there.
  */
 async function appendToEnvLocal(args: {
   fs: typeof import("node:fs/promises");
   dir: string;
   text: string;
-}): Promise<boolean> {
+}): Promise<"added" | "missing" | undefined> {
   // `git check-ignore` exits with 1 for a file it doesn't ignore.
   const notIgnored = await new Promise<boolean>((resolve) =>
     execFile(
@@ -301,19 +309,27 @@ async function appendToEnvLocal(args: {
       (error) => resolve(error?.code === 1)
     )
   );
-  if (notIgnored)
-    await appendLine({
-      fs: args.fs,
-      file: nodePath.join(args.dir, ".gitignore"),
-      text: `${ENV_LOCAL}\n`,
-    });
+  let ignoreRule: "added" | "missing" | undefined;
+  if (notIgnored) {
+    const gitignore = nodePath.join(args.dir, ".gitignore");
+    const stats = await args.fs.lstat(gitignore).catch(() => undefined);
+    if (stats?.isSymbolicLink()) ignoreRule = "missing";
+    else {
+      await appendLine({
+        fs: args.fs,
+        file: gitignore,
+        text: `${ENV_LOCAL}\n`,
+      });
+      ignoreRule = "added";
+    }
+  }
   await appendLine({
     fs: args.fs,
     file: nodePath.join(args.dir, ENV_LOCAL),
     text: args.text,
     mode: 0o600,
   });
-  return notIgnored;
+  return ignoreRule;
 }
 
 /** Appends `text`, starting on a new line if the file doesn't end with one. */
