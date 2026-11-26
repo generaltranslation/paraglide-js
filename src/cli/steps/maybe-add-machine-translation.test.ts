@@ -479,3 +479,20 @@ test("--machine-translation gt says when it keeps another provider", async () =>
     "Kept the machine translation provider this project already chose. To use General Translation, remove INLANG_MACHINE_TRANSLATE_PROVIDER and any provider API key from the shell, .env.local and .env.",
   ]);
 });
+
+test.each([
+  ["INLANG_MACHINE_TRANSLATE_PROVIDER: demosjarco\n", "other"],
+  ["INLANG_MACHINE_TRANSLATE_PROVIDER=`gt`\n", "gt"],
+])(
+  ".env.local is read as the inlang CLI reads it: %s",
+  async (text, chosen) => {
+    const { setup, provider, envLocal } = await run({
+      interactive: false,
+      machineTranslation: "gt",
+      files: { "/.env.local": text },
+    });
+    expect(setup).toBe("script");
+    expect(provider).toBe(chosen);
+    expect(envLocal).toBe(text);
+  }
+);

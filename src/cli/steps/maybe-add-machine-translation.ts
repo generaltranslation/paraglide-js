@@ -4,6 +4,8 @@ import { prompt, promptSelection, shellArgument } from "../utils.js";
 import { updatePackageJson } from "./update-package-json.js";
 import nodePath from "node:path";
 import { execFile } from "node:child_process";
+// What the inlang CLI reads `.env` files with.
+import { parse as parseEnv } from "dotenv";
 import {
   INLANG_CLI_PACKAGE,
   INLANG_CLI_VERSION_RANGE,
@@ -285,19 +287,6 @@ async function chosenProvider(args: {
   if (set(GT_CREDENTIAL)) return "gt";
   if (typeof projectId === "string" && projectId.trim()) return "gt";
   return undefined;
-}
-
-/** The variables of a `.env` file: `NAME=value`, optionally quoted or exported. */
-function parseEnv(text: string): Record<string, string> {
-  const variables: Record<string, string> = {};
-  for (const line of text.split(/\r?\n/)) {
-    const match = line.match(
-      /^\s*(?:export\s+)?([\w.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^#]*))/
-    );
-    if (!match) continue;
-    variables[match[1]!] = (match[2] ?? match[3] ?? match[4] ?? "").trim();
-  }
-  return variables;
 }
 
 async function readOptional(

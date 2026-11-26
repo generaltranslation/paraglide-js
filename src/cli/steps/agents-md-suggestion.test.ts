@@ -68,7 +68,7 @@ test("the AGENTS.md suggestion tells agents how to translate with the script's p
       .split("\n")
       .at(-1)
   ).toBe(
-    "- To fill missing translations, run `npm run machine-translate`. If no provider is set up yet (no INLANG_MACHINE_TRANSLATE_PROVIDER or API key in `.env.local` or `.env`, and no `gt.config.json`), first ask the user to run it once in their terminal to choose one."
+    "- To fill missing translations, run `npm run machine-translate`. If no provider is set up yet (no INLANG_MACHINE_TRANSLATE_PROVIDER or API key in `.env.local` or `.env`, and no `projectId` in `gt.config.json`), first ask the user to run it once in their terminal to choose one."
   );
   expect(agentsMdSuggestion(base)).not.toContain("machine-translate");
 });

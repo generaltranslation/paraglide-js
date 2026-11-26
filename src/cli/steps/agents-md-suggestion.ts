@@ -10,7 +10,7 @@ const RUN = `- To fill missing translations, run \`npm run ${MACHINE_TRANSLATE_S
 const TRANSLATE_LINE: Record<MachineTranslationProvider, string> = {
   gt: `${RUN} -- --no-browser\`. The first time, it prints a General Translation sign-in link and code and waits until the user signs in: run it in the background and give them the link and code.`,
   other: `${RUN}\`.`,
-  unchosen: `${RUN}\`. If no provider is set up yet (no INLANG_MACHINE_TRANSLATE_PROVIDER or API key in \`.env.local\` or \`.env\`, and no \`gt.config.json\`), first ask the user to run it once in their terminal to choose one.`,
+  unchosen: `${RUN}\`. If no provider is set up yet (no INLANG_MACHINE_TRANSLATE_PROVIDER or API key in \`.env.local\` or \`.env\`, and no \`projectId\` in \`gt.config.json\`), first ask the user to run it once in their terminal to choose one.`,
 };
 
 /**
