@@ -1069,6 +1069,7 @@ export function collectTextOnlyInputs(bundle: BundleNested): Set<string> {
       // The compiler ignores input annotations, but they state the input is
       // meant for a formatter, e.g. `.input {$date :datetime}`.
       if (declaration.annotation) otherUses.add(declaration.name);
+      markAnnotationOptions(declaration.annotation);
       continue;
     }
     // Un-annotated locals are aliases; their reads count for the input.

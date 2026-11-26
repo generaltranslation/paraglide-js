@@ -135,6 +135,96 @@ test("collectTextOnlyInputs finds the inputs that are only interpolated", () => 
   });
 });
 
+test("collectTextOnlyInputs follows locals and annotation options", () => {
+  const input = (
+    name: string,
+    annotation?: sdk.FunctionReference
+  ): sdk.Declaration => ({ type: "input-variable", name, annotation });
+  const local = (
+    name: string,
+    of: string,
+    annotation?: sdk.FunctionReference
+  ): sdk.Declaration => ({
+    type: "local-variable",
+    name,
+    value: {
+      type: "expression",
+      arg: { type: "variable-reference", name: of },
+      annotation,
+    },
+  });
+  const read = (name: string): sdk.Expression => ({
+    type: "expression",
+    arg: { type: "variable-reference", name },
+  });
+  const fn = (
+    name: string,
+    options: sdk.FunctionReference["options"] = []
+  ): sdk.FunctionReference => ({ type: "function-reference", name, options });
+  const option = (name: string, variable: string) => ({
+    name,
+    value: { type: "variable-reference" as const, name: variable },
+  });
+  const textOnly = (declarations: sdk.Declaration[], pattern: sdk.Pattern) =>
+    [...collectTextOnlyInputs(bundle("b", declarations, pattern))].sort();
+
+  // `.local a = {$name}`, `.local b = {$a}`, `{$b}`
+  expect(
+    textOnly([input("name"), local("a", "name"), local("b", "a")], [read("b")])
+  ).toEqual(["name"]);
+  // `.local a = {$name}`, `.local n = {$a :number}`, `{$a} {$n}`
+  expect(
+    textOnly(
+      [input("name"), local("a", "name"), local("n", "a", fn("number"))],
+      [read("a"), read("n")]
+    )
+  ).toEqual([]);
+  // `{$n :number minimumFractionDigits=$digits} {$digits}`
+  expect(
+    textOnly(
+      [input("n"), input("digits")],
+      [
+        {
+          type: "expression",
+          arg: { type: "variable-reference", name: "n" },
+          annotation: fn("number", [option("minimumFractionDigits", "digits")]),
+        },
+        read("digits"),
+      ]
+    )
+  ).toEqual([]);
+  // `{$n :relativetime unit=$unit} {$unit}`
+  expect(
+    textOnly(
+      [input("n"), input("unit")],
+      [
+        {
+          type: "expression",
+          arg: { type: "variable-reference", name: "n" },
+          annotation: fn("relativetime", [
+            { name: "unit", value: { type: "literal", value: "$unit" } },
+          ]),
+        },
+        read("unit"),
+      ]
+    )
+  ).toEqual([]);
+  // `.input {$date :datetime timeZone=$zone}`, `{$date} {$zone}`
+  expect(
+    textOnly(
+      [
+        input("date", fn("datetime", [option("timeZone", "zone")])),
+        input("zone"),
+      ],
+      [read("date"), read("zone")]
+    )
+  ).toEqual([]);
+  // an input no pattern reads
+  expect(textOnly([input("unused"), input("name")], [read("name")])).toEqual([
+    "name",
+  ]);
+});
+
 const strictConsumer = `
 import { m } from "./messages.js";
 
