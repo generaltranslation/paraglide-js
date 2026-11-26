@@ -376,3 +376,14 @@ test("the provider name is case-insensitive", async () => {
   });
   expect(provider).toBe("gt");
 });
+
+test("a .env.local that git already ignores leaves .gitignore alone", async () => {
+  git.exitCode = undefined;
+  vi.mocked(utils.promptSelection).mockResolvedValueOnce("gt");
+  const { gitignore, envLocal, logged } = await run({
+    files: { "/.gitignore": "*.local\n" },
+  });
+  expect(gitignore).toBe("*.local\n");
+  expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n");
+  expect(logged).not.toContain("Added .env.local to .gitignore.");
+});
