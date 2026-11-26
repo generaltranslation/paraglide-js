@@ -7,5 +7,6 @@ export type InitOptions = {
   lint?: "none" | "eslint" | "oxlint";
   check?: boolean;
   sherlock?: boolean;
-  machineTranslation?: boolean;
+  /** `true` adds the machine-translate script, `"gt"` also chooses General Translation. */
+  machineTranslation?: boolean | "gt";
 };

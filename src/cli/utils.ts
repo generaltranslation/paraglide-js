@@ -41,7 +41,10 @@ export const prompt: typeof consola.prompt = async (message, options) => {
 
 export const promptSelection = async <T extends string>(
   message: string,
-  options: { initial?: T; options: { label: string; value: T }[] } = {
+  options: {
+    initial?: T;
+    options: { label: string; value: T; hint?: string }[];
+  } = {
     options: [],
   }
 ): Promise<T> => {

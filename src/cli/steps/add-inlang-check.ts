@@ -7,9 +7,12 @@ import {
 import { updatePackageJson } from "./update-package-json.js";
 
 /**
- * The `@inlang/cli` range `init` adds. 3.4.0 introduced `inlang check`.
+ * The `@inlang/cli` range `init` adds. 3.4.0 introduced `inlang check`, and
+ * 3.7.0 made General Translation the default for `machine translate`.
  */
-export const INLANG_CLI_VERSION_RANGE = "^3.4.0";
+export const INLANG_CLI_VERSION_RANGE = "^3.7.1";
+
+export const INLANG_CLI_PACKAGE = "@inlang/cli";
 
 export const CHECK_SCRIPT_NAME = "check:i18n";
 
@@ -35,10 +38,10 @@ export const addInlangCheck: CliStep<
 
   await updatePackageJson({
     devDependencies: async (devDeps) => {
-      existingCli = devDeps["@inlang/cli"];
+      existingCli = devDeps[INLANG_CLI_PACKAGE];
       if (existingCli !== undefined) return devDeps;
       addedCli = true;
-      return { ...devDeps, "@inlang/cli": INLANG_CLI_VERSION_RANGE };
+      return { ...devDeps, [INLANG_CLI_PACKAGE]: INLANG_CLI_VERSION_RANGE };
     },
     scripts: async (scripts) => {
       if (scripts[CHECK_SCRIPT_NAME] !== undefined) return scripts;
@@ -60,7 +63,10 @@ export const addInlangCheck: CliStep<
       `Added a ${CHECK_SCRIPT_NAME} script that checks the translations to package.json.`
     );
   }
-  if (existingCli !== undefined && mayBeOlderThan3_4(existingCli)) {
+  if (
+    existingCli !== undefined &&
+    mayBeOlderThan(existingCli, { major: 3, minor: 4 })
+  ) {
     ctx.logger.warn(
       `\`inlang check\` needs @inlang/cli 3.4.0 or later. Your package.json has "${existingCli}". Update it to "${INLANG_CLI_VERSION_RANGE}".`
     );
@@ -70,14 +76,17 @@ export const addInlangCheck: CliStep<
 };
 
 /**
- * Whether a version range may resolve to an `@inlang/cli` before 3.4.0,
+ * Whether a version range may resolve to a version before `major.minor`,
  * judged by the first version it names (`^3.0.0`, `3.2.0`, `~2.1.0`).
  * Ranges without a version (`latest`, `*`, `workspace:*`) are trusted.
  */
-function mayBeOlderThan3_4(range: string): boolean {
+export function mayBeOlderThan(
+  range: string,
+  { major, minor }: { major: number; minor: number }
+): boolean {
   const match = range.match(/(\d+)\.(\d+)/);
   if (!match) return false;
-  const major = Number(match[1]);
-  const minor = Number(match[2]);
-  return major < 3 || (major === 3 && minor < 4);
+  const rangeMajor = Number(match[1]);
+  const rangeMinor = Number(match[2]);
+  return rangeMajor < major || (rangeMajor === major && rangeMinor < minor);
 }

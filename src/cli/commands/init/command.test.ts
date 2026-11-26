@@ -9,7 +9,11 @@ import { checkForUncommittedChanges } from "../../steps/check-for-uncomitted-cha
 import { fileURLToPath } from "node:url";
 import * as defaults from "../../defaults.js";
 import * as utils from "../../utils.js";
-import { createInitCommand, runInit } from "./command.js";
+import {
+  createInitCommand,
+  machineTranslateNextStep,
+  runInit,
+} from "./command.js";
 
 let root: string;
 beforeEach(async () => {
@@ -44,6 +48,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   process.exitCode = 0;
   await rm(root, { recursive: true, force: true });
 });
@@ -182,4 +187,50 @@ test("init emits declarations without requiring or editing a tsconfig", async ()
   expect(
     await readFile(join(root, "src/paraglide/runtime.d.ts"), "utf8")
   ).toContain("getLocale");
+});
+
+test("GT setup and reruns explain translation and conditional sign-in", async () => {
+  for (const name of Object.keys(process.env))
+    if (/INLANG_|GT_/.test(name)) vi.stubEnv(name, "");
+  const info = vi.spyOn(Logger.prototype, "info");
+  const stdout = vi
+    .spyOn(process.stdout, "write")
+    .mockImplementation(() => true);
+  for (let run = 0; run < 2; run++) {
+    await runInit({ yes: true, machineTranslation: "gt", compile: false });
+    expect(info).toHaveBeenCalledWith(
+      expect.stringContaining("add messages to messages/en.json")
+    );
+    expect(info).toHaveBeenCalledWith(
+      expect.stringContaining("If sign-in is needed")
+    );
+    const printed = stdout.mock.calls.map(([chunk]) => String(chunk)).join("");
+    expect(printed).toContain("npm run machine-translate -- --no-browser");
+    info.mockClear();
+    stdout.mockClear();
+  }
+});
+
+test("the next step names the base locale when init doesn't know its message file", () => {
+  expect(
+    machineTranslateNextStep({
+      provider: "other",
+      sourceFile: undefined,
+      baseLocale: "en",
+      targetLocales: ["de", "fr"],
+    })
+  ).toBe(
+    "Next: add messages for en, then run `npm run machine-translate` to translate them into de, fr."
+  );
+});
+
+test("unreadable provider configuration requires repair before translation", () => {
+  expect(
+    machineTranslateNextStep({
+      provider: "unknown",
+      sourceFile: "messages/en.json",
+      baseLocale: "en",
+      targetLocales: ["de"],
+    })
+  ).toContain("resolve the unreadable provider configuration before running");
 });

@@ -6,16 +6,23 @@ import { initializeInlangProject } from "../../steps/initialize-inlang-project.j
 import { maybeAddSherlock } from "../../steps/maybe-add-sherlock.js";
 import { promptForOutdir } from "../../steps/prompt-for-outdir.js";
 import { updatePackageJson } from "../../steps/update-package-json.js";
-import { shellArgument, type CliStep } from "../../utils.js";
+import {
+  shellArgument,
+  toRelativeDisplayPath,
+  type CliStep,
+} from "../../utils.js";
 import nodeFs from "node:fs";
 import { ENV_VARIABLES } from "../../../services/env-variables/index.js";
 import { detectBundler } from "../../steps/detect-bundler.js";
 import { addVitePlugin } from "../../steps/add-vite-plugin.js";
 import { compile } from "../../../compiler/compile.js";
-import { maybeAddMachineTranslation } from "../../steps/maybe-add-machine-translation.js";
+import {
+  MACHINE_TRANSLATE_SCRIPT_NAME,
+  maybeAddMachineTranslation,
+  type MachineTranslationProvider,
+} from "../../steps/maybe-add-machine-translation.js";
 import { addInlangCheck } from "../../steps/add-inlang-check.js";
 import { agentsMdSuggestion } from "../../steps/agents-md-suggestion.js";
-import { getNewProjectTemplate } from "../../defaults.js";
 
 import type { InitOptions } from "../../init-options.js";
 import {
@@ -197,30 +204,64 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
     );
     const settings = await ctx9.project.settings.get();
     const pattern = settings["plugin.inlang.messageFormat"]?.pathPattern;
+    // Known only for the inlang message format plugin.
+    const pathPattern =
+      typeof pattern === "string"
+        ? toRelativeDisplayPath(
+            root,
+            nodePath.resolve(
+              nodePath.dirname(nodePath.resolve(root, ctx9.projectPath)),
+              pattern
+            )
+          )
+        : undefined;
+    if (ctx9.machineTranslationProvider) {
+      logger.info(
+        machineTranslateNextStep({
+          provider: ctx9.machineTranslationProvider,
+          sourceFile: pathPattern?.replaceAll("{locale}", settings.baseLocale),
+          baseLocale: settings.baseLocale,
+          targetLocales: settings.locales.filter(
+            (locale) => locale !== settings.baseLocale
+          ),
+        })
+      );
+    }
     process.stdout.write(
       agentsMdSuggestion({
         root,
         projectPath: ctx9.projectPath,
         outdir: ctx9.outdir,
-        pathPattern:
-          typeof pattern === "string"
-            ? nodePath
-                .relative(
-                  root,
-                  nodePath.resolve(
-                    nodePath.dirname(nodePath.resolve(root, ctx9.projectPath)),
-                    pattern
-                  )
-                )
-                .split(nodePath.sep)
-                .join("/")
-            : getNewProjectTemplate()["plugin.inlang.messageFormat"]
-                .pathPattern,
+        pathPattern,
+        machineTranslation: ctx9.machineTranslationProvider,
       }) + "\n"
     );
   } finally {
     await initialized.project.close();
   }
+}
+
+export function machineTranslateNextStep(args: {
+  provider: MachineTranslationProvider;
+  /** The base locale's message file, if init knows it. */
+  sourceFile: string | undefined;
+  baseLocale: string;
+  targetLocales: string[];
+}): string {
+  if (args.provider === "unknown")
+    return `Next: resolve the unreadable provider configuration before running \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}\`.`;
+  const into = args.targetLocales.length
+    ? ` into ${args.targetLocales.join(", ")}`
+    : "";
+  const where = args.sourceFile
+    ? `to ${args.sourceFile}`
+    : `for ${args.baseLocale}`;
+  return (
+    `Next: add messages ${where}, then run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}\` to translate them${into}.` +
+    (args.provider === "gt"
+      ? " If sign-in is needed, the command opens your browser."
+      : "")
+  );
 }
 
 const addParaglideJsToDevDependencies: CliStep<

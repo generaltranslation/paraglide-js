@@ -53,6 +53,7 @@
     "@inlang/sdk": "^4.2.0",
     "commander": "11.1.0",
     "consola": "3.4.0",
+    "dotenv": "^16.6.1",
     "jiti": "^2.7.0",
     "json5": "2.2.3",
     "magic-string": "^0.30.21",
