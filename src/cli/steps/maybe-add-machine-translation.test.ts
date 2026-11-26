@@ -355,3 +355,24 @@ test("a machine-translate script added while init asks is kept", async () => {
     "machine-translate": "my-translator",
   });
 });
+
+test("a blank shell variable doesn't hide the provider in .env.local", async () => {
+  process.env.INLANG_MACHINE_TRANSLATE_PROVIDER = " ";
+  const { setup, provider, envLocal } = await run({
+    interactive: false,
+    machineTranslation: "gt",
+    files: { "/.env.local": "INLANG_MACHINE_TRANSLATE_PROVIDER=demosjarco\n" },
+  });
+  expect(setup).toBe("script");
+  expect(provider).toBe("other");
+  expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=demosjarco\n");
+});
+
+test("the provider name is case-insensitive", async () => {
+  const { provider } = await run({
+    interactive: false,
+    machineTranslation: "gt",
+    files: { "/.env.local": "INLANG_MACHINE_TRANSLATE_PROVIDER=GT\n" },
+  });
+  expect(provider).toBe("gt");
+});
