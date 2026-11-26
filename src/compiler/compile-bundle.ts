@@ -1,6 +1,7 @@
 import type {
   Bundle,
   BundleNested,
+  FunctionReference,
   MarkupStandalone,
   MarkupStart,
   ProjectSettings,
@@ -15,6 +16,7 @@ import type { Compiled } from "./types.js";
 import {
   inputTypeForName,
   jsDocBundleFunctionTypes,
+  type InputMatchType,
   type InputMatchTypes,
 } from "./jsdoc-types.js";
 import { isValidIdentifier, quotePropertyKey } from "./variable-access.js";
@@ -26,6 +28,7 @@ import {
 import type { CompilerOptions } from "./compiler-options.js";
 import { perLocaleBuildStaticLocaleExpression } from "./per-locale-build.js";
 import { resolveInputAlias } from "./input-alias.js";
+import { annotationVariableReferences } from "./compile-annotation.js";
 
 type InlineBody = NonNullable<CompiledMessage["inline"]>;
 
@@ -78,6 +81,8 @@ export const compileBundle = (args: {
   compactTypes?: boolean;
   sharedMessageFactory?: boolean;
   experimentalStaticLocale?: CompilerOptions["experimentalStaticLocale"];
+  /** Type inputs that are only interpolated as text `string | number`. */
+  strictInputTypes?: CompilerOptions["strictInputTypes"];
 }): CompiledBundleWithMessages => {
   const moduleId = args.moduleId ?? toSafeModuleId(args.bundle.id);
   const fused =
@@ -85,7 +90,9 @@ export const compileBundle = (args: {
   if (fused) return fused;
   const compiledMessages: Record<string, CompiledMessage> = {};
   const inputTypeAliasName = toBundleInputTypeAliasName(moduleId);
-  const matchTypes = collectInputMatchTypes(args.bundle);
+  const matchTypes = collectInputMatchTypes(args.bundle, {
+    strictInputTypes: args.strictInputTypes,
+  });
   const hasMarkup = bundleHasMarkup(args.bundle);
 
   for (const message of args.bundle.messages) {
@@ -210,7 +217,10 @@ function tryCompileInlineBundle(
     }
   }
   const inputTypeAliasName = toBundleInputTypeAliasName(moduleId);
-  const matchTypes: InputMatchTypes = new Map();
+  // Without selectors, only strictInputTypes changes the input types.
+  const matchTypes: InputMatchTypes = args.strictInputTypes
+    ? collectInputMatchTypes(args.bundle, { strictInputTypes: true })
+    : new Map();
   const messages: Record<string, CompiledMessage> = {};
   const expressions: Record<string, string> = Object.create(null);
   const plain: Record<string, string> | undefined = args.sharedMessageFactory
@@ -949,7 +959,10 @@ function renderTypeObjectKey(name: string): string {
   return isValidIdentifier(name) ? name : quotePropertyKey(name);
 }
 
-function collectInputMatchTypes(bundle: BundleNested): InputMatchTypes {
+function collectInputMatchTypes(
+  bundle: BundleNested,
+  options: { strictInputTypes?: boolean } = {}
+): InputMatchTypes {
   const inputNames = new Set(
     bundle.declarations
       ?.filter((decl) => decl.type === "input-variable")
@@ -960,7 +973,10 @@ function collectInputMatchTypes(bundle: BundleNested): InputMatchTypes {
   const ensureInfo = (name: string) => {
     const existing = matchTypes.get(name);
     if (existing) return existing;
-    const created = { literals: new Set<string>(), hasCatchAll: false };
+    const created: InputMatchType = {
+      literals: new Set<string>(),
+      hasCatchAll: false,
+    };
     matchTypes.set(name, created);
     return created;
   };
@@ -1010,7 +1026,93 @@ function collectInputMatchTypes(bundle: BundleNested): InputMatchTypes {
     }
   }
 
+  if (options.strictInputTypes) {
+    for (const name of collectTextOnlyInputs(bundle)) {
+      ensureInfo(name).textOnly = true;
+    }
+  }
+
   return matchTypes;
+}
+
+/**
+ * Returns the inputs that every message of the bundle only interpolates as
+ * text, directly or through un-annotated local variables (`{$name}`).
+ *
+ * An input is not text-only if it is a selector, the argument or an option of
+ * a function annotation (`{$count :number}`, `.local n = {$count :plural}`),
+ * a markup option, or carries an annotation itself. The formatters accept
+ * other values than strings and numbers (dates, numeric strings, ...), so
+ * those inputs keep their type. Inputs no pattern reads are not text-only.
+ *
+ * @example
+ *   // en: "Hello {$name}, you have {$count :number} messages"
+ *   collectTextOnlyInputs(bundle) // Set { "name" }
+ */
+export function collectTextOnlyInputs(bundle: BundleNested): Set<string> {
+  const declarations = bundle.declarations ?? [];
+  const interpolated = new Set<string>();
+  const otherUses = new Set<string>();
+  const markOtherUse = (variableName: string) => {
+    const inputName = resolveInputAlias(variableName, declarations);
+    if (inputName !== undefined) otherUses.add(inputName);
+  };
+  const markAnnotationOptions = (annotation: FunctionReference | undefined) => {
+    if (!annotation) return;
+    for (const name of annotationVariableReferences(annotation)) {
+      markOtherUse(name);
+    }
+  };
+
+  for (const declaration of declarations) {
+    if (declaration.type === "input-variable") {
+      // The compiler ignores input annotations, but they state the input is
+      // meant for a formatter, e.g. `.input {$date :datetime}`.
+      if (declaration.annotation) otherUses.add(declaration.name);
+      markAnnotationOptions(declaration.annotation);
+      continue;
+    }
+    // Un-annotated locals are aliases; their reads count for the input.
+    if (!declaration.value.annotation) continue;
+    if (declaration.value.arg.type === "variable-reference") {
+      markOtherUse(declaration.value.arg.name);
+    }
+    markAnnotationOptions(declaration.value.annotation);
+  }
+
+  for (const message of bundle.messages) {
+    for (const selector of message.selectors ?? []) {
+      markOtherUse(selector.name);
+    }
+    for (const variant of message.variants) {
+      for (const match of variant.matches ?? []) {
+        markOtherUse(match.key);
+      }
+      for (const part of variant.pattern) {
+        if (part.type === "text") continue;
+        if (part.type !== "expression") {
+          for (const option of part.options ?? []) {
+            if (option.value.type === "variable-reference") {
+              markOtherUse(option.value.name);
+            }
+          }
+          continue;
+        }
+        if (part.arg.type === "variable-reference") {
+          if (part.annotation) {
+            markOtherUse(part.arg.name);
+          } else {
+            const inputName = resolveInputAlias(part.arg.name, declarations);
+            if (inputName !== undefined) interpolated.add(inputName);
+          }
+        }
+        markAnnotationOptions(part.annotation);
+      }
+    }
+  }
+
+  for (const name of otherUses) interpolated.delete(name);
+  return interpolated;
 }
 
 export function bundleHasMarkup(bundle: BundleNested): boolean {

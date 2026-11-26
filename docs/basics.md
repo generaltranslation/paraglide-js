@@ -27,6 +27,15 @@ Pass parameters as an object:
 m.greeting({ name: "Samuel" }); // "Hello Samuel!"
 ```
 
+By default a parameter that does not select a variant accepts any value except `null` and `undefined`. A parameter that is only interpolated converts its value to a string, so an object renders as "[object Object]". Set the [`strictInputTypes`](./compiler-options) compiler option to type such parameters `string | number` and catch that at compile time:
+
+```js
+m.greeting({ name: "Samuel" }); // ✅
+m.greeting({ name: { first: "Samuel" } }); // ❌ Type error with strictInputTypes
+```
+
+Parameters that select a variant or go through a formatter such as `:number` or `:datetime` keep their types.
+
 ## Getting and setting the locale
 
 ```js

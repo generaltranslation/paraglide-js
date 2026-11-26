@@ -138,3 +138,26 @@ test("inputsType falls back to NonNullable<unknown> when no match info exists", 
 
   expect(result).toBe("{ type: NonNullable<unknown> }");
 });
+
+test("inputsType types text-only inputs as string | number", () => {
+  const inputs: InputVariable[] = [
+    { name: "error", type: "input-variable" },
+    { name: "count", type: "input-variable" },
+    { name: "type", type: "input-variable" },
+  ];
+
+  const matchTypes = new Map([
+    [
+      "error",
+      { literals: new Set<string>(), hasCatchAll: true, textOnly: true },
+    ],
+    ["count", { literals: new Set<string>(), hasCatchAll: true }],
+    ["type", { literals: new Set(["a", "b"]), hasCatchAll: false }],
+  ]);
+
+  const result = inputsType(inputs, matchTypes);
+
+  expect(result).toBe(
+    '{ error: string | number, count: NonNullable<unknown>, type: "a" | "b" }'
+  );
+});

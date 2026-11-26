@@ -37,6 +37,7 @@ export const defaultCompilerOptions = {
   emitPrettierIgnore: true,
   emitReadme: true,
   emitTsDeclarations: false,
+  strictInputTypes: false,
   cleanOutdir: true,
   disableAsyncLocalStorage: false,
   lazyUrlPatternPolyfill: false,
@@ -299,6 +300,41 @@ export type CompilerOptions = {
    * @default false
    */
   emitTsDeclarations?: boolean;
+  /**
+   * Type message inputs that are only interpolated as text as
+   * `string | number` instead of `NonNullable<unknown>`.
+   *
+   * A message interpolates its inputs with JavaScript string conversion. An
+   * object passed to `{name}` renders as "[object Object]", which the default
+   * input type does not catch. With this option, such a call is a type error:
+   *
+   * ```ts
+   * // "Summary failed: {error}"
+   * m.summary_failed({ error: "timeout" }); // ok
+   * m.summary_failed({ error: { code: 1, message: "timeout" } }); // type error
+   * ```
+   *
+   * Only inputs that are interpolated and nothing else are narrowed. Inputs
+   * that are a selector (match literals keep their literal union type), the
+   * argument or an option of a formatter such as `:number`, `:datetime` or
+   * `:plural`, or a markup option keep their type, because those accept other
+   * values such as dates or numeric strings.
+   *
+   * Off by default because it rejects values that interpolate on purpose,
+   * like a `Date` or an object with its own `toString()`.
+   *
+   * @example
+   * ```ts
+   * await compile({
+   *   project: "./project.inlang",
+   *   outdir: "./src/paraglide",
+   *   strictInputTypes: true,
+   * });
+   * ```
+   *
+   * @default false
+   */
+  strictInputTypes?: boolean;
   /**
    * https://paraglidejs.com/strategy#url
    */

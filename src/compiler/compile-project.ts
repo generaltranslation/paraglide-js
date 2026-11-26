@@ -128,6 +128,7 @@ export const compileCatalog = async (args: {
       messageReferenceExpression: outputStructure.messageReferenceExpression,
       settings,
       experimentalStaticLocale: optionsWithDefaults.experimentalStaticLocale,
+      strictInputTypes: optionsWithDefaults.strictInputTypes,
     })
   );
 
