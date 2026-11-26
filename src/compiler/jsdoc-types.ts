@@ -2,10 +2,26 @@ import type { InputVariable } from "@inlang/sdk";
 import { renderInputMatchTypeVariants } from "./match-literals.js";
 import { isValidIdentifier, quotePropertyKey } from "./variable-access.js";
 
-export type InputMatchTypes = Map<
-  string,
-  { literals: Set<string>; hasCatchAll: boolean }
->;
+/** How a bundle uses one of its inputs, as far as its type is concerned. */
+export type InputMatchType = {
+  literals: Set<string>;
+  hasCatchAll: boolean;
+  /**
+   * The input is only interpolated as text: never a selector, never
+   * formatted, never a markup option. Set only with the `strictInputTypes`
+   * compiler option. Such an input is typed `string | number` instead of
+   * `NonNullable<unknown>`.
+   */
+  textOnly?: boolean;
+};
+
+export type InputMatchTypes = Map<string, InputMatchType>;
+
+/**
+ * The type of an input that `strictInputTypes` finds to be only interpolated
+ * as text. Other values would interpolate as `[object Object]` or similar.
+ */
+export const textInputType = "string | number";
 
 export function jsDocBundleFunctionTypes(args: {
   inputs: InputVariable[];
@@ -64,6 +80,8 @@ function resolveInputType(name: string, matchTypes?: InputMatchTypes): string {
 
   const info = matchTypes.get(name);
   if (!info) return "NonNullable<unknown>";
+  // A text-only input is never a selector, so it has no match literals.
+  if (info.textOnly) return textInputType;
   if (info.hasCatchAll) return "NonNullable<unknown>";
 
   const literals = Array.from(info.literals);

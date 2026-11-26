@@ -108,6 +108,7 @@ export const paraglideConfigSchema = v.object({
   emitPrettierIgnore: v.optional(v.boolean()),
   emitReadme: v.optional(v.boolean()),
   emitTsDeclarations: v.optional(v.boolean()),
+  strictInputTypes: v.optional(v.boolean()),
   urlPatterns: v.optional(
     v.array(
       v.object({
