@@ -5,15 +5,22 @@ import * as utils from "../utils.js";
 import { maybeAddMachineTranslation } from "./maybe-add-machine-translation.js";
 
 // `git check-ignore`: exit code 1 means a work tree that doesn't ignore the
-// file, 128 means no git repository.
-const git = vi.hoisted(() => ({ exitCode: 1 as number | undefined }));
+// file, 128 means no git repository. `git ls-files` exits with 0 for a
+// tracked file.
+const git = vi.hoisted(() => ({
+  exitCode: 1 as number | undefined,
+  tracked: false,
+}));
 vi.mock("node:child_process", () => ({
   execFile: (
     _file: string,
-    _args: string[],
+    args: string[],
     _options: object,
     callback: (error: { code: number } | null) => void
-  ) => callback(git.exitCode === undefined ? null : { code: git.exitCode }),
+  ) => {
+    const code = args[0] === "ls-files" ? (git.tracked ? 0 : 1) : git.exitCode;
+    callback(code === undefined || code === 0 ? null : { code });
+  },
 }));
 
 const originalCwd = process.cwd;
@@ -21,6 +28,7 @@ const savedEnv = { ...process.env };
 beforeEach(() => {
   process.cwd = (() => "/") as typeof process.cwd;
   git.exitCode = 1;
+  git.tracked = false;
   // The developer's own shell may choose a provider.
   for (const name of Object.keys(process.env))
     if (/INLANG_|GT_/.test(name)) delete process.env[name];
@@ -42,12 +50,15 @@ async function run(
     files?: Record<string, string>;
     interactive?: boolean;
     machineTranslation?: boolean | "gt";
+    /** Prepares what plain files can't express, e.g. a symlink. */
+    prepare?: (fs: ReturnType<typeof memfs>["fs"]) => void;
   } = {}
 ) {
   const { fs } = memfs({
     "/package.json": JSON.stringify({ scripts: { build: "vite build" } }),
     ...options.files,
   });
+  options.prepare?.(fs);
   const logger = new Logger({ silent: true, prefix: false });
   const success = vi.spyOn(logger, "success");
   const info = vi.spyOn(logger, "info");
@@ -75,6 +86,7 @@ async function run(
     logged: success.mock.calls.map(([message]) => message),
     informed: info.mock.calls.map(([message]) => message),
     warned: warn.mock.calls.map(([message]) => String(message)),
+    read,
   };
 }
 
@@ -262,17 +274,6 @@ test("a machine-translate script that doesn't run the inlang CLI is kept, withou
   expect(utils.promptSelection).not.toHaveBeenCalled();
 });
 
-test("outside a git repository, .gitignore is left alone", async () => {
-  git.exitCode = 128;
-  vi.mocked(utils.promptSelection).mockResolvedValueOnce("gt");
-  const { gitignore, envLocal, logged } = await run({
-    files: { "/.gitignore": "*.local\n" },
-  });
-  expect(gitignore).toBe("*.local\n");
-  expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n");
-  expect(logged).not.toContain("Added .env.local to .gitignore.");
-});
-
 test("a script that runs the inlang CLI through npx counts as the inlang CLI", async () => {
   const script =
     "npx @inlang/cli@latest machine translate --project ./project.inlang";
@@ -309,53 +310,6 @@ test("warns about an @inlang/cli version before 3.7 pinned in the script", async
   ]);
 });
 
-test("a symlinked .env.local is left alone", async () => {
-  const { fs } = memfs({
-    "/package.json": "{}",
-    "/shared/.env": "OTHER=1\n",
-  });
-  fs.symlinkSync("/shared/.env", "/.env.local");
-  const logger = new Logger({ silent: true, prefix: false });
-  const warn = vi.spyOn(logger, "warn");
-  const result = await maybeAddMachineTranslation({
-    fs: fs.promises as unknown as typeof import("node:fs/promises"),
-    logger,
-    projectPath: "./project.inlang",
-    root: "/",
-    packageJsonPath: "/package.json",
-    interactive: false,
-    machineTranslation: "gt",
-  });
-  expect(result.machineTranslationSetup).toBe("script");
-  expect(result.machineTranslationProvider).toBe("unchosen");
-  expect(String(fs.readFileSync("/shared/.env"))).toBe("OTHER=1\n");
-  expect(warn).toHaveBeenCalledWith(
-    "Didn't choose General Translation: .env.local is a symbolic link, which init doesn't change. The inlang CLI asks for a provider on its first run."
-  );
-});
-
-test("a machine-translate script added while init asks is kept", async () => {
-  const { fs } = memfs({ "/package.json": "{}" });
-  vi.mocked(utils.promptSelection).mockImplementationOnce(async () => {
-    fs.writeFileSync(
-      "/package.json",
-      JSON.stringify({ scripts: { "machine-translate": "my-translator" } })
-    );
-    return "script";
-  });
-  await maybeAddMachineTranslation({
-    fs: fs.promises as unknown as typeof import("node:fs/promises"),
-    logger: new Logger({ silent: true, prefix: false }),
-    projectPath: "./project.inlang",
-    root: "/",
-    packageJsonPath: "/package.json",
-    interactive: true,
-  });
-  expect(JSON.parse(String(fs.readFileSync("/package.json"))).scripts).toEqual({
-    "machine-translate": "my-translator",
-  });
-});
-
 test("a blank shell variable doesn't hide the provider in .env.local", async () => {
   process.env.INLANG_MACHINE_TRANSLATE_PROVIDER = " ";
   const { setup, provider, envLocal } = await run({
@@ -375,17 +329,6 @@ test("the provider name is case-insensitive", async () => {
     files: { "/.env.local": "INLANG_MACHINE_TRANSLATE_PROVIDER=GT\n" },
   });
   expect(provider).toBe("gt");
-});
-
-test("a .env.local that git already ignores leaves .gitignore alone", async () => {
-  git.exitCode = undefined;
-  vi.mocked(utils.promptSelection).mockResolvedValueOnce("gt");
-  const { gitignore, envLocal, logged } = await run({
-    files: { "/.gitignore": "*.local\n" },
-  });
-  expect(gitignore).toBe("*.local\n");
-  expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n");
-  expect(logged).not.toContain("Added .env.local to .gitignore.");
 });
 
 test("a blank key in the shell or .env.local still overrides one in .env", async () => {
@@ -429,25 +372,110 @@ test("warns about an @inlang/cli before 3.7 when the project already chose Gener
   ]);
 });
 
+test.each([
+  ["outside a git repository", 128],
+  ["when git already ignores .env.local", undefined],
+])("%s, .gitignore is left alone", async (_, exitCode) => {
+  git.exitCode = exitCode;
+  const { gitignore, envLocal, logged } = await run({
+    interactive: false,
+    machineTranslation: "gt",
+    files: { "/.gitignore": "*.local\n" },
+  });
+  expect(gitignore).toBe("*.local\n");
+  expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n");
+  expect(logged).not.toContain("Added .env.local to .gitignore.");
+});
+
 test("a symlinked .gitignore is left alone, with a warning", async () => {
-  const { fs } = memfs({ "/package.json": "{}", "/shared/ignore": "dist\n" });
-  fs.symlinkSync("/shared/ignore", "/.gitignore");
-  const logger = new Logger({ silent: true, prefix: false });
-  const warn = vi.spyOn(logger, "warn");
-  await maybeAddMachineTranslation({
-    fs: fs.promises as unknown as typeof import("node:fs/promises"),
-    logger,
-    projectPath: "./project.inlang",
-    root: "/",
-    packageJsonPath: "/package.json",
+  const { read, envLocal, warned } = await run({
+    interactive: false,
+    machineTranslation: "gt",
+    files: { "/shared/ignore": "dist\n" },
+    prepare: (fs) => fs.symlinkSync("/shared/ignore", "/.gitignore"),
+  });
+  expect(await read("/shared/ignore")).toBe("dist\n");
+  expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n");
+  expect(warned).toEqual([
+    "Git doesn't ignore .env.local, and .gitignore is a symbolic link, which init doesn't change. Ignore .env.local before the first run: the inlang CLI only saves a key to an ignored file.",
+  ]);
+});
+
+/** Runs `--machine-translation gt` where init can't save the choice. */
+async function runWithoutSave(options: Parameters<typeof run>[0]) {
+  const result = await run({
+    ...options,
     interactive: false,
     machineTranslation: "gt",
   });
-  expect(String(fs.readFileSync("/shared/ignore"))).toBe("dist\n");
-  expect(String(fs.readFileSync("/.env.local"))).toBe(
-    "INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n"
+  expect(result.setup).toBe("script");
+  expect(result.provider).toBe("unchosen");
+  expect(result.pkg.scripts["machine-translate"]).toBeDefined();
+  expect(result.warned).toHaveLength(1);
+  expect(result.warned[0]).toMatch(/^Didn't choose General Translation: /);
+  expect(result.warned[0]).toMatch(
+    / The inlang CLI asks for a provider on its first run\.$/
   );
-  expect(warn).toHaveBeenCalledWith(
-    "Git doesn't ignore .env.local, and .gitignore is a symbolic link, which init doesn't change. Ignore .env.local before the first run: the inlang CLI only saves a key to an ignored file."
+  return result;
+}
+
+test("a symlinked .env.local isn't changed", async () => {
+  const { read, warned } = await runWithoutSave({
+    files: { "/shared/.env": "OTHER=1\n" },
+    prepare: (fs) => fs.symlinkSync("/shared/.env", "/.env.local"),
+  });
+  expect(await read("/shared/.env")).toBe("OTHER=1\n");
+  expect(warned[0]).toContain(
+    ".env.local is a symbolic link, which init doesn't change."
   );
+});
+
+test("a .env.local that git tracks isn't changed", async () => {
+  git.tracked = true;
+  const { envLocal, gitignore, warned } = await runWithoutSave({
+    files: { "/.env.local": "OTHER=1\n" },
+  });
+  expect(envLocal).toBe("OTHER=1\n");
+  expect(gitignore).toBeUndefined();
+  expect(warned[0]).toContain(
+    "git tracks .env.local. Untrack it with `git rm --cached .env.local`."
+  );
+});
+
+test("a failed save is a warning, not a failed setup", async () => {
+  const { envLocal, warned } = await runWithoutSave({
+    prepare: (fs) => fs.mkdirSync("/.gitignore"),
+  });
+  expect(envLocal).toBeUndefined();
+  expect(warned[0]).toContain("couldn't save the choice to .env.local");
+});
+
+test("a machine-translate script added while init asks is kept", async () => {
+  let added: () => void = () => {};
+  vi.mocked(utils.promptSelection).mockImplementationOnce(async () => {
+    added();
+    return "script";
+  });
+  const { pkg } = await run({
+    prepare: (fs) => {
+      added = () =>
+        fs.writeFileSync(
+          "/package.json",
+          JSON.stringify({ scripts: { "machine-translate": "my-translator" } })
+        );
+    },
+  });
+  expect(pkg.scripts).toEqual({ "machine-translate": "my-translator" });
+});
+
+test("--machine-translation gt says when it keeps another provider", async () => {
+  const { setup, informed } = await run({
+    interactive: false,
+    machineTranslation: "gt",
+    files: { "/.env": "INLANG_DEEPL_API_KEY=k\n" },
+  });
+  expect(setup).toBe("script");
+  expect(informed).toEqual([
+    "Kept the machine translation provider this project already chose. To use General Translation, remove INLANG_MACHINE_TRANSLATE_PROVIDER and any provider API key from the shell, .env.local and .env.",
+  ]);
 });

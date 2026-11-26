@@ -92,14 +92,20 @@ export const maybeAddMachineTranslation: CliStep<
 
   // The inlang CLI reads its settings next to the project.
   const envDir = nodePath.dirname(nodePath.resolve(ctx.root, ctx.projectPath));
-  const chosen = await chosenProvider({
+  const found = await chosenProvider({
     fs: ctx.fs,
     logger: ctx.logger,
     dir: envDir,
   });
+  // A file init couldn't read is left to the inlang CLI, as another provider.
+  const chosen = found === "unreadable" ? "other" : found;
   let setup: MachineTranslationSetup;
   if (ctx.machineTranslation === true) setup = "script";
   else if (chosen) {
+    if (ctx.machineTranslation === "gt" && found === "other")
+      ctx.logger.info(
+        `Kept the machine translation provider this project already chose. To use General Translation, remove ${PROVIDER_ENV} and any provider API key from the shell, ${ENV_LOCAL} and .env.`
+      );
     if (ctx.machineTranslation === "gt" || existing !== undefined)
       setup = "script";
     else
@@ -138,10 +144,10 @@ export const maybeAddMachineTranslation: CliStep<
   }
   if (setup === "none") return done(setup);
 
+  const relativePath = nodePath.relative(ctx.root, ctx.projectPath);
+  let existingCli: string | undefined;
+  let addedScript = false;
   try {
-    const relativePath = nodePath.relative(ctx.root, ctx.projectPath);
-    let existingCli: string | undefined;
-    let addedScript = false;
     await updatePackageJson({
       devDependencies: async (devDeps) => {
         existingCli = devDeps[INLANG_CLI_PACKAGE];
@@ -163,45 +169,6 @@ export const maybeAddMachineTranslation: CliStep<
       );
     if (addedScript)
       ctx.logger.success("Added a machine-translate script to package.json.");
-
-    // A version in the script, e.g. `npx @inlang/cli@3.4.0`, wins.
-    const pinned = runsInlangCli?.[1];
-    const version = pinned ?? existingCli;
-    if (
-      (setup === "gt" || chosen === "gt") &&
-      version !== undefined &&
-      mayBeOlderThan(version, { major: 3, minor: 7 })
-    )
-      ctx.logger.warn(
-        `General Translation needs ${INLANG_CLI_PACKAGE} 3.7.0 or later. Your ${pinned ? "machine-translate script" : "package.json"} has "${version}". Update it to "${INLANG_CLI_VERSION_RANGE}".`
-      );
-
-    if (setup === "gt") {
-      const envLocal = nodePath.join(envDir, ENV_LOCAL);
-      const stats = await ctx.fs.lstat(envLocal).catch(() => undefined);
-      if (stats?.isSymbolicLink()) {
-        // It may be shared with other projects, and the inlang CLI won't save a key to it.
-        ctx.logger.warn(
-          `Didn't choose General Translation: ${ENV_LOCAL} is a symbolic link, which init doesn't change. The inlang CLI asks for a provider on its first run.`
-        );
-        return done("script", "unchosen");
-      }
-      const ignoreRule = await appendToEnvLocal({
-        fs: ctx.fs,
-        dir: envDir,
-        text: `${PROVIDER_ENV}=gt\n`,
-      });
-      ctx.logger.success(
-        `Chose General Translation for machine translation in ${ENV_LOCAL}. To choose another provider, remove ${PROVIDER_ENV} from it.`
-      );
-      if (ignoreRule === "added")
-        ctx.logger.success(`Added ${ENV_LOCAL} to .gitignore.`);
-      else if (ignoreRule === "missing")
-        // git doesn't read a symlinked .gitignore, and it may be shared.
-        ctx.logger.warn(
-          `Git doesn't ignore ${ENV_LOCAL}, and .gitignore is a symbolic link, which init doesn't change. Ignore ${ENV_LOCAL} before the first run: the inlang CLI only saves a key to an ignored file.`
-        );
-    }
   } catch (error) {
     ctx.logger.error(
       [
@@ -215,20 +182,75 @@ export const maybeAddMachineTranslation: CliStep<
     return done("none");
   }
 
-  return done(setup, setup === "gt" ? "gt" : (chosen ?? "unchosen"));
+  // A version in the script, e.g. `npx @inlang/cli@3.4.0`, wins.
+  const pinned = runsInlangCli?.[1];
+  const version = pinned ?? existingCli;
+  if (
+    (setup === "gt" || chosen === "gt") &&
+    version !== undefined &&
+    mayBeOlderThan(version, { major: 3, minor: 7 })
+  )
+    ctx.logger.warn(
+      `General Translation needs ${INLANG_CLI_PACKAGE} 3.7.0 or later. Your ${pinned ? "machine-translate script" : "package.json"} has "${version}". Update it to "${INLANG_CLI_VERSION_RANGE}".`
+    );
+  if (setup !== "gt") return done(setup, chosen ?? "unchosen");
+
+  // Without the choice saved, the inlang CLI asks on its first run.
+  const notChosen = (reason: string) => {
+    ctx.logger.warn(
+      `Didn't choose General Translation: ${reason} The inlang CLI asks for a provider on its first run.`
+    );
+    return done("script", "unchosen");
+  };
+  const stats = await ctx.fs
+    .lstat(nodePath.join(envDir, ENV_LOCAL))
+    .catch(() => undefined);
+  // It may be shared with other projects; the inlang CLI won't save a key to it.
+  if (stats?.isSymbolicLink())
+    return notChosen(
+      `${ENV_LOCAL} is a symbolic link, which init doesn't change.`
+    );
+  // The inlang CLI won't save a key to it: it would be committed.
+  if ((await git({ dir: envDir, args: ["ls-files", "--error-unmatch"] })) === 0)
+    return notChosen(
+      `git tracks ${ENV_LOCAL}. Untrack it with \`git rm --cached ${ENV_LOCAL}\`.`
+    );
+  let ignoreRule: Awaited<ReturnType<typeof appendToEnvLocal>>;
+  try {
+    ignoreRule = await appendToEnvLocal({
+      fs: ctx.fs,
+      dir: envDir,
+      text: `${PROVIDER_ENV}=gt\n`,
+    });
+  } catch (error) {
+    return notChosen(
+      `couldn't save the choice to ${ENV_LOCAL} (${error instanceof Error ? error.message : String(error)}).`
+    );
+  }
+  ctx.logger.success(
+    `Chose General Translation for machine translation in ${ENV_LOCAL}. To choose another provider, remove ${PROVIDER_ENV} from it.`
+  );
+  if (ignoreRule === "added")
+    ctx.logger.success(`Added ${ENV_LOCAL} to .gitignore.`);
+  else if (ignoreRule === "missing")
+    // git doesn't read a symlinked .gitignore, and it may be shared.
+    ctx.logger.warn(
+      `Git doesn't ignore ${ENV_LOCAL}, and .gitignore is a symbolic link, which init doesn't change. Ignore ${ENV_LOCAL} before the first run: the inlang CLI only saves a key to an ignored file.`
+    );
+  return done("gt", "gt");
 };
 
 /**
  * The machine translation provider the project already chose for the inlang
  * CLI: in the shell, in `.env.local` or `.env`, or with a project ID in
  * `gt.config.json`. `init` never overrides that choice. When it can't read one
- * of those files, it warns and leaves the provider to the inlang CLI.
+ * of those files, it warns and resolves `unreadable`.
  */
 async function chosenProvider(args: {
   fs: typeof import("node:fs/promises");
   logger: Logger;
   dir: string;
-}): Promise<"gt" | "other" | undefined> {
+}): Promise<"gt" | "other" | "unreadable" | undefined> {
   // As the inlang CLI: the shell wins over `.env.local`, which wins over
   // `.env`, except that a blank provider setting in the shell falls back to
   // the files.
@@ -251,7 +273,7 @@ async function chosenProvider(args: {
     args.logger.warn(
       `Couldn't read ${file}, so init left the machine translation provider to the inlang CLI: ${error instanceof Error ? error.message : String(error)}`
     );
-    return "other";
+    return "unreadable";
   }
   const set = (pattern: RegExp) =>
     Object.entries(env).some(
@@ -301,14 +323,8 @@ async function appendToEnvLocal(args: {
   text: string;
 }): Promise<"added" | "missing" | undefined> {
   // `git check-ignore` exits with 1 for a file it doesn't ignore.
-  const notIgnored = await new Promise<boolean>((resolve) =>
-    execFile(
-      "git",
-      ["check-ignore", "-q", "--", ENV_LOCAL],
-      { cwd: args.dir },
-      (error) => resolve(error?.code === 1)
-    )
-  );
+  const notIgnored =
+    (await git({ dir: args.dir, args: ["check-ignore", "-q"] })) === 1;
   let ignoreRule: "added" | "missing" | undefined;
   if (notIgnored) {
     const gitignore = nodePath.join(args.dir, ".gitignore");
@@ -345,5 +361,30 @@ async function appendLine(args: {
     args.file,
     separator + args.text,
     args.mode ? { mode: args.mode } : undefined
+  );
+}
+
+/**
+ * Runs `git <args> -- .env.local` in `dir` and resolves its exit code, or
+ * undefined if git couldn't run.
+ */
+function git(args: {
+  dir: string;
+  args: string[];
+}): Promise<number | undefined> {
+  return new Promise((resolve) =>
+    execFile(
+      "git",
+      [...args.args, "--", ENV_LOCAL],
+      { cwd: args.dir },
+      (error) =>
+        resolve(
+          error === null
+            ? 0
+            : typeof error.code === "number"
+              ? error.code
+              : undefined
+        )
+    )
   );
 }

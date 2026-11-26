@@ -56,7 +56,7 @@ test("the AGENTS.md suggestion tells agents how to translate with the script's p
       .split("\n")
       .at(-1)
   ).toBe(
-    "- To fill missing translations, run `npm run machine-translate -- --no-browser`. The first time, it prints a General Translation sign-in link and code: give them to the user."
+    "- To fill missing translations, run `npm run machine-translate -- --no-browser`. The first time, it prints a General Translation sign-in link and code and waits until the user signs in: run it in the background and give them the link and code."
   );
   expect(
     agentsMdSuggestion({ ...base, machineTranslation: "other" })
@@ -68,7 +68,7 @@ test("the AGENTS.md suggestion tells agents how to translate with the script's p
       .split("\n")
       .at(-1)
   ).toBe(
-    "- To fill missing translations, run `npm run machine-translate`. No provider is chosen yet: before the first run, ask the user to run it in their terminal and choose one."
+    "- To fill missing translations, run `npm run machine-translate`. If no provider is set up yet (no INLANG_MACHINE_TRANSLATE_PROVIDER or API key in `.env.local` or `.env`, and no `gt.config.json`), first ask the user to run it once in their terminal to choose one."
   );
   expect(agentsMdSuggestion(base)).not.toContain("machine-translate");
 });

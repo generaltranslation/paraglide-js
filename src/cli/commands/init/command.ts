@@ -206,27 +206,19 @@ export async function runInit(options: InitOptions & { compile?: boolean }) {
     // Known only for the inlang message format plugin.
     const pathPattern =
       typeof pattern === "string"
-        ? nodePath
-            .relative(
-              root,
-              nodePath.resolve(
-                nodePath.dirname(nodePath.resolve(root, ctx9.projectPath)),
-                pattern
-              )
+        ? toRelativeDisplayPath(
+            root,
+            nodePath.resolve(
+              nodePath.dirname(nodePath.resolve(root, ctx9.projectPath)),
+              pattern
             )
-            .split(nodePath.sep)
-            .join("/")
+          )
         : undefined;
     if (ctx9.machineTranslationSetup !== "none") {
       logger.info(
         machineTranslateNextStep({
           setup: ctx9.machineTranslationSetup,
-          sourceFile:
-            pathPattern &&
-            toRelativeDisplayPath(
-              root,
-              pathPattern.replaceAll("{locale}", settings.baseLocale)
-            ),
+          sourceFile: pathPattern?.replaceAll("{locale}", settings.baseLocale),
           baseLocale: settings.baseLocale,
           targetLocales: settings.locales.filter(
             (locale) => locale !== settings.baseLocale

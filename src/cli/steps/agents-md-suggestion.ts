@@ -4,6 +4,15 @@ import {
   type MachineTranslationProvider,
 } from "./maybe-add-machine-translation.js";
 
+const RUN = `- To fill missing translations, run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}`;
+
+/** How agents fill missing translations, by the script's provider. */
+const TRANSLATE_LINE: Record<MachineTranslationProvider, string> = {
+  gt: `${RUN} -- --no-browser\`. The first time, it prints a General Translation sign-in link and code and waits until the user signs in: run it in the background and give them the link and code.`,
+  other: `${RUN}\`.`,
+  unchosen: `${RUN}\`. If no provider is set up yet (no INLANG_MACHINE_TRANSLATE_PROVIDER or API key in \`.env.local\` or \`.env\`, and no \`gt.config.json\`), first ask the user to run it once in their terminal to choose one.`,
+};
+
 /**
  * The localization section `init` suggests adding to AGENTS.md. `init` only
  * prints it and never writes AGENTS.md.
@@ -29,18 +38,8 @@ export function agentsMdSuggestion(args: {
     "## Localization",
     `- Translations are an inlang project. Before localization work, read \`${projectPath}/README.md\`. It covers checks, machine translation and editors. It is git-ignored, so search tools may skip it.`,
     `- Edit messages in ${messages}. Never edit \`${outdir}/\`: Paraglide JS generates it.`,
-    ...(args.machineTranslation === "gt"
-      ? [
-          `- To fill missing translations, run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME} -- --no-browser\`. The first time, it prints a General Translation sign-in link and code: give them to the user.`,
-        ]
-      : args.machineTranslation === "other"
-        ? [
-            `- To fill missing translations, run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}\`.`,
-          ]
-        : args.machineTranslation === "unchosen"
-          ? [
-              `- To fill missing translations, run \`npm run ${MACHINE_TRANSLATE_SCRIPT_NAME}\`. No provider is chosen yet: before the first run, ask the user to run it in their terminal and choose one.`,
-            ]
-          : []),
+    ...(args.machineTranslation
+      ? [TRANSLATE_LINE[args.machineTranslation]]
+      : []),
   ].join("\n");
 }
