@@ -387,3 +387,26 @@ test("a .env.local that git already ignores leaves .gitignore alone", async () =
   expect(envLocal).toBe("INLANG_MACHINE_TRANSLATE_PROVIDER=gt\n");
   expect(logged).not.toContain("Added .env.local to .gitignore.");
 });
+
+test("a blank key in the shell or .env.local still overrides one in .env", async () => {
+  for (const [files, shell] of [
+    [{ "/.env": "INLANG_DEEPL_API_KEY=k\n" }, ""],
+    [
+      {
+        "/.env": "INLANG_DEEPL_API_KEY=k\n",
+        "/.env.local": "INLANG_DEEPL_API_KEY=\n",
+      },
+      undefined,
+    ],
+  ] as const) {
+    if (shell === undefined) delete process.env.INLANG_DEEPL_API_KEY;
+    else process.env.INLANG_DEEPL_API_KEY = shell;
+    const { setup, provider } = await run({
+      interactive: false,
+      machineTranslation: "gt",
+      files,
+    });
+    expect(setup).toBe("gt");
+    expect(provider).toBe("gt");
+  }
+});

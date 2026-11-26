@@ -222,23 +222,24 @@ async function chosenProvider(args: {
   logger: Logger;
   dir: string;
 }): Promise<"gt" | "other" | undefined> {
-  // The shell wins over `.env.local`, which wins over `.env`, unless it's blank.
-  const variables: Record<string, string> = {};
-  const add = (source: Record<string, string | undefined>) => {
-    for (const [name, value] of Object.entries(source))
-      if (value?.trim()) variables[name] = value.trim();
-  };
+  // As the inlang CLI: the shell wins over `.env.local`, which wins over
+  // `.env`, except that a blank provider setting in the shell falls back to
+  // the files.
+  let fileEnv: Record<string, string> = {};
+  let env: Record<string, string | undefined>;
+  let projectId: unknown;
   let file = "gt.config.json";
   try {
     for (file of [".env", ENV_LOCAL]) {
       const text = await readOptional(args.fs, nodePath.join(args.dir, file));
-      if (text !== undefined) add(parseEnv(text));
+      if (text !== undefined) fileEnv = { ...fileEnv, ...parseEnv(text) };
     }
-    add(process.env);
+    env = { ...fileEnv, ...process.env };
+    env[PROVIDER_ENV] =
+      process.env[PROVIDER_ENV]?.trim() || fileEnv[PROVIDER_ENV];
     file = "gt.config.json";
     const config = await readOptional(args.fs, nodePath.join(args.dir, file));
-    const projectId = config && JSON.parse(config)?.projectId;
-    if (typeof projectId === "string") add({ GT_PROJECT_ID: projectId });
+    projectId = config && JSON.parse(config)?.projectId;
   } catch (error) {
     args.logger.warn(
       `Couldn't read ${file}, so init left the machine translation provider to the inlang CLI: ${error instanceof Error ? error.message : String(error)}`
@@ -246,11 +247,14 @@ async function chosenProvider(args: {
     return "other";
   }
   const set = (pattern: RegExp) =>
-    Object.keys(variables).some((name) => pattern.test(name));
-  const provider = variables[PROVIDER_ENV];
+    Object.entries(env).some(
+      ([name, value]) => pattern.test(name) && Boolean(value?.trim())
+    );
+  const provider = env[PROVIDER_ENV]?.trim();
   if (provider) return provider.toLowerCase() === "gt" ? "gt" : "other";
   if (set(OWN_KEY)) return "other";
   if (set(GT_CREDENTIAL)) return "gt";
+  if (typeof projectId === "string" && projectId.trim()) return "gt";
   return undefined;
 }
 
