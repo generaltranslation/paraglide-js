@@ -16,20 +16,16 @@ export function extractLocaleFromNavigator() {
     return undefined;
   }
 
-  const languages = navigator.languages.map((lang) => ({
-    fullTag: lang,
-    baseTag: lang.split("-")[0],
-  }));
-
-  for (const lang of languages) {
-    const fullLocale = toLocale(lang.fullTag);
-    if (fullLocale) {
-      return fullLocale;
-    }
-
-    const baseLocale = toLocale(lang.baseTag);
-    if (baseLocale) {
-      return baseLocale;
+  for (const lang of navigator.languages) {
+    // Drop one subtag at a time, so that `zh-Hant-TW` matches `zh-Hant`
+    // before `zh` (RFC 4647 lookup)
+    const subtags = lang.split("-");
+    while (subtags.length > 0) {
+      const locale = toLocale(subtags.join("-"));
+      if (locale) {
+        return locale;
+      }
+      subtags.pop();
     }
   }
 
