@@ -18,7 +18,7 @@ const qvaluePattern = /^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/;
 export function extractLocaleFromHeader(request) {
   const acceptLanguageHeader = request.headers.get("accept-language");
   if (acceptLanguageHeader) {
-    // Parse language preferences with their q-values and base language codes
+    // Parse language preferences with their q-values
     const languages = splitOutsideQuotes(acceptLanguageHeader, ",")
       .map((lang) => {
         const [tag = "", ...params] = splitOutsideQuotes(lang, ";").map((p) =>
@@ -26,11 +26,8 @@ export function extractLocaleFromHeader(request) {
         );
         const weight = params.find((param) => /^q(?:\s|=|$)/i.test(param));
         const q = weight ? weight.replace(/^q\s*=\s*/i, "") : "1";
-        // Get both the full tag and base language code
-        const baseTag = tag.split("-")[0];
         return {
-          fullTag: tag,
-          baseTag,
+          tag,
           q: qvaluePattern.test(q) ? Number(q) : 0,
         };
       })
@@ -39,14 +36,15 @@ export function extractLocaleFromHeader(request) {
       .sort((a, b) => b.q - a.q);
 
     for (const lang of languages) {
-      const fullLocale = toLocale(lang.fullTag);
-      if (fullLocale) {
-        return fullLocale;
-      }
-
-      const baseLocale = toLocale(lang.baseTag);
-      if (baseLocale) {
-        return baseLocale;
+      // Drop one subtag at a time, so that `zh-Hant-TW` matches `zh-Hant`
+      // before `zh` (RFC 4647 lookup)
+      const subtags = lang.tag.split("-");
+      while (subtags.length > 0) {
+        const locale = toLocale(subtags.join("-"));
+        if (locale) {
+          return locale;
+        }
+        subtags.pop();
       }
     }
 

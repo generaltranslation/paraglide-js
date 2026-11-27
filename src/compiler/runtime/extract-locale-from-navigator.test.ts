@@ -61,3 +61,32 @@ test("canonicalizes navigator locale casing", async () => {
     configurable: true,
   });
 });
+
+test("truncates navigator languages one subtag at a time", async () => {
+  const originalNavigator = globalThis.navigator;
+
+  const runtime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "zh", "zh-Hant"],
+      },
+    }),
+    isServer: "false",
+    strategy: ["preferredLanguage"],
+  });
+
+  Object.defineProperty(globalThis, "navigator", {
+    value: {
+      languages: ["zh-Hant-TW", "en-US"],
+    },
+    configurable: true,
+  });
+
+  expect(runtime.getLocale()).toBe("zh-Hant");
+
+  Object.defineProperty(globalThis, "navigator", {
+    value: originalNavigator,
+    configurable: true,
+  });
+});

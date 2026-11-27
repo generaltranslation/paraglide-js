@@ -138,3 +138,23 @@ test.each([
     expect(runtime.extractLocaleFromHeader(request)).toBe(expected);
   }
 );
+
+test.each([
+  ["zh-Hant-TW", "zh-Hant"],
+  ["sr-latn-RS", "sr-Latn"],
+  ["zh-Hans-CN", "zh"],
+])("truncates %s one subtag at a time to %s", async (tag, expected) => {
+  const runtime = await createParaglide({
+    blob: await newProject({
+      settings: {
+        baseLocale: "en",
+        locales: ["en", "zh", "zh-Hant", "sr-Latn"],
+      },
+    }),
+  });
+  const request = new Request("http://example.com", {
+    headers: { "accept-language": tag },
+  });
+
+  expect(runtime.extractLocaleFromHeader(request)).toBe(expected);
+});
